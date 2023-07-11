@@ -26,5 +26,5 @@ module "hosting-provider" {
   # node_capacity_type = "ON_DEMAND"
   # ami_type           = var.ami_type
   # instance_type      = var.instance_type
-
+}
 
