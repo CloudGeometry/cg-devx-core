@@ -34,9 +34,21 @@ variable "cluster_version" {
 
 variable "node_groups" {
   type = list(object({
+    name           = optional(string)
+    instance_types = list(string, "t3.medium")
+    capacity_type  = string /*“on-demand” or “spot” */
+    min_size       = number(3)
+    max_size       = number(5)
+    desired_size   = number(3)
     }
     )
   )
 }
+variable "cluster_node_labels" {
+  type = list()
+}
 
+variable "alert_emails" {
+  type = list()
+}
 
