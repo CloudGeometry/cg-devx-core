@@ -26,3 +26,18 @@ Run the command to validate code style:
 ```bash
 flake8
 ```
+
+## SDKs
+
+### Cloud providers
+
+- [AWS SDK](https://github.com/boto/boto3)
+- [Azure SDK](https://github.com/Azure/azure-sdk-for-python)
+- [GCP SDK](https://github.com/googleapis/google-cloud-python#google-cloud-datastore)
+
+### DNS registrars 
+
+
+### Git
+
+[GitHub]() over REST API
