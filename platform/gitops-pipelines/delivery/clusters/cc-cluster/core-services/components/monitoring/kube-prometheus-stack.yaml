@@ -1,0 +1,124 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+  name: kube-prometheus-stack
+  namespace: argocd
+spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: kube-prometheus-stack
+    helm:
+      values: |-
+        prometheus:
+          prometheusSpec:
+            podMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelectorNilUsesHelmValues: false
+            serviceMonitorSelector: {}
+            serviceMonitorNamespaceSelector: {}
+        prometheusOperator:
+            admissionWebhooks:
+              failurePolicy: Ignore
+        grafana:
+          envFromSecret: grafana-secrets
+          admin:
+              existingSecret: grafana-secrets
+              userKey: grafana-user
+              passwordKey: grafana-pass
+          # adminPassword: $grafana-oidc-secret:grafana-pass
+          grafana.ini:
+            check_for_updates: false
+            reporting_enabled: false
+            server:
+              enable_gzip: true
+              root_url: https://<GRAFANA_INGRESS_URL>
+            security:
+              disable_gravatar: true
+            dashboards:
+              min_refresh_interval: 60s
+            auth.generic_oauth:
+              name: Vault
+              enabled: true
+              allow_sign_up: true
+              auto_login: false
+              client_id: $grafana-secrets:client-id
+              client_secret: $grafana-secrets:client-secret
+              auth_url: https://<OIDC_PROVIDER_AUTHORIZE_URL>
+              token_url: https://<OIDC_PROVIDER_TOKEN_URL>
+              api_url: https://<OIDC_PROVIDER_USERINFO_URL>
+              scopes: openid groups user profile email
+              allowed_domains: <CC_CLUSTER_FQDN> <DOMAIN_NAME>
+              auto_assign_org_role: Editor
+              role_attribute_path: contains(info.groups[*], 'admins') && 'Admin' || contains(info.groups[*], 'developers') && 'Editor' || 'Editor'
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            hosts:
+              - <GRAFANA_INGRESS_URL>
+            annotations:
+              cert-manager.io/cluster-issuer: "letsencrypt-prod"
+            tls: 
+              - secretName: grafana-tls
+                hosts:
+                - <GRAFANA_INGRESS_URL>
+          sidecar:
+            dashboards:
+              enabled: true
+              defaultFolderName: "General"
+              label: grafana_dashboard
+              labelValue: "1"
+              folderAnnotation: grafana_folder
+              searchNamespace: ALL
+              provider:
+                foldersFromFilesStructure: true
+          # Provision grafana-dashboards-kubernetes
+          dashboardProviders:
+            dashboardproviders.yaml:
+              apiVersion: 1
+              providers:
+              - name: 'grafana-dashboards-kubernetes'
+                orgId: 1
+                folder: 'Kubernetes'
+                type: file
+                disableDeletion: true
+                editable: true
+                options:
+                  path: /var/lib/grafana/dashboards/grafana-dashboards-kubernetes
+          dashboards:
+            grafana-dashboards-kubernetes:
+              k8s-system-api-server:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-system-api-server.json
+                token: ''
+              k8s-system-coredns:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-system-coredns.json
+                token: ''
+              k8s-views-global:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-global.json
+                token: ''
+              k8s-views-namespaces:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-namespaces.json
+                token: ''
+              k8s-views-nodes:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-nodes.json
+                token: ''
+              k8s-views-pods:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-pods.json
+                token: ''
+              k8s-addons-prometheus:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-addons-prometheus.json
+                token: ''
+              k8s-addons-trivy-operator:
+                url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-addons-trivy-operator.json
+                token: ''
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: 47.6.1
+  syncPolicy:
+    syncOptions:
+    - ServerSideApply=true
+    - CreateNamespace=true
