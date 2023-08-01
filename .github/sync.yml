@@ -1,5 +1,4 @@
 CloudGeometry/cg-devx-core-public-test:
   - source: /
-    dest: /
     exclude: .github
     deleteOrphaned: true
