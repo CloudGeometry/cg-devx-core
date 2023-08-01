@@ -2,9 +2,7 @@ name: Sync Files
 on:
   push:
     tags:
-        - 'v.1.*'
-    tags-ignore:
-        - 'v.0.*'
+        - 'v.*'
   workflow_dispatch:
 jobs:
   sync:
