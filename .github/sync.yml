@@ -1,4 +1,8 @@
 CloudGeometry/cg-devx-core-public-test:
-  - source: /
-    exclude: .github
+  - LICENSE
+  - README.md
+  - templating.md
+  - cmd/
+    deleteOrphaned: true
+  - platform/
     deleteOrphaned: true
