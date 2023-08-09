@@ -1,15 +1,17 @@
 variable "aws_region" {
-  type = string
+  type    = string
+  default = "us-east-1"
 }
 
 variable "aws_account_id" {
-  type = string
+  type    = string
+  default = "test"
 }
-
+/*
 variable "hosted_zone_name" {
   type = string
 }
-
+*/
 variable "cluster_network_cidr" {
   type    = string
   default = "10.0.0.0/16"
@@ -29,26 +31,31 @@ variable "cluster_name" {
   default = "gxc"
 }
 variable "cluster_version" {
-  type = string
+  type    = string
+  default = "1.27"
 }
 
 variable "node_groups" {
   type = list(object({
     name           = optional(string)
-    instance_types = list(string, "t3.medium")
-    capacity_type  = string /*“on-demand” or “spot” */
-    min_size       = number(3)
-    max_size       = number(5)
-    desired_size   = number(3)
+    instance_types = optional(list(string), ["t3.medium"])
+    capacity_type  = optional(string, "on-demand") /*“on-demand” or “spot” */
+    min_size       = optional(number, 3)
+    max_size       = optional(number, 5)
+    desired_size   = optional(number, 3)
     }
     )
   )
+  default = [{}]
 }
+
+
+
+/*
 variable "cluster_node_labels" {
-  type = list()
+  type = list(string)
 }
-
 variable "alert_emails" {
-  type = list()
+  type = list(string)
 }
-
+*/
