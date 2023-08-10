@@ -88,7 +88,7 @@ module "ebs_kms_key" {
 
   tags = local.tags
 }
-#delete me
+
 resource "aws_iam_policy" "additional" {
   name        = "${local.name}-additional"
   description = "Example usage of node additional policy"
@@ -107,4 +107,3 @@ resource "aws_iam_policy" "additional" {
 
   tags = local.tags
 }
-
