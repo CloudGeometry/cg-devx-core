@@ -21,6 +21,34 @@ output "kms_key_id" {
 }
 #put roles arns here
 
+output "vpc_cni_irsa" {
+  description = "vpc_cni role ARN"
+  value       = module.vpc_cni_irsa.iam_role_arn
+}
+output "ebs_csi_irsa_role" {
+  description = "CSI EBS IAM Role ARN"
+  value       = module.ebs_csi_irsa_role.iam_role_arn
+}
+
+output "efs_csi_irsa_role" {
+  description = "CSI EFS IAM Role ARN"
+  value       = module.efs_csi_irsa_role.iam_role_arn
+}
+
+output "iam_argoworkflow_role" {
+  description = "ArgoCD Workflow IAM role ARN"
+  value       = module.iam_argoworkflow_role.iam_role_arn
+}
+
+output "cert_manager_irsa_role" {
+  description = "Cert_Manager IAM Role ARN"
+  value       = module.cert_manager_irsa_role.iam_role_arn
+}
+
+output "external_dns_irsa_role" {
+  description = "External DNS IAM Role ARN"
+  value       = module.external_dns_irsa_role.iam_role_arn
+}
 
 
 

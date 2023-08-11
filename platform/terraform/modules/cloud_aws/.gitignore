@@ -1,0 +1,6 @@
+.terraform
+*.tfstate
+*.tfstate.backup
+old_*
+*DS_*
+*.txt
