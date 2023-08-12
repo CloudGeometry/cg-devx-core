@@ -39,17 +39,26 @@ output "iam_argoworkflow_role" {
   description = "ArgoCD Workflow IAM role ARN"
   value       = module.iam_argoworkflow_role.iam_role_arn
 }
-
+output "atlantis_irsa_role" {
+  description = "Atlantis admin. IAM Role ARN"
+  value       = module.atlantis_irsa_role.iam_role_arn
+}
 output "cert_manager_irsa_role" {
   description = "Cert_Manager IAM Role ARN"
   value       = module.cert_manager_irsa_role.iam_role_arn
 }
-
+output "image_registry_irsa_role" {
+  description = "Image registry (Harbor) Role ARN"
+  value       = module.image_registry_irsa_role.iam_role_arn
+}
 output "external_dns_irsa_role" {
   description = "External DNS IAM Role ARN"
   value       = module.external_dns_irsa_role.iam_role_arn
 }
-
+output "vault_irsa_role" {
+  description = "AWS Secretsmanager IAM Role ARN"
+  value       = module.vault_irsa_role.iam_role_arn
+}
 
 
 

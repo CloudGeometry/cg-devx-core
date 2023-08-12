@@ -44,7 +44,7 @@ module "ebs_csi_irsa_role" {
   attach_ebs_csi_policy = true
 
   oidc_providers = {
-    ex = {
+    main = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
     }
@@ -60,7 +60,7 @@ module "efs_csi_irsa_role" {
   attach_efs_csi_policy = true
 
   oidc_providers = {
-    ex = {
+    main = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["kube-system:efs-csi-controller-sa"]
     }
@@ -86,6 +86,24 @@ module "iam_argoworkflow_role" {
   }
 }
 # atlantis
+module "atlantis_irsa_role" {
+  source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name                  = "atlantis"
+  attach_cert_manager_policy = true
+  oidc_providers = {
+    main = {
+      provider_arn = module.eks.oidc_provider_arn
+      #need to know ns:serviceaccount
+      namespace_service_accounts = ["kube-system:atlantis"]
+    }
+  }
+  role_policy_arns = {
+    policy = aws_iam_policy.atlantis_policy.arn
+  }
+
+  tags = local.tags
+}
+
 # cert manager
 module "cert_manager_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -93,7 +111,7 @@ module "cert_manager_irsa_role" {
   attach_cert_manager_policy = true
   #  cert_manager_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
   oidc_providers = {
-    ex = {
+    main = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["kube-system:cert-manager"]
     }
@@ -103,8 +121,25 @@ module "cert_manager_irsa_role" {
 }
 
 
-
 # container registry
+module "image_registry_irsa_role" {
+  source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name                  = "image_registry"
+  attach_cert_manager_policy = true
+  oidc_providers = {
+    main = {
+      provider_arn = module.eks.oidc_provider_arn
+      #need to know ns:serviceaccount
+      namespace_service_accounts = ["kube-system:harbor"]
+    }
+  }
+  role_policy_arns = {
+    policy = aws_iam_policy.image_registry_policy.arn
+  }
+
+  tags = local.tags
+}
+
 # external DNS
 module "external_dns_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -113,7 +148,7 @@ module "external_dns_irsa_role" {
   #  external_dns_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
 
   oidc_providers = {
-    ex = {
+    main = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["kube-system:external-dns"]
     }
@@ -122,23 +157,21 @@ module "external_dns_irsa_role" {
   tags = local.tags
 }
 # vault
-#
-#
-#
-resource "aws_iam_policy" "argoworkflow" {
-  name        = "${local.name}-additional"
-  description = "ArgoWorkFlow IAM policy"
-
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Action" : "s3:*",
-        "Effect" : "Allow",
-        "Resource" : "arn:aws:s3:::*"
-      }
-    ]
-  })
+module "vault_irsa_role" {
+  source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name                  = "vault"
+  attach_cert_manager_policy = true
+  oidc_providers = {
+    main = {
+      provider_arn = module.eks.oidc_provider_arn
+      #need to know ns:serviceaccount
+      namespace_service_accounts = ["kube-system:vault"]
+    }
+  }
+  role_policy_arns = {
+    policy = aws_iam_policy.vault_policy.arn
+  }
 
   tags = local.tags
 }
+

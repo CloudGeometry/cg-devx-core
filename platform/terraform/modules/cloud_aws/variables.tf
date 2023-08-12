@@ -3,7 +3,7 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
-variable "aws_account_id" {
+variable "aws_account" {
   type    = string
   default = "test"
 }
@@ -37,7 +37,7 @@ variable "cluster_version" {
 
 variable "node_groups" {
   type = list(object({
-    name           = optional(string)
+    name           = optional(string, "ng-def")
     instance_types = optional(list(string), ["t3.medium"])
     capacity_type  = optional(string, "on-demand") /*“on-demand” or “spot” */
     min_size       = optional(number, 3)

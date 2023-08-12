@@ -30,38 +30,40 @@ module "eks" {
       "k8s.io/cluster-autoscaler/enabled" : true,
       "k8s.io/cluster-autoscaler/${local.name}" : "owned",
     }
+    subnet_ids         = module.vpc.private_subnets
+    launch_template_os = "amazonlinux2eks"
+    k8s_taints         = [{ key = "ondemandInstance", value = "true", effect = "NO_SCHEDULE" }]
+    #
+    create_iam_role          = true
+    iam_role_name            = "self-managed-node-group-iam-role"
+    iam_role_use_name_prefix = true
+    iam_role_description     = "Def role"
+    iam_role_tags = {
+      Purpose = "Protector of the kubelet"
+    }
+    capacity_rebalance   = true
+    node_group_name      = "${local.name}-def-group"
+    launch_template_name = "lt-def"
+
   }
   /*has to be replaced with iteration through array of objects*/
+  /*
   self_managed_node_groups = {
     # Default node group - as provisioned by the module defaults
     #    default_node_group = {}
     test_ng_dmd = {
       #
-      node_group_name    = "smng-demand"
-      capacity_type      = "on-demand"
-      capacity_rebalance = true
+      node_group_name = "smng-demand"
+      capacity_type   = "on-demand"
       #instance_types     = ["t3.medium", "t3.small"]
-      instance_type      = "t3.medium"
-      min_size           = 2
-      max_size           = 5
-      desired_size       = 3
-      subnet_ids         = module.vpc.private_subnets
-      launch_template_os = "amazonlinux2eks"
-      k8s_taints         = [{ key = "ondemandInstance", value = "true", effect = "NO_SCHEDULE" }]
-      #
-      create_iam_role          = true
-      iam_role_name            = "self-managed-node-group-iam-role"
-      iam_role_use_name_prefix = false
-      iam_role_description     = "Def role"
-      iam_role_tags = {
-        Purpose = "Protector of the kubelet"
-      }
-      #  iam_role_additional_policies = {
-      # AmazonEC2ContainerRegistryReadOnly = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-      #        additional                         = aws_iam_policy.additional.arn
-      #}
+      instance_types = "t3.medium"
+      min_size       = 2
+      max_size       = 5
+      desired_size   = 3
 
     }
 
   }
+  */
+  self_managed_node_groups = local.node_groups
 }

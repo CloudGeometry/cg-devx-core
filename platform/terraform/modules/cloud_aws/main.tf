@@ -1,6 +1,6 @@
 provider "aws" {
   region  = local.region
-  profile = local.aws_account_id
+  profile = local.aws_account
 }
 
 provider "kubernetes" {
@@ -17,24 +17,36 @@ provider "kubernetes" {
 
 data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {}
-
 locals {
   #  name            = "ex-${replace(basename(path.cwd), "_", "-")}"
   name            = var.cluster_name
   cluster_version = var.cluster_version
   region          = var.aws_region
-  aws_account_id  = var.aws_account_id
-
-  vpc_cidr = var.cluster_network_cidr
-  azs      = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  aws_account     = var.aws_account
+  vpc_cidr        = var.cluster_network_cidr
+  azs             = slice(data.aws_availability_zones.available.names, 0, var.az_count)
 
   tags = {
     cgx_name   = local.name
     GithubRepo = "terraform-aws-eks"
     GithubOrg  = "terraform-aws-modules"
   }
-}
+  node_groups = var.node_groups
+  /*
+  node_groups = { for node_group in var.node_groups : node_group.name => {
+    node_group_name = node_group.name
+    capacity_type   = node_group.capacity_type
+    #instance_types     = ["t3.medium", "t3.small"]
+    instance_types = node_group.instance_types
+    min_size       = 2
+    max_size       = 5
+    desired_size   = 3
+    name_prefix = "def_group_np-"
 
+    }
+  }
+*/
+}
 ################################################################################
 # EKS Module
 ################################################################################
