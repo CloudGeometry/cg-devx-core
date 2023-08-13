@@ -1,1 +1,1 @@
-aws eks update-kubeconfig --name "gxc"
+aws eks update-kubeconfig --name "pzdc"

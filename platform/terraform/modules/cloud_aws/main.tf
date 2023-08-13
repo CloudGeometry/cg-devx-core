@@ -19,12 +19,13 @@ data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {}
 locals {
   #  name            = "ex-${replace(basename(path.cwd), "_", "-")}"
-  name            = var.cluster_name
-  cluster_version = var.cluster_version
-  region          = var.aws_region
-  aws_account     = var.aws_account
-  vpc_cidr        = var.cluster_network_cidr
-  azs             = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  name                = var.cluster_name
+  cluster_version     = var.cluster_version
+  region              = var.aws_region
+  aws_account         = var.aws_account
+  vpc_cidr            = var.cluster_network_cidr
+  azs                 = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  cluster_node_lables = "labe1=foo,label2=bar"
 
   tags = {
     cgx_name   = local.name
@@ -100,24 +101,4 @@ module "ebs_kms_key" {
 
   tags = local.tags
 }
-#delete me
-/*
-resource "aws_iam_policy" "additional" {
-  name        = "${local.name}-additional"
-  description = "Example usage of node additional policy"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "ec2:Describe*",
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-    ]
-  })
 
-  tags = local.tags
-}
-*/

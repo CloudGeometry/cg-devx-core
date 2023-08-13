@@ -37,12 +37,14 @@ variable "cluster_version" {
 
 variable "node_groups" {
   type = list(object({
-    name           = optional(string, "ng-def")
-    instance_types = optional(list(string), ["t3.medium"])
-    capacity_type  = optional(string, "on-demand") /*“on-demand” or “spot” */
-    min_size       = optional(number, 3)
-    max_size       = optional(number, 5)
-    desired_size   = optional(number, 3)
+    name                    = optional(string, "ng-def")
+    override_instance_types = optional(list(string), ["t3.medium", "t3.small"])
+    instance_type           = optional(string, "t3.medium")
+    #    capacity_type           = optional(string, "on-demand") /*“on-demand” or “spot” */
+    instance_market_options = optional(map(string), {})
+    min_size                = optional(number, 3)
+    max_size                = optional(number, 5)
+    desired_size            = optional(number, 3)
     }
     )
   )
@@ -51,10 +53,11 @@ variable "node_groups" {
 
 
 
-/*
 variable "cluster_node_labels" {
-  type = list(string)
+  type    = string
+  default = ""
 }
+/*
 variable "alert_emails" {
   type = list(string)
 }
