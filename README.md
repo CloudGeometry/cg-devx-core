@@ -1,7 +1,6 @@
 # Welcome to CGDevX
 
-Here ate CloudGeometry we use CGDevX to simplify the creation and management of DevOps and Cloud resources, and we've
-decided to make it available to the public.
+Here at CloudGeometry we use CGDevX as a Reference Architecture for simplifying the creation and management of DevOps and Cloud resources, and we've decided to make it available to the public.
 
 While we consider it to be pretty exciting, it's important that you realize that this public version is a pre-alpha
 release; there's no guarantee that it will work for you, and it's very likely that things will change before the general
