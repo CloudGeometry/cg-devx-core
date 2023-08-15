@@ -37,25 +37,23 @@ variable "cluster_version" {
 
 variable "node_groups" {
   type = list(object({
-    name                    = optional(string, "ng-def")
-    override_instance_types = optional(list(string), ["t3.medium", "t3.small"])
-    instance_type           = optional(string, "t3.medium")
-    #    capacity_type           = optional(string, "on-demand") /*“on-demand” or “spot” */
-    instance_market_options = optional(map(string), {})
-    min_size                = optional(number, 3)
-    max_size                = optional(number, 5)
-    desired_size            = optional(number, 3)
+    name           = optional(string, "")
+    instance_types = optional(list(string), ["t3.medium", "t3.small"])
+    capacity_type  = optional(string, "on-demand")
+    min_size       = optional(number, 2)
+    max_size       = optional(number, 5)
+    desired_size   = optional(number, 3)
     }
     )
   )
-  default = [{}]
+  #  default = [{}]
 }
 
 
 
 variable "cluster_node_labels" {
   type    = string
-  default = ""
+  default = "node.kubernetes.io/node_label1=value1,node.kubernetes.io/node_label2=value2"
 }
 /*
 variable "alert_emails" {

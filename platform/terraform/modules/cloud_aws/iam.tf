@@ -22,7 +22,7 @@ EOT
 module "vpc_cni_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name             = "vpc_cni"
+  role_name             = "${local.name}-vpc-cni-role"
   attach_vpc_cni_policy = true
   vpc_cni_enable_ipv4   = true
 
@@ -40,7 +40,7 @@ module "vpc_cni_irsa" {
 module "ebs_csi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name             = "ebs-csi"
+  role_name             = "${local.name}-ebs-csi-role"
   attach_ebs_csi_policy = true
 
   oidc_providers = {
@@ -56,7 +56,7 @@ module "ebs_csi_irsa_role" {
 module "efs_csi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
-  role_name             = "efs-csi"
+  role_name             = "${local.name}-efs-csi-role"
   attach_efs_csi_policy = true
 
   oidc_providers = {
@@ -71,7 +71,7 @@ module "efs_csi_irsa_role" {
 # argo workflow
 module "iam_argoworkflow_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "ArgoWorkFlow"
+  role_name = "${local.name}-argoworkflow-role"
 
   role_policy_arns = {
     policy = aws_iam_policy.argoworkflow.arn
@@ -88,7 +88,7 @@ module "iam_argoworkflow_role" {
 # atlantis
 module "atlantis_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "atlantis"
+  role_name                  = "${local.name}-atlantis-role"
   attach_cert_manager_policy = true
   oidc_providers = {
     main = {
@@ -107,7 +107,7 @@ module "atlantis_irsa_role" {
 # cert manager
 module "cert_manager_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "cert-manager"
+  role_name                  = "${local.name}-cert-manager-role"
   attach_cert_manager_policy = true
   #  cert_manager_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
   oidc_providers = {
@@ -124,7 +124,7 @@ module "cert_manager_irsa_role" {
 # container registry
 module "image_registry_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "image_registry"
+  role_name                  = "${local.name}-image-registry-role"
   attach_cert_manager_policy = true
   oidc_providers = {
     main = {
@@ -143,7 +143,7 @@ module "image_registry_irsa_role" {
 # external DNS
 module "external_dns_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "external-dns"
+  role_name                  = "${local.name}-external-dns-role"
   attach_external_dns_policy = true
   #  external_dns_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
 
@@ -159,7 +159,7 @@ module "external_dns_irsa_role" {
 # vault
 module "vault_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "vault"
+  role_name                  = "${local.name}-vault-role"
   attach_cert_manager_policy = true
   oidc_providers = {
     main = {

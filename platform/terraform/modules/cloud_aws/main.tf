@@ -25,14 +25,36 @@ locals {
   aws_account         = var.aws_account
   vpc_cidr            = var.cluster_network_cidr
   azs                 = slice(data.aws_availability_zones.available.names, 0, var.az_count)
-  cluster_node_lables = "labe1=foo,label2=bar"
+  cluster_node_lables = var.cluster_node_labels
 
   tags = {
     cgx_name   = local.name
     GithubRepo = "terraform-aws-eks"
     GithubOrg  = "terraform-aws-modules"
   }
-  node_groups = var.node_groups
+  default_node_group_name = "${local.name}-node-group"
+  node_groups = [
+    for node_group in var.node_groups :
+    {
+      name                    = node_group.name == "" ? local.default_node_group_name : node_group.name
+      min_size                = node_group.min_size
+      max_size                = node_group.max_size
+      desired_size            = node_group.desired_size
+      override_instance_types = node_group.instance_types
+      instance_type           = node_group.instance_types[0]
+      #node_group.capacity_type == "spot" ? instance_market_options.market_type = "spot" : {} 
+      instance_market_options = lower(node_group.capacity_type) == "spot" ? { market_type = "spot" } : {}
+      bootstrap_extra_args = join(",", [
+        "--kubelet-extra-args '--node-labels=node.kubernetes.io/lifecycle=${node_group.capacity_type}",
+        var.cluster_node_labels,
+        "'"
+        ]
+      )
+
+    }
+  ]
+
+  #  node_groups = var.node_groups
   /*
   node_groups = { for node_group in var.node_groups : node_group.name => {
     node_group_name = node_group.name

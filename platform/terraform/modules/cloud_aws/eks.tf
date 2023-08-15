@@ -35,15 +35,15 @@ module "eks" {
     k8s_taints         = [{ key = "ondemandInstance", value = "true", effect = "NO_SCHEDULE" }]
     #
     create_iam_role          = true
-    iam_role_name            = "self-managed-node-group-iam-role"
+    iam_role_name            = "${local.name}-self-managed-node-group-iam-role"
     iam_role_use_name_prefix = true
     iam_role_description     = "Def role"
     iam_role_tags = {
       Purpose = "Protector of the kubelet"
     }
     capacity_rebalance   = true
-    node_group_name      = "${local.name}-def-group"
-    launch_template_name = "lt-def"
+    node_group_name      = "${local.name}-node-group"
+    launch_template_name = "${local.name}-lt-def"
 
   }
   /*has to be replaced with iteration through array of objects*/

@@ -1,1 +1,2 @@
-aws eks update-kubeconfig --name "pzdc"
+
+aws eks update-kubeconfig --name ${1}
