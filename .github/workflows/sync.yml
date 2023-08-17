@@ -10,7 +10,7 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@master
-      - name: Exit if not on master branch
+      - name: Exit if not on main branch
         if: endsWith(github.ref, 'main') == false
         run: exit -1
       - name: Run GitHub File Sync
