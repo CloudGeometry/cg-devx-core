@@ -8,6 +8,7 @@ class DnsRegistrars(str, enum.Enum):
     """List of possible DNS Registrars."""
 
     Route53 = 'route53'
+    AzureDNS = 'azure_dns'
 
     @classmethod
     def has_value(cls, value) -> bool:

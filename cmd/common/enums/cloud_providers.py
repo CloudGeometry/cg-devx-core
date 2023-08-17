@@ -7,8 +7,8 @@ from cmd.common.const.const import DEFAULT_ENUM_VALUE
 class CloudProviders(str, enum.Enum):
     """List of possible cloud providers."""
 
-    aws = 'aws'
-    azure = 'azure'
+    AWS = 'aws'
+    Azure = 'azure'
 
     @classmethod
     def has_value(cls, value) -> bool:

@@ -1,7 +1,7 @@
-class GitManager:
+class GitProviderManager:
     """Git provider wrapper to standardise Git management."""
 
-    def check_repository_existence(self, url: str):
+    def check_repository_existence(self, name: str = "GitOps"):
         """
         Check if repository exists
         :return: True or False

@@ -1,24 +1,36 @@
-from cmd.services.cloud.aws.session_manager import SessionManager
+from cmd.services.cloud.aws.aws_manager import AwsSdk
+from cmd.services.dns.dns_provider_manager import DNSManager
 
 
-def checkifDnsRecordExist(domain_name, dns_record):
-    '''
-    (str, str) --> (str)
-    Read your domain-name and dns_record and check if it exists or not
-    Returns recordSet and it's value in return
+class Route53Manager(DNSManager):
+    __route53_permissions: [str] = ["route53:ListHostedZones",
+                                    "route53:ListResourceRecordSets",
+                                    "route53:ListTagsForResource"]
 
-    #If record exist
-    >>> checkifDnsRecordExist("domain_name.com", "mail.domain_name.com")
-    mail.domain_name.com : 5.3.5.3
+    def __init__(self, profile=None, key=None, secret=None):
+        self.__aws_sdk = AwsSdk(None, profile, key, secret)
 
-    #If record doesn't exist
-    >>> checkifDnsRecordExist("domain_name.com", "mail.domain_name.com")
-    0
-    '''
-    session = SessionManager.create_session()
-    r53_client = session.client('route53')
-    record_sets = r53_client.list_hosted_zones()
-    for recordset in record_sets.get_records():
-        if recordset.name == dns_record + ".":
-            return recordset.name + " : " + recordset.to_print()
-    return 0
+    def evaluate_domain_ownership(self, domain_name):
+        """
+        Check if domain is owned by user
+        :return: True or False
+        """
+        name_severs = self.__aws_sdk.get_name_severs(domain_name)
+        if name_severs is not None:
+            self.get_domain_ns_records(domain_name, name_severs)
+
+        self.__aws_sdk.check_hosted_zone_liveness()
+
+    def evaluate_permissions(self):
+        """
+        Check if provided credentials have required permissions
+        :return: True or False
+            """
+        missing_permissions = []
+        missing_permissions.extend(self.__aws_sdk.blocked(self.__route53_permissions))
+        missing_permissions.extend(
+            self.__aws_sdk.blocked(["route53:ChangeResourceRecordSets"], ["arn:aws:route53:::hostedzone/*"]))
+        if len(missing_permissions) == 0:
+            return True
+        else:
+            return False
