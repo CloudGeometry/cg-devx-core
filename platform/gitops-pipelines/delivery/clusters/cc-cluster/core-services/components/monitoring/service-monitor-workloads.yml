@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '5'
+  name: workloads-monitoring
+  namespace: monitoring
+spec:
+  endpoints:
+    - honorLabels: true
+      port: http
+      scheme: http
+  selector:
+    matchLabels:
+      expose-metrics: "true"
+  namespaceSelector:
+    any: true

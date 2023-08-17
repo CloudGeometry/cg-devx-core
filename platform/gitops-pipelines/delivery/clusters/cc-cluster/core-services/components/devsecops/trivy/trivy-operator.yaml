@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+  name: trivy
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: trivy
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: trivy-operator
+    repoURL: https://aquasecurity.github.io/helm-charts/
+    targetRevision: 0.14.1
+    helm:
+      releaseName: trivy-operator
+      values: |
+        trivy:
+          ignoreUnfixed: false
+        serviceMonitor:
+          # enabled determines whether a serviceMonitor should be deployed
+          enabled: true
+        operator:
+          metricsVulnIdEnabled: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
