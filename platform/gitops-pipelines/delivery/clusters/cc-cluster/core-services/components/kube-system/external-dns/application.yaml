@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/external-dns
+    targetRevision: 1.12.1
+    helm:
+      releaseName: external-dns
+      values: |
+        serviceAccount:
+          create: true
+          name: external-dns
+          annotations:
+            <K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>: '<EXTERNAL_DNS_IAM_ROLE_RN>'
+        domainFilters:
+          - <CC_CLUSTER_FQDN>
+    chart: external-dns
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

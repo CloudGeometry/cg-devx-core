@@ -1,0 +1,12 @@
+email: cg-devx-demo@cloudgeometry.io
+cloud-provider: aws
+cloud-profile: cg-develop
+cloud-region: eu-central-1
+cluster-name: cg-devx-demo
+dns-registrar: route53
+domain-name: cgdevx.io
+git-provider: github
+git-org: cloudgeometry
+git-access-token: ghp_xxx
+gitops-repo-name: cg-devx-gitops
+setup-demo-workload: False
