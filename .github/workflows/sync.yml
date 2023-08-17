@@ -1,8 +1,6 @@
 name: Sync Files
 on:
   push:
-    branches:
-        - main
     tags:
         - 'v.*'
   workflow_dispatch:
@@ -12,6 +10,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@master
+      - name: Exit if not on master branch
+        if: endsWith(github.ref, 'main') == false
+        run: exit -1
       - name: Run GitHub File Sync
         uses: BetaHuhn/repo-file-sync-action@v1
         with:
