@@ -1,7 +1,7 @@
 """Cloud providers enums."""
 import enum
 
-from cmd.common.const.const import DEFAULT_ENUM_VALUE
+from cli.common.const.const import DEFAULT_ENUM_VALUE
 
 
 class CloudProviders(str, enum.Enum):

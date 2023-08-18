@@ -2,7 +2,7 @@ from urllib.error import HTTPError
 
 import requests
 
-from cmd.services.vcs.git_provider_manager import GitProviderManager
+from cli.services.vcs.git_provider_manager import GitProviderManager
 
 
 class GitHubProviderManager(GitProviderManager):

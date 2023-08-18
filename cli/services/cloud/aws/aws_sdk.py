@@ -1,9 +1,11 @@
 import logging
+import time
 from typing import Dict, List, Optional
 
 from botocore.exceptions import ClientError
 
-from cmd.services.cloud.aws.aws_session_manager import AwsSessionManager
+from cli.services.cloud.aws.aws_session_manager import AwsSessionManager
+from cli.services.dns.dns_provider_manager import get_domain_txt_records_doh, get_domain_txt_records_dot
 
 
 class AwsSdk:
@@ -93,117 +95,70 @@ class AwsSdk:
             return False
         return True
 
-    def get_name_severs(self, domain_name: str):
+    def get_name_severs(self, domain_name: str) -> [str]:
         r53_client = self._session_manager.session.client('route53')
         hosted_zones = r53_client.list_hosted_zones()
-        z = next(zone for zone in hosted_zones["HostedZones"] if zone["Name"].find(domain_name))
-        zone_id = z["Id"]
+
+        hosted_zone = next(filter(lambda x: x["Name"] == f'{domain_name}.', hosted_zones["HostedZones"]), None)
+        if hosted_zone is None:
+            raise Exception("Domain not found")
+
+        is_private = bool(hosted_zone["Config"]["PrivateZone"])
+
+        zone_id = hosted_zone["Id"]
         hosted_zone = r53_client.get_hosted_zone(Id=zone_id)
-        if hosted_zone["Config"]["PrivateZone"]:
-            return None
 
-        return hosted_zone["DelegationSet"]["NameServers"]
+        # append . to the record to make if fully-qualified in case it's missing
+        ns = []
+        for z in hosted_zone["DelegationSet"]["NameServers"]:
+            if z.endswith("."):
+                ns.append(z)
+            else:
+                ns.append(f'{z}.')
 
-    def check_hosted_zone_liveness(self, domain_name):
-        pass
+        return ns, zone_id, is_private
 
+    def set_hosted_zone_liveness(self, hosted_zone_name, hosted_zone_id, name_servers):
 
-# TODO:rewrite code below
-"""
+        route53_record_name = f'cgdevx-liveness.{hosted_zone_name}'
+        route53_record_value = "domain record propagated"
 
-// TestHostedZoneLiveness checks Route53 for the liveness test record
-func (conf *AWSConfiguration) TestHostedZoneLiveness(hostedZoneName string) bool {
-	route53RecordName := fmt.Sprintf("kubefirst-liveness.%s", hostedZoneName)
-	route53RecordValue := "domain record propagated"
+        r53_client = self._session_manager.session.client('route53')
+        response = r53_client.list_resource_record_sets(HostedZoneId=hosted_zone_id)
+        # check if route53RecordName exists in ResourceRecordSets
 
-	route53Client := route53.NewFromConfig(conf.Config)
+        record = next(
+            filter(lambda x: x["Name"] == route53_record_name and x["Type"] == "TXT", response["ResourceRecordSets"]),
+            None)
 
-	hostedZoneID, err := conf.GetHostedZoneID(hostedZoneName)
-	if err != nil {
-		log.Error().Msg(err.Error())
-		return false
-	}
+        # if not - create
+        if record is None:
+            batch = {"Changes": [{"Action": "UPSERT",
+                                  "ResourceRecordSet": {
+                                      "Name": route53_record_name,
+                                      "Type": "TXT",
+                                      "ResourceRecords": [
+                                          {
+                                              "Value": f'"{route53_record_value}"',
+                                          },
+                                      ],
+                                      "TTL": 10,
+                                      "Weight": 100,
+                                      "SetIdentifier": "CREATE liveness check for CGDevX cluster installation", }}],
+                     "Comment": "CREATE liveness check for CGDevX cluster installation"}
 
-	log.Info().Msgf("checking to see if record %s exists", route53RecordName)
-	log.Info().Msgf("hostedZoneId %s", hostedZoneID)
-	log.Info().Msgf("route53RecordName %s", route53RecordName)
+            r = r53_client.change_resource_record_sets(HostedZoneId=hosted_zone_id, ChangeBatch=batch)
 
-	// check for existing record
-	records, err := route53Client.ListResourceRecordSets(context.Background(), &route53.ListResourceRecordSetsInput{
-		HostedZoneId: aws.String(hostedZoneID),
-	})
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return false
-	}
-	for _, r := range records.ResourceRecordSets {
-		if *r.Name == fmt.Sprintf("%s.", route53RecordName) {
-			log.Info().Msg("domain record found")
-			return true
-		}
-	}
+        # check if record is updated
+        loop_count = 100
+        while loop_count > 0:
+            time.sleep(10)
+            # ["https://" + str(s).rstrip('.') for s in name_servers][0]
+            existing_txt = get_domain_txt_records_dot(route53_record_name)
 
-	// create record if it does not exist
-	record, err := route53Client.ChangeResourceRecordSets(
-		context.Background(),
-		&route53.ChangeResourceRecordSetsInput{
-			ChangeBatch: &route53Types.ChangeBatch{
-				Changes: []route53Types.Change{
-					{
-						Action: "UPSERT",
-						ResourceRecordSet: &route53Types.ResourceRecordSet{
-							Name: aws.String(route53RecordName),
-							Type: "TXT",
-							ResourceRecords: []route53Types.ResourceRecord{
-								{
-									Value: aws.String(strconv.Quote(route53RecordValue)),
-								},
-							},
-							TTL:           aws.Int64(10),
-							Weight:        aws.Int64(100),
-							SetIdentifier: aws.String("CREATE liveness check for kubefirst installation"),
-						},
-					},
-				},
-				Comment: aws.String("CREATE liveness check for kubefirst installation"),
-			},
-			HostedZoneId: aws.String(hostedZoneID),
-		})
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return false
-	}
-	log.Info().Msgf("record creation status is %s", record.ChangeInfo.Status)
+            if set(existing_txt).issubset(set([f'"{route53_record_value}"'])):
+                break
 
-	count := 0
-	// todo need to exit after n number of minutes and tell them to check ns records
-	// todo this logic sucks
-	for count <= 100 {
-		count++
+            loop_count -= 1
 
-		log.Info().Msgf("%s", route53RecordName)
-		ips, err := net.LookupTXT(route53RecordName)
-		if err != nil {
-			ips, err = dns.BackupResolver.LookupTXT(context.Background(), route53RecordName)
-		}
-
-		log.Info().Msgf("%s", ips)
-
-		if err != nil {
-			log.Warn().Msgf("could not get record name %s - waiting 10 seconds and trying again: \nerror: %s", route53RecordName, err)
-			time.Sleep(10 * time.Second)
-		} else {
-			for _, ip := range ips {
-				// todo check ip against route53RecordValue in some capacity so we can pivot the value for testing
-				log.Info().Msgf("%s. in TXT record value: %s\n", route53RecordName, ip)
-				count = 101
-			}
-		}
-		if count == 100 {
-			log.Error().Msg("unable to resolve hosted zone dns record. please check your domain registrar")
-			return false
-		}
-	}
-	return true
-}
-"""
+        return True
