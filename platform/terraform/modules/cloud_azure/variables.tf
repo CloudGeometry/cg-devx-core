@@ -27,6 +27,7 @@ variable "location" {
   type        = string
 }
 
+
 variable "resource_group_name" {
   description = "Specifies the resource group name"
   default     = "DevX-rg"
@@ -481,12 +482,15 @@ variable "storage_account_replication_type" {
     error_message = "The replication type of the storage account is invalid."
   }
 }
+/* resource "random_pet" "key_vault_name" {
+  prefix = var.resource_group_name_prefix
+}
 
 variable "key_vault_name" {
   description = "Specifies the name of the key vault."
   type        = string
-  default     = "DevXAksKeyVault"
-}
+  default     = "DevXAksKeyVault${random_pet.key_vault_name.id}"
+} */
 
 variable "key_vault_sku_name" {
   description = "(Required) The Name of the SKU used for this Key Vault. Possible values are standard and premium."
@@ -566,7 +570,7 @@ variable "admin_username" {
 variable "ssh_public_key" {
   description = "(Required) Specifies the SSH public key for the jumpbox virtual machine and AKS worker nodes."
   type        = string
-  default = ""
+  default = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzkaoqP5dPnw+9p2mwo2ZVkft970st3sd0PmTV/Q4kKVCmPE3PilwSMN3ryWGuSUqkWUXkOypFMw83DU06HwvOv2o+KJxMUZRSswaHbpU4HmjGlK8zkQAz0IRGOCcW+CiLnNbVgjq7jB6ESD9yRU4XhmEb1TGt7wmQgKkWqR1hmsd0jDCzQHHztuWbeipjeNsJhpSMzJD9iv7/tdPrnBABZ4/4mS9h8NfOVokbXVcgG30qZM6RHH0PUiWaem5ntA2WXHjjTa2oGDPy3p4jC+O8C2yXY7VgqN5cGSmmIpBGc9qrZhDNx+1ZtGOUp8fEotZ5KHtzPmPqdvz86Fq45y2j mikhailkhviadchenia@Mikhails-MBP"
 }
 
 variable "keda_enabled" {

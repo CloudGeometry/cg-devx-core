@@ -4,13 +4,17 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "3.50"
     }
+    random = {
+      source = "hashicorp/random"
+      version = "3.5.1"
+    }
   }
 }
 
 provider "azurerm" {
   features {}
 /* azure SP info */
-  subscription_id   = ""
+  subscription_id   = "589bdbcd-8edc-42f6-9898-e0eb44a19e04"
   tenant_id         = "fbd4a7eb-f866-4926-9aff-4a972cdef121"
   client_id         = "1f7fba2a-351e-4a1b-8ae1-bef42cec610e"
   client_secret     = "btnI3EhQZMYVo.4~96Zuy4BCg5djUyvCo4"
@@ -34,6 +38,9 @@ resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
   tags     = var.tags
+}
+
+resource "random_pet" "key_vault_name" {
 }
 
 module "log_analytics_workspace" {
@@ -233,7 +240,7 @@ resource "azurerm_role_assignment" "network_contributor" {
 }
  */
 # Generate randon name for storage account
-resource "random_string" "storage_account_suffix" {
+resource "random_string" "random_suffix" {
   length  = 8
   special = false
   lower   = true
@@ -243,7 +250,7 @@ resource "random_string" "storage_account_suffix" {
 
 module "storage_account" {
   source                      = "./modules/storage_account"
-  name                        = "${local.storage_account_prefix}${random_string.storage_account_suffix.result}"
+  name                        = "${local.storage_account_prefix}${random_string.random_suffix.result}"
   location                    = var.location
   resource_group_name         = azurerm_resource_group.rg.name
   account_kind                = var.storage_account_kind
@@ -290,7 +297,7 @@ module "node_pool" {
 
 module "key_vault" {
   source                          = "./modules/key_vault"
-  name                            = var.key_vault_name
+  name                            = "DevXKeyVault${random_pet.key_vault_name.id}"
   location                        = var.location
   resource_group_name             = azurerm_resource_group.rg.name
   tenant_id                       = data.azurerm_client_config.current.tenant_id
