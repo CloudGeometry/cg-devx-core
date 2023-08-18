@@ -1,13 +1,14 @@
+#Do we really want the region setting here?
 variable "aws_region" {
   type    = string
   default = "us-east-1"
 }
-
+/*
 variable "aws_account" {
   type    = string
   default = "test"
 }
-/*
+
 variable "hosted_zone_name" {
   type = string
 }
@@ -29,6 +30,10 @@ variable "az_count" {
 variable "cluster_name" {
   type    = string
   default = "gxc"
+  validation {
+    condition     = (length(var.cluster_name) <= 4) && (length(var.cluster_name) >= 2)
+    error_message = "Must be between 2 and 4 symbols long"
+  }
 }
 variable "cluster_version" {
   type    = string

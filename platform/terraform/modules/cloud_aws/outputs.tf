@@ -1,4 +1,9 @@
 ###
+output "private_key" {
+  description = "Private key of generated keypair"
+  sensitive   = true
+  value       = module.key_pair.private_key_openssh
+}
 output "network_id" {
   description = "module.vpc.vpc_id"
   value       = module.vpc.vpc_id
@@ -227,20 +232,6 @@ output "cloudwatch_log_group_name" {
 output "cloudwatch_log_group_arn" {
   description = "Arn of cloudwatch log group created"
   value       = module.eks.cloudwatch_log_group_arn
-}
-
-################################################################################
-# EKS Managed Node Group
-################################################################################
-
-output "eks_managed_node_groups" {
-  description = "Map of attribute maps for all EKS managed node groups created"
-  value       = module.eks.eks_managed_node_groups
-}
-
-output "eks_managed_node_groups_autoscaling_group_names" {
-  description = "List of the autoscaling group names created by EKS managed node groups"
-  value       = module.eks.eks_managed_node_groups_autoscaling_group_names
 }
 
 ################################################################################

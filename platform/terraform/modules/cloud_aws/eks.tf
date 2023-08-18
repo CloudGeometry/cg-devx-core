@@ -1,9 +1,13 @@
+#https://github.com/terraform-aws-modules/terraform-aws-eks/issues/2635
+
 module "eks" {
   source                         = "terraform-aws-modules/eks/aws"
   version                        = "~>19.16.0"
   cluster_name                   = local.name
   cluster_version                = local.cluster_version
   cluster_endpoint_public_access = true
+  cluster_enabled_log_types      = []
+  create_cloudwatch_log_group    = false
   cluster_addons = {
     coredns = {
       most_recent = true
@@ -12,6 +16,9 @@ module "eks" {
       most_recent = true
     }
     vpc-cni = {
+      most_recent = true
+    }
+    aws-ebs-csi-driver = {
       most_recent = true
     }
   }

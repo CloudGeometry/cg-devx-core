@@ -1,6 +1,6 @@
 provider "aws" {
-  region  = local.region
-  profile = local.aws_account
+  region = local.region
+  default_tags { tags = local.tags } # all resources that implement tags, with the exception of the aws_autoscaling_group
 }
 
 provider "kubernetes" {
@@ -18,19 +18,16 @@ provider "kubernetes" {
 data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {}
 locals {
-  #  name            = "ex-${replace(basename(path.cwd), "_", "-")}"
   name                = var.cluster_name
   cluster_version     = var.cluster_version
   region              = var.aws_region
-  aws_account         = var.aws_account
+  aws_account         = data.aws_caller_identity.current.account_id
   vpc_cidr            = var.cluster_network_cidr
   azs                 = slice(data.aws_availability_zones.available.names, 0, var.az_count)
   cluster_node_lables = var.cluster_node_labels
 
   tags = {
-    cgx_name   = local.name
-    GithubRepo = "terraform-aws-eks"
-    GithubOrg  = "terraform-aws-modules"
+    cgx_name = local.name
   }
   default_node_group_name = "${local.name}-node-group"
   node_groups = [
@@ -53,23 +50,7 @@ locals {
 
     }
   ]
-
-  #  node_groups = var.node_groups
-  /*
-  node_groups = { for node_group in var.node_groups : node_group.name => {
-    node_group_name = node_group.name
-    capacity_type   = node_group.capacity_type
-    #instance_types     = ["t3.medium", "t3.small"]
-    instance_types = node_group.instance_types
-    min_size       = 2
-    max_size       = 5
-    desired_size   = 3
-    name_prefix = "def_group_np-"
-
-    }
-  }
-*/
-}
+} #end of locals
 ################################################################################
 # EKS Module
 ################################################################################
@@ -97,7 +78,6 @@ module "key_pair" {
   version            = "~> 2.0"
   key_name_prefix    = local.name
   create_private_key = true
-  tags               = local.tags
 }
 
 module "ebs_kms_key" {
@@ -120,7 +100,5 @@ module "ebs_kms_key" {
 
   # Aliases
   aliases = ["eks/${local.name}/ebs"]
-
-  tags = local.tags
 }
 
