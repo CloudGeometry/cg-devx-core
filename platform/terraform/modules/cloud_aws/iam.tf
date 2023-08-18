@@ -6,7 +6,6 @@
 module "sample_role" {
   source  = "terraform-aws-modules/iam/aws/modules/iam-role-for-service-accounts-eks"
   version = "5.20.0"
-
   tags = local.tags
 }
 
@@ -33,7 +32,6 @@ module "vpc_cni_irsa" {
     }
   }
 
-  tags = local.tags
 }
 
 # CSI
@@ -50,7 +48,6 @@ module "ebs_csi_irsa_role" {
     }
   }
 
-  tags = local.tags
 }
 
 module "efs_csi_irsa_role" {
@@ -66,7 +63,6 @@ module "efs_csi_irsa_role" {
     }
   }
 
-  tags = local.tags
 }
 # argo workflow
 module "iam_argoworkflow_role" {
@@ -87,9 +83,8 @@ module "iam_argoworkflow_role" {
 }
 # atlantis
 module "atlantis_irsa_role" {
-  source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "${local.name}-atlantis-role"
-  attach_cert_manager_policy = true
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-atlantis-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
@@ -101,7 +96,6 @@ module "atlantis_irsa_role" {
     policy = aws_iam_policy.atlantis_policy.arn
   }
 
-  tags = local.tags
 }
 
 # cert manager
@@ -117,15 +111,13 @@ module "cert_manager_irsa_role" {
     }
   }
 
-  tags = local.tags
 }
 
 
 # container registry
 module "image_registry_irsa_role" {
-  source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "${local.name}-image-registry-role"
-  attach_cert_manager_policy = true
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-image-registry-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
@@ -136,8 +128,6 @@ module "image_registry_irsa_role" {
   role_policy_arns = {
     policy = aws_iam_policy.image_registry_policy.arn
   }
-
-  tags = local.tags
 }
 
 # external DNS
@@ -154,13 +144,11 @@ module "external_dns_irsa_role" {
     }
   }
 
-  tags = local.tags
 }
 # vault
 module "vault_irsa_role" {
-  source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name                  = "${local.name}-vault-role"
-  attach_cert_manager_policy = true
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-vault-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
@@ -172,6 +160,5 @@ module "vault_irsa_role" {
     policy = aws_iam_policy.vault_policy.arn
   }
 
-  tags = local.tags
 }
 
