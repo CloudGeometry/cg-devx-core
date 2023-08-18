@@ -1,8 +1,8 @@
-from cmd.common.utils.os_utils import detect_command_presence
-from cmd.services.cloud.aws.aws_sdk import AwsSdk
-from cmd.services.cloud.aws.iam_permissions import vpc_permissions, eks_permissions, s3_permissions, \
+from cli.common.utils.os_utils import detect_command_presence
+from cli.services.cloud.aws.aws_sdk import AwsSdk
+from cli.services.cloud.aws.iam_permissions import vpc_permissions, eks_permissions, s3_permissions, \
     own_iam_permissions, iam_permissions
-from cmd.services.cloud.cloud_provider_manager import CloudProviderManager
+from cli.services.cloud.cloud_provider_manager import CloudProviderManager
 
 CLI = 'aws'
 

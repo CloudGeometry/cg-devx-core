@@ -6,7 +6,7 @@ from zipfile import ZipFile
 import requests
 
 # loading the temp.zip and creating a zip object
-from cmd.common.const.const import LOCAL_FOLDER
+from cli.common.const.const import LOCAL_FOLDER
 
 
 class DependencyManager:

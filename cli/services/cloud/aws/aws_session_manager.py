@@ -1,7 +1,7 @@
 import boto3
 from boto3 import Session
 
-from cmd.common.singleton_metaclass import SingletonMeta
+from cli.common.singleton_metaclass import SingletonMeta
 
 
 class AwsSessionManager():
