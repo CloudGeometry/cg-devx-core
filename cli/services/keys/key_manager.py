@@ -4,7 +4,7 @@ from cryptography.hazmat.backends import default_backend as crypto_default_backe
 from cryptography.hazmat.primitives import serialization as crypto_serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from cmd.common.const.const import LOCAL_FOLDER
+from cli.common.const.const import LOCAL_FOLDER
 
 
 class KeyManager:

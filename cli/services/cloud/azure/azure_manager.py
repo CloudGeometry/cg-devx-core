@@ -1,6 +1,6 @@
-from cmd.common.utils.os_utils import detect_command_presence
-from cmd.services.cloud.azure.blob_storage import create_storage
-from cmd.services.cloud.cloud_provider_manager import CloudProviderManager
+from cli.common.utils.os_utils import detect_command_presence
+from cli.services.cloud.azure.blob_storage import create_storage
+from cli.services.cloud.cloud_provider_manager import CloudProviderManager
 
 CLI = 'az'
 K8s = 'kubelogin'

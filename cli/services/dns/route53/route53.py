@@ -1,5 +1,5 @@
-from cmd.services.cloud.aws.aws_manager import AwsSdk
-from cmd.services.dns.dns_provider_manager import DNSManager
+from cli.services.cloud.aws.aws_manager import AwsSdk
+from cli.services.dns.dns_provider_manager import DNSManager, get_domain_ns_records
 
 
 class Route53Manager(DNSManager):
@@ -12,14 +12,16 @@ class Route53Manager(DNSManager):
 
     def evaluate_domain_ownership(self, domain_name):
         """
-        Check if domain is owned by user
+        Check if domain is owned by user and create liveness check record
         :return: True or False
         """
-        name_severs = self.__aws_sdk.get_name_severs(domain_name)
-        if name_severs is not None:
-            self.get_domain_ns_records(domain_name, name_severs)
+        name_servers, zone_id, zone_is_private = self.__aws_sdk.get_name_severs(domain_name)
+        if name_servers is not None:
+            existing_ns = get_domain_ns_records(domain_name)
+            if not set(existing_ns).issubset(set(name_servers)):
+                return False
 
-        self.__aws_sdk.check_hosted_zone_liveness()
+        self.__aws_sdk.set_hosted_zone_liveness(domain_name, zone_id, name_servers)
 
     def evaluate_permissions(self):
         """
