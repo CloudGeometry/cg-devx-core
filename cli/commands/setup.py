@@ -1,20 +1,20 @@
 import click
 import yaml
 
-from cmd.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
-from cmd.common.const.parameter_names import *
-from cmd.common.enums.cloud_providers import CloudProviders
-from cmd.common.enums.dns_registrars import DnsRegistrars
-from cmd.common.enums.git_providers import GitProviders
-from cmd.common.state_store import StateStore
-from cmd.services.cloud.aws.aws_manager import AWSManager
-from cmd.services.cloud.azure.azure_manager import AzureManager
-from cmd.services.cloud.cloud_provider_manager import CloudProviderManager
-from cmd.services.dns.dns_provider_manager import DNSManager
-from cmd.services.dns.route53.route53 import Route53Manager
-from cmd.services.keys.key_manager import KeyManager
-from cmd.services.vcs.git_provider_manager import GitProviderManager
-from cmd.services.vcs.github.github_manager import GitHubProviderManager
+from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
+from cli.common.const.parameter_names import *
+from cli.common.enums.cloud_providers import CloudProviders
+from cli.common.enums.dns_registrars import DnsRegistrars
+from cli.common.enums.git_providers import GitProviders
+from cli.common.state_store import StateStore
+from cli.services.cloud.aws.aws_manager import AWSManager
+from cli.services.cloud.azure.azure_manager import AzureManager
+from cli.services.cloud.cloud_provider_manager import CloudProviderManager
+from cli.services.dns.dns_provider_manager import DNSManager
+from cli.services.dns.route53.route53 import Route53Manager
+from cli.services.keys.key_manager import KeyManager
+from cli.services.vcs.git_provider_manager import GitProviderManager
+from cli.services.vcs.github.github_manager import GitHubProviderManager
 
 
 @click.command()
@@ -146,6 +146,7 @@ def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
         click.ClickException("Cloud CLI is missing")
     if not manager.evaluate_permissions():
         click.ClickException("Insufficient IAM permission")
+    pass
 
 
 def git_provider_check(manager: GitProviderManager, p: StateStore) -> None:
@@ -153,6 +154,7 @@ def git_provider_check(manager: GitProviderManager, p: StateStore) -> None:
         click.ClickException("Insufficient Git token permissions")
     if manager.check_repository_existence(p.get_input_param(GIT_REPOSITORY_NAME)):
         click.ClickException("GitOps repo already exists")
+    pass
 
 
 def dns_provider_check(manager: DNSManager, p: StateStore) -> None:
@@ -160,6 +162,7 @@ def dns_provider_check(manager: DNSManager, p: StateStore) -> None:
         click.ClickException("Insufficient DNS permissions")
     if not manager.evaluate_domain_ownership(p.get_input_param(DOMAIN_NAME)):
         click.ClickException("Could not verify domain ownership")
+    pass
 
 
 def setup_param_validator(params: StateStore) -> bool:

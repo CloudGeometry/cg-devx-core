@@ -11,14 +11,14 @@ Using Python virtualenv is recommended. You can init the virtual environment wit
 
 # Initialize venv in ./venv
 # You only need to execute this once
-python3 -m cmd
+python3 -m cli
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Activate the venv
 # You need to run this whenever you work with the codebase
-source cmd/bin/activate
+source cli/bin/activate
 ```
 
 ## Code Style

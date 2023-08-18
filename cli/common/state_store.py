@@ -4,11 +4,11 @@ from pathlib import Path
 
 import yaml
 
-from cmd.common.const.const import STATE_INPUT_PARAMS, LOCAL_FOLDER, STATE_CHECKPOINTS
-from cmd.common.const.parameter_names import CLOUD_PROVIDER, GIT_PROVIDER, DNS_REGISTRAR
-from cmd.common.enums.cloud_providers import CloudProviders
-from cmd.common.enums.dns_registrars import DnsRegistrars
-from cmd.common.enums.git_providers import GitProviders
+from cli.common.const.const import STATE_INPUT_PARAMS, LOCAL_FOLDER, STATE_CHECKPOINTS
+from cli.common.const.parameter_names import CLOUD_PROVIDER, GIT_PROVIDER, DNS_REGISTRAR
+from cli.common.enums.cloud_providers import CloudProviders
+from cli.common.enums.dns_registrars import DnsRegistrars
+from cli.common.enums.git_providers import GitProviders
 
 
 class StateStore:
