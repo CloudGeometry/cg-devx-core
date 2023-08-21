@@ -8,7 +8,7 @@ locals {
   vpc_cidr            = var.cluster_network_cidr
   azs                 = slice(data.aws_availability_zones.available.names, 0, var.az_count)
   cluster_node_lables = var.cluster_node_labels
-
+  node_group_type     = "eks_managed"
   tags = {
     cgx_name = local.name
   }
@@ -22,8 +22,8 @@ locals {
       desired_size            = node_group.desired_size
       override_instance_types = node_group.instance_types
       instance_type           = node_group.instance_types[0]
-      #node_group.capacity_type == "spot" ? instance_market_options.market_type = "spot" : {} 
-      instance_market_options = lower(node_group.capacity_type) == "spot" ? { market_type = "spot" } : {}
+      instance_market_options = ((upper(node_group.capacity_type) == "spot") && (local.node_group_type == "eks_managed")) ? { market_type = "spot" } : {}
+      capacity_type           = upper(node_group.capacity_type)
       bootstrap_extra_args = join(",", [
         "--kubelet-extra-args '--node-labels=node.kubernetes.io/lifecycle=${node_group.capacity_type}",
         var.cluster_node_labels,

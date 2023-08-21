@@ -9,9 +9,10 @@ module "eks" {
   cluster_enabled_log_types      = []
   create_cloudwatch_log_group    = false
   cluster_addons = {
-    coredns = {
-      most_recent = true
-    }
+    #Created by default
+    #coredns = {
+    #  most_recent = true
+    # }
     kube-proxy = {
       most_recent = true
     }
@@ -30,7 +31,22 @@ module "eks" {
   # Self managed node groups will not automatically create the aws-auth configmap so we need to
   create_aws_auth_configmap = true
   manage_aws_auth_configmap = true
+  #
+  eks_managed_node_group_defaults = {
+    #ami_type                              = "AL2_x86_64"
+    #  instance_types                        = module.instance_types
+    attach_cluster_primary_security_group = true
+    #    vpc_security_group_ids                = [aws_security_group.additional.id]
+    #   iam_role_additional_policies = {
+    # additional = aws_iam_policy.additional.arn
+    #}
+    node_group_name      = "${local.name}-node-group"
+    launch_template_name = "${local.name}-eks-lt-def"
 
+  }
+
+
+  #
   self_managed_node_group_defaults = {
     # enable discovery of autoscaling groups by cluster-autoscaler
     autoscaling_group_tags = {
@@ -42,7 +58,7 @@ module "eks" {
     k8s_taints         = [{ key = "ondemandInstance", value = "true", effect = "NO_SCHEDULE" }]
     #
     create_iam_role          = true
-    iam_role_name            = "${local.name}-self-managed-node-group-iam-role"
+    iam_role_name            = "${local.name}-sm-ng-iam-role"
     iam_role_use_name_prefix = true
     iam_role_description     = "Def role"
     iam_role_tags = {
@@ -53,24 +69,7 @@ module "eks" {
     launch_template_name = "${local.name}-lt-def"
 
   }
-  /*has to be replaced with iteration through array of objects*/
-  /*
-  self_managed_node_groups = {
-    # Default node group - as provisioned by the module defaults
-    #    default_node_group = {}
-    test_ng_dmd = {
-      #
-      node_group_name = "smng-demand"
-      capacity_type   = "on-demand"
-      #instance_types     = ["t3.medium", "t3.small"]
-      instance_types = "t3.medium"
-      min_size       = 2
-      max_size       = 5
-      desired_size   = 3
+  #self_managed_node_groups = local.node_groups
+  eks_managed_node_groups = local.node_groups
 
-    }
-
-  }
-  */
-  self_managed_node_groups = local.node_groups
 }
