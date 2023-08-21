@@ -13,11 +13,16 @@ terraform {
 
 provider "azurerm" {
   features {}
-/* azure SP info */
-  subscription_id   = "589bdbcd-8edc-42f6-9898-e0eb44a19e04"
+/* azure SP info Sponsorship subscription*/
+/*   subscription_id   = "589bdbcd-8edc-42f6-9898-e0eb44a19e04"
   tenant_id         = "fbd4a7eb-f866-4926-9aff-4a972cdef121"
   client_id         = "1f7fba2a-351e-4a1b-8ae1-bef42cec610e"
-  client_secret     = "btnI3EhQZMYVo.4~96Zuy4BCg5djUyvCo4"
+  client_secret     = "btnI3EhQZMYVo.4~96Zuy4BCg5djUyvCo4" */
+  /* Azure SP info Visual Studio Enterprise Subscription - MCT */
+  subscription_id   = "357a6301-ef79-489e-ba9e-10ce2267585b"
+  tenant_id         = "fbd4a7eb-f866-4926-9aff-4a972cdef121"
+  client_id         = "2cf60ee4-db67-43e1-ab59-e6764fb5c429"
+  client_secret     = "LZnPxAPUrR50rGH9xF_WPWUmvN77h6d_vT"
 }
 
 /* terraform {
@@ -65,14 +70,14 @@ module "hub_network" {
     {
       name : "AzureFirewallSubnet"
       address_prefixes : var.hub_firewall_subnet_address_prefix
-      enforce_private_link_endpoint_network_policies : true
-      enforce_private_link_service_network_policies : false
+      private_endpoint_network_policies_enabled : true
+      private_link_service_network_policies_enabled : false
     },
  /*    {
       name : "AzureBastionSubnet"
       address_prefixes : var.hub_bastion_subnet_address_prefix
-      enforce_private_link_endpoint_network_policies : true
-      enforce_private_link_service_network_policies : false
+      private_endpoint_network_policies_enabled : true
+      private_link_service_network_policies_enabled : false
     } */
   ]
 }
@@ -90,26 +95,26 @@ module "aks_network" {
     {
       name : var.default_node_pool_subnet_name
       address_prefixes : var.default_node_pool_subnet_address_prefix
-      enforce_private_link_endpoint_network_policies : true
-      enforce_private_link_service_network_policies : false
+      private_endpoint_network_policies_enabled : true
+      private_link_service_network_policies_enabled : false
     },
     {
       name : var.additional_node_pool_subnet_name
       address_prefixes : var.additional_node_pool_subnet_address_prefix
-      enforce_private_link_endpoint_network_policies : true
-      enforce_private_link_service_network_policies : false
+      private_endpoint_network_policies_enabled : true
+      private_link_service_network_policies_enabled : false
     },
     {
       name : var.pod_subnet_name
       address_prefixes : var.pod_subnet_address_prefix
-      enforce_private_link_endpoint_network_policies : true
-      enforce_private_link_service_network_policies : false
+      private_endpoint_network_policies_enabled : true
+      private_link_service_network_policies_enabled : false
     },
     {
       name : var.vm_subnet_name
       address_prefixes : var.vm_subnet_address_prefix
-      enforce_private_link_endpoint_network_policies : true
-      enforce_private_link_service_network_policies : false
+      private_endpoint_network_policies_enabled : true
+      private_link_service_network_policies_enabled : false
     }
   ]
 }
@@ -297,7 +302,7 @@ module "node_pool" {
 
 module "key_vault" {
   source                          = "./modules/key_vault"
-  name                            = "DevXKeyVault${random_pet.key_vault_name.id}"
+  name                            = "DevXKV-${random_pet.key_vault_name.id}"
   location                        = var.location
   resource_group_name             = azurerm_resource_group.rg.name
   tenant_id                       = data.azurerm_client_config.current.tenant_id

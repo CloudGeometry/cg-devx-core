@@ -3,6 +3,7 @@ variable "name" {
   type        = string
 }
 
+
 variable "resource_group_name" {
   description = "(Required) Specifies the resource group name of the key vault."
   type        = string

@@ -7,9 +7,12 @@ terraform {
 
   required_version = ">= 0.14.9"
 }
+resource "random_pet" "key_vault_name" {
+}
+
 
 resource "azurerm_key_vault" "key_vault" {
-  name                            = var.name
+  name                            = "DevXKV-${random_pet.key_vault_name.id}"
   location                        = var.location
   resource_group_name             = var.resource_group_name
   tenant_id                       = var.tenant_id

@@ -576,19 +576,19 @@ variable "ssh_public_key" {
 variable "keda_enabled" {
   description = "(Optional) Specifies whether KEDA Autoscaler can be used for workloads."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "vertical_pod_autoscaler_enabled" {
   description = "(Optional) Specifies whether Vertical Pod Autoscaler should be enabled."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "workload_identity_enabled" {
   description = "(Optional) Specifies whether Azure AD Workload Identity should be enabled for the Cluster. Defaults to false."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "oidc_issuer_enabled" {
@@ -606,7 +606,7 @@ variable "open_service_mesh_enabled" {
 variable "image_cleaner_enabled" {
   description = "(Optional) Specifies whether Image Cleaner is enabled."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "azure_policy_enabled" {

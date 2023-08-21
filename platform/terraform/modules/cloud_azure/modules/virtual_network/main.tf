@@ -29,8 +29,8 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name                            = var.resource_group_name
   virtual_network_name                           = azurerm_virtual_network.vnet.name
   address_prefixes                               = each.value.address_prefixes
-  enforce_private_link_endpoint_network_policies = each.value.enforce_private_link_endpoint_network_policies
-  enforce_private_link_service_network_policies  = each.value.enforce_private_link_service_network_policies
+  private_endpoint_network_policies_enabled      = each.value.private_endpoint_network_policies_enabled
+  private_link_service_network_policies_enabled  = each.value.private_link_service_network_policies_enabled
 }
 
 /* resource "azurerm_monitor_diagnostic_setting" "settings" {

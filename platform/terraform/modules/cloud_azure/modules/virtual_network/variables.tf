@@ -23,8 +23,8 @@ variable "subnets" {
   type = list(object({
     name                                           = string
     address_prefixes                               = list(string)
-    enforce_private_link_endpoint_network_policies = bool
-    enforce_private_link_service_network_policies  = bool
+    private_endpoint_network_policies_enabled      = bool
+    private_link_service_network_policies_enabled  = bool
   }))
 }
 
