@@ -14,15 +14,15 @@ terraform {
 provider "azurerm" {
   features {}
 /* azure SP info Sponsorship subscription*/
-/*   subscription_id   = "589bdbcd-8edc-42f6-9898-e0eb44a19e04"
+  subscription_id   = "589bdbcd-8edc-42f6-9898-e0eb44a19e04"
   tenant_id         = "fbd4a7eb-f866-4926-9aff-4a972cdef121"
   client_id         = "1f7fba2a-351e-4a1b-8ae1-bef42cec610e"
-  client_secret     = "btnI3EhQZMYVo.4~96Zuy4BCg5djUyvCo4" */
-  /* Azure SP info Visual Studio Enterprise Subscription - MCT */
-  subscription_id   = "357a6301-ef79-489e-ba9e-10ce2267585b"
+  client_secret     = "btnI3EhQZMYVo.4~96Zuy4BCg5djUyvCo4" 
+/* Azure SP info Visual Studio Enterprise Subscription - MCT /
+ /*  subscription_id   = "357a6301-ef79-489e-ba9e-10ce2267585b"
   tenant_id         = "fbd4a7eb-f866-4926-9aff-4a972cdef121"
   client_id         = "2cf60ee4-db67-43e1-ab59-e6764fb5c429"
-  client_secret     = "LZnPxAPUrR50rGH9xF_WPWUmvN77h6d_vT"
+  client_secret     = "LZnPxAPUrR50rGH9xF_WPWUmvN77h6d_vT" */
 }
 
 /* terraform {
@@ -274,7 +274,7 @@ module "storage_account" {
 } */
 
 
-module "node_pool" {
+/* module "node_pool" {
   source = "./modules/node_pool"
   resource_group_name = azurerm_resource_group.rg.name
   kubernetes_cluster_id = module.aks_cluster.id
@@ -298,7 +298,7 @@ module "node_pool" {
   tags                         = var.tags
 
   depends_on                   = [module.routetable]
-}
+} */
 
 module "key_vault" {
   source                          = "./modules/key_vault"
