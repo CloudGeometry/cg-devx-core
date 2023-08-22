@@ -28,8 +28,7 @@ module "eks" {
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
 
-  # Self managed node groups will not automatically create the aws-auth configmap so we need to
-  create_aws_auth_configmap = true
+  #create_aws_auth_configmap = true
   manage_aws_auth_configmap = true
   #
   eks_managed_node_group_defaults = {
@@ -42,9 +41,11 @@ module "eks" {
     #}
     node_group_name      = "${local.name}-node-group"
     launch_template_name = "${local.name}-eks-lt-def"
+    #    enable_bootstrap_user_data = true
 
   }
 
+  eks_managed_node_groups = local.eks_node_groups
 
   #
   self_managed_node_group_defaults = {
@@ -70,6 +71,5 @@ module "eks" {
 
   }
   #self_managed_node_groups = local.node_groups
-  eks_managed_node_groups = local.node_groups
 
 }

@@ -57,8 +57,11 @@ variable "node_groups" {
 
 
 variable "cluster_node_labels" {
-  type    = string
-  default = "node.kubernetes.io/node_label1=value1,node.kubernetes.io/node_label2=value2"
+  type = map(any)
+  default = {
+    "node.kubernetes.io/node_label1" = "value1"
+    "node.kubernetes.io/node_label2" = "value2"
+  }
 }
 /*
 variable "alert_emails" {
