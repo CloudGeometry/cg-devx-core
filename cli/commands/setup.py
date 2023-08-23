@@ -81,7 +81,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
             GIT_PROVIDER: git_provider,
             GIT_ORGANIZATION_NAME: git_org,
             GIT_ACCESS_TOKEN: git_token,
-            GIT_REPOSITORY_NAME: gitops_repo_name,
+            GITOPS_REPOSITORY_NAME: gitops_repo_name,
             GITOPS_REPOSITORY_TEMPLATE_URL: gitops_template_url,
             GITOPS_REPOSITORY_TEMPLATE_BRANCH: gitops_template_branch,
             DEMO_WORKLOAD: install_demo
@@ -152,7 +152,7 @@ def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
 def git_provider_check(manager: GitProviderManager, p: StateStore) -> None:
     if not manager.evaluate_permissions():
         click.ClickException("Insufficient Git token permissions")
-    if manager.check_repository_existence(p.get_input_param(GIT_REPOSITORY_NAME)):
+    if manager.check_repository_existence(p.get_input_param(GITOPS_REPOSITORY_NAME)):
         click.ClickException("GitOps repo already exists")
     pass
 
