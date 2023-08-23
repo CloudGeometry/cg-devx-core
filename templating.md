@@ -22,7 +22,7 @@ Templating variables reference to input parameters
 - `<GIT_PROVIDER>` - git-provider
 - `<GIT_ORGANIZATION_NAME>` - git-org
 - `<GIT_ACCESS_TOKEN>` - git-access-token
-- `<GIT_REPOSITORY_NAME>` - gitops-repo-name
+- `<GITOPS_REPOSITORY_NAME>` - gitops-repo-name
 - `<GITOPS_REPOSITORY_TEMPLATE_URL>` - gitops-template-url
 - `<GITOPS_REPOSITORY_TEMPLATE_BRANCH>` - gitops-template-branch
 
