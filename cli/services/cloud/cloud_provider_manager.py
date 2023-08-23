@@ -15,7 +15,7 @@ class CloudProviderManager:
         """
         pass
 
-    def create_iac_state_storage(self):
+    def create_iac_state_storage(self, bucket: str, region: str = None):
         """
         Creates cloud native terraform remote state storage
         :return: Resource identifier

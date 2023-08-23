@@ -7,9 +7,11 @@ from cli.common.enums.cloud_providers import CloudProviders
 from cli.common.enums.dns_registrars import DnsRegistrars
 from cli.common.enums.git_providers import GitProviders
 from cli.common.state_store import StateStore
+from cli.common.utils.generators import random_string_generator
 from cli.services.cloud.aws.aws_manager import AWSManager
 from cli.services.cloud.azure.azure_manager import AzureManager
 from cli.services.cloud.cloud_provider_manager import CloudProviderManager
+from cli.services.dependency_manager import DependencyManager
 from cli.services.dns.dns_provider_manager import DNSManager
 from cli.services.dns.route53.route53 import Route53Manager
 from cli.services.keys.key_manager import KeyManager
@@ -81,7 +83,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
             GIT_PROVIDER: git_provider,
             GIT_ORGANIZATION_NAME: git_org,
             GIT_ACCESS_TOKEN: git_token,
-            GIT_REPOSITORY_NAME: gitops_repo_name,
+            GITOPS_REPOSITORY_NAME: gitops_repo_name,
             GITOPS_REPOSITORY_TEMPLATE_URL: gitops_template_url,
             GITOPS_REPOSITORY_TEMPLATE_BRANCH: gitops_template_branch,
             DEMO_WORKLOAD: install_demo
@@ -135,10 +137,41 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     click.echo("DNS provider pre-flight check. Done!")
 
     # create ssh keys
-    KeyManager.create_keys()
+    click.echo("Generating ssh keys")
+    public_key = KeyManager.create_keys()
+    click.echo("Generating ssh keys. Done!")
 
     # create terraform storage backend
-    cm.create_iac_state_storage()
+    click.echo("Creating tf backend storage")
+    tf_backend_storage_name: str = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
+    tf_backend_location = cm.create_iac_state_storage(tf_backend_storage_name)
+    click.echo("Creating tf backend storage. Done!")
+    # tf_backend_location = 'http://cg-devx-gitops-lf49vhtx.s3.amazonaws.com/'
+
+    p.set_checkpoint("preflight")
+    p.save_checkpoint()
+
+    click.echo("Checking dependencies")
+
+    dm: DependencyManager = DependencyManager()
+
+    # terraform
+    if dm.check_tf():
+        click.echo("tf is installed. Continuing")
+    else:
+        click.echo("Downloading and installing tf")
+        dm.install_tf()
+        click.echo("tf is installed")
+
+    # kubectl
+    if dm.check_kubectl():
+        click.echo("kubectl is installed. Continuing")
+    else:
+        click.echo("Downloading and installing kubectl")
+        dm.install_kubectl()
+        click.echo("kubectl is installed")
+
+    return True
 
 
 def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
@@ -146,15 +179,13 @@ def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
         click.ClickException("Cloud CLI is missing")
     if not manager.evaluate_permissions():
         click.ClickException("Insufficient IAM permission")
-    pass
 
 
 def git_provider_check(manager: GitProviderManager, p: StateStore) -> None:
     if not manager.evaluate_permissions():
         click.ClickException("Insufficient Git token permissions")
-    if manager.check_repository_existence(p.get_input_param(GIT_REPOSITORY_NAME)):
+    if manager.check_repository_existence(p.get_input_param(GITOPS_REPOSITORY_NAME)):
         click.ClickException("GitOps repo already exists")
-    pass
 
 
 def dns_provider_check(manager: DNSManager, p: StateStore) -> None:
@@ -162,7 +193,6 @@ def dns_provider_check(manager: DNSManager, p: StateStore) -> None:
         click.ClickException("Insufficient DNS permissions")
     if not manager.evaluate_domain_ownership(p.get_input_param(DOMAIN_NAME)):
         click.ClickException("Could not verify domain ownership")
-    pass
 
 
 def setup_param_validator(params: StateStore) -> bool:
