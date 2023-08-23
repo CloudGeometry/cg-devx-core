@@ -65,6 +65,17 @@ Ingress URLs for core components. Note!: URL does not contain protocol suffix
 - `<GRAFANA_INGRESS_URL>`
 - `<SONARQUBE_INGRESS_URL>`
 
+### Atlantis
+Secret for Atlantis webhook
+
+- `<ATLANTIS_WEBHOOK_SECRET>`
+
+### Github
+bot user's keypair
+
+- `<VCS_BOT_SSH_PUBLIC_KEY>`
+- `<VCS_BOT_SSH_PRIVATE_KEY>`
+
 ### OIDC
 
 OIDC provider configuration Note!: URL does not contain protocol suffix
