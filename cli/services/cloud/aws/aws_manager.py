@@ -17,7 +17,7 @@ class AWSManager(CloudProviderManager):
         """Check whether `name` is on PATH and marked as executable."""
         return detect_command_presence(CLI)
 
-    def create_iac_state_storage(self, bucket, region):
+    def create_iac_state_storage(self, bucket: str, region: str = None):
         """
         Creates cloud native terraform remote state storage
         :return: Resource identifier

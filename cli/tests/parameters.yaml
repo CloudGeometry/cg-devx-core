@@ -7,6 +7,6 @@ dns-registrar: route53
 domain-name: cgdevx-demo.demoapps.click
 git-provider: github
 git-org: cloudgeometry
-git-access-token: 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
+git-access-token: gh_xxx
 gitops-repo-name: cg-devx-gitops
 setup-demo-workload: False

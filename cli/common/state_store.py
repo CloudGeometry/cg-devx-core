@@ -1,6 +1,7 @@
 """Global parameter store."""
 import os
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -41,6 +42,12 @@ class StateStore:
         else:
             return None
 
+    def __getitem__(self, key: str) -> Any:
+        return self.__store[STATE_INPUT_PARAMS].__getitem__(key)
+
+    def __setitem__(self, key: str, value) -> None:
+        return self.__store[STATE_INPUT_PARAMS].__setitem__(key, [value])
+
     @classmethod
     def update_input_params(self, input_params: dict):
         self.__store[STATE_INPUT_PARAMS].update(input_params)
@@ -51,7 +58,7 @@ class StateStore:
 
     @classmethod
     def set_checkpoint(self, name: str):
-        self.__store[STATE_CHECKPOINTS].push(name)
+        self.__store[STATE_CHECKPOINTS].append(name)
 
     @classmethod
     def save_checkpoint(self):
@@ -63,4 +70,3 @@ class StateStore:
 
 def param_validator(paras: StateStore) -> bool:
     return True
-
