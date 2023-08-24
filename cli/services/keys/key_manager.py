@@ -11,7 +11,7 @@ class KeyManager:
     """Cryptographic key management wrapper to standardise key management."""
 
     @staticmethod
-    def create_keys():
+    def create_keys(key_name: str = "cgdevx-rsa"):
         """
         Create keypair
         :return:
@@ -34,8 +34,11 @@ class KeyManager:
             format=crypto_serialization.PublicFormat.OpenSSH
         )
 
-        with open(Path().home() / LOCAL_FOLDER / "cgdevx-rsa.pem", "w") as private_key_file:
+        with open(Path().home() / LOCAL_FOLDER / f'{key_name}.pem', "w") as private_key_file:
             private_key_file.write(private_key.decode())
 
-        with open(Path().home() / LOCAL_FOLDER / "cgdevx-rsa.pub", "w") as public_key_file:
-            public_key_file.write(public_key.decode())
+        pk = public_key.decode()
+        with open(Path().home() / LOCAL_FOLDER / f'{key_name}.pub', "w") as public_key_file:
+            public_key_file.write(pk)
+
+        return pk

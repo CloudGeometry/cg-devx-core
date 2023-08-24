@@ -8,4 +8,4 @@ def random_string_generator(length: int = 8) -> str:
     :param length: length of the string
     :return: alphanumeric string
     """
-    return ''.join(secrets.choice(string.ascii_lowercase + string.hexdigits) for i in range(length))
+    return ''.join(secrets.choice(string.ascii_lowercase + string.digits) for i in range(length))
