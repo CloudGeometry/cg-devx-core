@@ -88,12 +88,12 @@ class AwsSdk:
 
             s3_client = self._session_manager.session.client('s3', region_name=region)
             location = {'LocationConstraint': region}
-            s3_client.create_bucket(Bucket=bucket_name,
-                                    CreateBucketConfiguration=location)
+            bucket = s3_client.create_bucket(Bucket=bucket_name,
+                                             CreateBucketConfiguration=location)
         except ClientError as e:
             logging.error(e)
             return False
-        return True
+        return bucket["Location"]
 
     def get_name_severs(self, domain_name: str) -> [str]:
         r53_client = self._session_manager.session.client('route53')

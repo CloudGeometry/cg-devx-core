@@ -15,3 +15,4 @@ gcloud==0.18.3
 GitPython==3.1.32
 dnspython==2.4.2
 httpx==0.24.1
+python-terraform==0.10.1
