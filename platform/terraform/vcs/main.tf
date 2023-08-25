@@ -11,6 +11,10 @@ terraform {
 
 }
 
+# Configure the GitHub Provider
+provider "github" {}
+
+
 # Variables for templating
 # - `<GIT_PROVIDER>` - git-provider
 # - `<GIT_ORGANIZATION_NAME>` - git-org
