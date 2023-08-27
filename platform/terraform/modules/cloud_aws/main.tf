@@ -6,9 +6,9 @@ locals {
   region              = var.aws_region
   aws_account         = data.aws_caller_identity.current.account_id
   vpc_cidr            = var.cluster_network_cidr
-  azs                 = slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  azs                 = slice(data.aws_availability_zones.available.names, 0, min(var.az_count, length(data.aws_availability_zones.available.names)))
   cluster_node_lables = var.cluster_node_labels
-  node_group_type     = "EKS"
+  node_group_type     = var.node_group_type
   tags = {
     cgx_name = local.name
   }
@@ -43,7 +43,7 @@ locals {
       override_instance_types = node_group.instance_types
       instance_type           = node_group.instance_types[0]
       instance_types          = node_group.instance_types
-      instance_market_options = ((upper(node_group.capacity_type) == "spot") && (local.node_group_type == "self_managed")) ? { market_type = "spot" } : {}
+      instance_market_options = ((upper(node_group.capacity_type) == "spot") && (local.node_group_type == "SELF")) ? { market_type = "spot" } : {}
       capacity_type           = upper(node_group.capacity_type)
       bootstrap_extra_args = join(",", [
         "--kubelet-extra-args '--node-labels=node.kubernetes.io/lifecycle=${node_group.capacity_type}",
@@ -56,9 +56,6 @@ locals {
     }
   ]
 } #end of locals
-################################################################################
-# EKS Module
-################################################################################
 
 
 ################################################################################
@@ -77,13 +74,6 @@ data "aws_ami" "eks_default" {
   }
 }
 
-
-module "key_pair" {
-  source             = "terraform-aws-modules/key-pair/aws"
-  version            = "~> 2.0"
-  key_name_prefix    = local.name
-  create_private_key = true
-}
 
 module "ebs_kms_key" {
   source  = "terraform-aws-modules/kms/aws"

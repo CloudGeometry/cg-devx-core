@@ -1,9 +1,4 @@
 ###
-output "private_key" {
-  description = "Private key of generated keypair"
-  sensitive   = true
-  value       = module.key_pair.private_key_openssh
-}
 output "network_id" {
   description = "module.vpc.vpc_id"
   value       = module.vpc.vpc_id

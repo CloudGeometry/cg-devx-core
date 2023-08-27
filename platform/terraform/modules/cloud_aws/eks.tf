@@ -9,10 +9,9 @@ module "eks" {
   cluster_enabled_log_types      = []
   create_cloudwatch_log_group    = false
   cluster_addons = {
-    #Created by default
-    #coredns = {
-    #  most_recent = true
-    # }
+    coredns = {
+      most_recent = true
+    }
     kube-proxy = {
       most_recent = true
     }
@@ -28,12 +27,12 @@ module "eks" {
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
 
-  #create_aws_auth_configmap = true
-  manage_aws_auth_configmap = true
+  create_aws_auth_configmap = (local.node_group_type == "SELF") ? true : false
+  manage_aws_auth_configmap = (local.node_group_type == "SELF") ? true : false
   #
   eks_managed_node_group_defaults = {
-    #ami_type                              = "AL2_x86_64"
-    #  instance_types                        = module.instance_types
+    # ami_type                              = "AL2_x86_64"
+    # instance_types                        = module.instance_types
     attach_cluster_primary_security_group = true
     #    vpc_security_group_ids                = [aws_security_group.additional.id]
     #   iam_role_additional_policies = {
@@ -45,7 +44,7 @@ module "eks" {
 
   }
 
-  eks_managed_node_groups = local.eks_node_groups
+  eks_managed_node_groups = (local.node_group_type == "EKS") ? local.eks_node_groups : []
 
   #
   self_managed_node_group_defaults = {
@@ -70,6 +69,7 @@ module "eks" {
     launch_template_name = "${local.name}-lt-def"
 
   }
+  #Still commented out for the safety of stable version
   #self_managed_node_groups = local.node_groups
 
 }

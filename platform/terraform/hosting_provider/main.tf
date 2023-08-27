@@ -1,17 +1,22 @@
 terraform {
   backend "s3" {
-    bucket  = "cloud-aws-m-state-storage"
+    bucket  = "cloud-aws-m-state-storage-w1"
     key     = "terraform/aws/terraform.tfstate"
     encrypt = true
   }
+}
+
+locals {
+  name          = "gxcnew12eks"
+  ProvisionedBy = "cgdevx"
 }
 
 provider "aws" {
   #  region = var.aws_region
   default_tags {
     tags = {
-      ClusterName   = "gxclong12eks"
-      ProvisionedBy = "cgdevx"
+      ClusterName   = local.name
+      ProvisionedBy = local.ProvisionedBy
     }
   }
 }
@@ -27,8 +32,9 @@ provider "kubernetes" {
   }
 }
 module "hosting-provider" {
-  source       = "../modules/cloud_aws"
-  cluster_name = "gxclong12eks"
+  source          = "../modules/cloud_aws"
+  cluster_name    = local.name
+  node_group_type = "EKS"
   node_groups = [
     {
       name           = "gr1"

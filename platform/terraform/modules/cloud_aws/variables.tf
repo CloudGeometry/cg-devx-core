@@ -39,7 +39,14 @@ variable "cluster_version" {
   type    = string
   default = "1.27"
 }
-
+variable "node_group_type" {
+  type    = string
+  default = "EKS"
+  validation {
+    condition     = contains(["EKS", "SELF"], var.node_group_type)
+    error_message = "Can be \"EKS\" for eks-managed  or \"SELF\" for self-managed node groups."
+  }
+}
 variable "node_groups" {
   type = list(object({
     name           = optional(string, "")
@@ -53,8 +60,6 @@ variable "node_groups" {
   )
   #  default = [{}]
 }
-
-
 
 variable "cluster_node_labels" {
   type = map(any)
