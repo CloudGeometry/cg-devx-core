@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
+      source = "hashicorp/azurerm"
     }
   }
 
@@ -37,7 +37,7 @@ resource "azurerm_network_security_group" "nsg" {
 
   lifecycle {
     ignore_changes = [
-        tags
+      tags
     ]
   }
 }
@@ -57,7 +57,7 @@ resource "azurerm_monitor_diagnostic_setting" "settings" {
     }
   }
 
- log {
+  log {
     category = "NetworkSecurityGroupRuleCounter"
     enabled  = true
 

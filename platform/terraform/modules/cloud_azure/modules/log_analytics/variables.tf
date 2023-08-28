@@ -1,25 +1,25 @@
 variable "resource_group_name" {
   description = "(Required) Specifies the resource group name"
-  type = string
+  type        = string
 }
 
 variable "location" {
   description = "(Required) Specifies the location of the log analytics workspace"
-  type = string
+  type        = string
 }
 
 variable "name" {
   description = "(Required) Specifies the name of the log analytics workspace"
-  type = string
+  type        = string
 }
 
 variable "sku" {
   description = "(Optional) Specifies the sku of the log analytics workspace"
-  type = string
-  default = "PerGB2018"
-  
+  type        = string
+  default     = "PerGB2018"
+
   validation {
-    condition = contains(["Free", "Standalone", "PerNode", "PerGB2018"], var.sku)
+    condition     = contains(["Free", "Standalone", "PerNode", "PerGB2018"], var.sku)
     error_message = "The log analytics sku is incorrect."
   }
 }
@@ -27,7 +27,12 @@ variable "sku" {
 variable "solution_plan_map" {
   description = "(Optional) Specifies the map structure containing the list of solutions to be enabled."
   type        = map(any)
-  default     = {}
+  default = {
+    ContainerInsights = {
+      product   = "OMSGallery/ContainerInsights"
+      publisher = "Microsoft"
+    }
+  }
 }
 
 variable "tags" {

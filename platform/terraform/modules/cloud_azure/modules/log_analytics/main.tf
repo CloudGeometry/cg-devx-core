@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
+      source = "hashicorp/azurerm"
     }
   }
 
@@ -24,9 +24,9 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
   retention_in_days   = var.retention_in_days != "" ? var.retention_in_days : null
 
   lifecycle {
-      ignore_changes = [
-          tags
-      ]
+    ignore_changes = [
+      tags
+    ]
   }
 }
 

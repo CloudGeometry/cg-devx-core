@@ -5,10 +5,10 @@ output "id" {
 
 output "private_dns_zone_group" {
   description = "Specifies the private dns zone group of the private endpoint."
-  value = azurerm_private_endpoint.private_endpoint.private_dns_zone_group
+  value       = azurerm_private_endpoint.private_endpoint.private_dns_zone_group
 }
 
 output "private_dns_zone_configs" {
   description = "Specifies the private dns zone(s) configuration"
-  value = azurerm_private_endpoint.private_endpoint.private_dns_zone_configs
+  value       = azurerm_private_endpoint.private_endpoint.private_dns_zone_configs
 }

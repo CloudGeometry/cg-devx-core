@@ -10,7 +10,7 @@ variable "resource_group_name" {
 
 variable "private_connection_resource_id" {
   description = "(Required) Specifies the resource id of the private link service"
-  type        = string 
+  type        = string
 }
 
 variable "location" {
@@ -26,7 +26,7 @@ variable "subnet_id" {
 variable "is_manual_connection" {
   description = "(Optional) Specifies whether the private endpoint connection requires manual approval from the remote resource owner."
   type        = string
-  default     = false  
+  default     = false
 }
 
 variable "subresource_name" {
@@ -38,7 +38,7 @@ variable "subresource_name" {
 variable "request_message" {
   description = "(Optional) Specifies a message passed to the owner of the remote resource when the private endpoint attempts to establish the connection to the remote resource."
   type        = string
-  default     = null 
+  default     = null
 }
 
 variable "private_dns_zone_group_name" {

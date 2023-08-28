@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
+      source = "hashicorp/azurerm"
     }
   }
 
@@ -16,9 +16,9 @@ resource "azurerm_public_ip" "public_ip" {
   sku                 = "Standard"
 
   lifecycle {
-      ignore_changes = [
-          tags
-      ]
+    ignore_changes = [
+      tags
+    ]
   }
 }
 
@@ -35,9 +35,9 @@ resource "azurerm_bastion_host" "bastion_host" {
   }
 
   lifecycle {
-      ignore_changes = [
-          tags
-      ]
+    ignore_changes = [
+      tags
+    ]
   }
 }
 

@@ -25,7 +25,7 @@ variable "sku" {
   default     = "Basic"
 
   validation {
-    condition = contains(["Basic", "Standard", "Premium"], var.sku)
+    condition     = contains(["Basic", "Standard", "Premium"], var.sku)
     error_message = "The container registry sku is invalid."
   }
 }

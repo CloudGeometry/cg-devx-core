@@ -33,7 +33,7 @@ variable "target_resource_id" {
 
 variable "log_analytics_workspace_id" {
   description = "(Optional) Specifies the ID of a Log Analytics Workspace where Diagnostics Data should be sent."
-   type        = string
+  type        = string
 }
 
 variable "log_analytics_destination_type" {

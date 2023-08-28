@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
+      source = "hashicorp/azurerm"
     }
   }
 
@@ -35,7 +35,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "node_pool" {
 
   lifecycle {
     ignore_changes = [
-        tags
+      tags
     ]
   }
 }

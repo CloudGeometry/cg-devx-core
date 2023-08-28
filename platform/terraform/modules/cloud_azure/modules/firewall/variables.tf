@@ -9,7 +9,7 @@ variable "sku_name" {
   type        = string
 
   validation {
-    condition = contains(["AZFW_Hub", "AZFW_VNet" ], var.sku_name)
+    condition     = contains(["AZFW_Hub", "AZFW_VNet"], var.sku_name)
     error_message = "The value of the sku name property of the firewall is invalid."
   }
 }
@@ -20,7 +20,7 @@ variable "sku_tier" {
   type        = string
 
   validation {
-    condition = contains(["Premium", "Standard", "Basic" ], var.sku_tier)
+    condition     = contains(["Premium", "Standard", "Basic"], var.sku_tier)
     error_message = "The value of the sku tier property of the firewall is invalid."
   }
 }
@@ -41,7 +41,7 @@ variable "threat_intel_mode" {
   type        = string
 
   validation {
-    condition = contains(["Off", "Alert", "Deny"], var.threat_intel_mode)
+    condition     = contains(["Off", "Alert", "Deny"], var.threat_intel_mode)
     error_message = "The threat intel mode is invalid."
   }
 }

@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
+      source = "hashicorp/azurerm"
     }
   }
 
@@ -31,7 +31,7 @@ resource "azurerm_storage_account" "storage_account" {
 
   lifecycle {
     ignore_changes = [
-        tags
+      tags
     ]
   }
 }

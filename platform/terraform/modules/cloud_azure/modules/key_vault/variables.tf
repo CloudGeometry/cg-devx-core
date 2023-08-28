@@ -25,7 +25,7 @@ variable "sku_name" {
   default     = "standard"
 
   validation {
-    condition = contains(["standard", "premium" ], var.sku_name)
+    condition     = contains(["standard", "premium"], var.sku_name)
     error_message = "The value of the sku name property of the key vault is invalid."
   }
 }
@@ -72,34 +72,34 @@ variable "soft_delete_retention_days" {
   default     = 30
 }
 
-variable "bypass" { 
+variable "bypass" {
   description = "(Required) Specifies which traffic can bypass the network rules. Possible values are AzureServices and None."
   type        = string
-  default     = "AzureServices" 
+  default     = "AzureServices"
 
   validation {
-    condition = contains(["AzureServices", "None" ], var.bypass)
+    condition     = contains(["AzureServices", "None"], var.bypass)
     error_message = "The valut of the bypass property of the key vault is invalid."
   }
 }
 
-variable "default_action" { 
+variable "default_action" {
   description = "(Required) The Default Action to use when no rules match from ip_rules / virtual_network_subnet_ids. Possible values are Allow and Deny."
   type        = string
-  default     = "Allow" 
+  default     = "Allow"
 
   validation {
-    condition = contains(["Allow", "Deny" ], var.default_action)
+    condition     = contains(["Allow", "Deny"], var.default_action)
     error_message = "The value of the default action property of the key vault is invalid."
   }
 }
 
-variable "ip_rules" { 
+variable "ip_rules" {
   description = "(Optional) One or more IP Addresses, or CIDR Blocks which should be able to access the Key Vault."
   default     = []
 }
 
-variable "virtual_network_subnet_ids" { 
+variable "virtual_network_subnet_ids" {
   description = "(Optional) One or more Subnet ID's which should be able to access this Key Vault."
   default     = []
 }

@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm"
+      source = "hashicorp/azurerm"
     }
   }
 
@@ -24,7 +24,7 @@ resource "azurerm_key_vault" "key_vault" {
   enable_rbac_authorization       = var.enable_rbac_authorization
   purge_protection_enabled        = var.purge_protection_enabled
   soft_delete_retention_days      = var.soft_delete_retention_days
-  
+
   timeouts {
     delete = "60m"
   }
@@ -37,9 +37,9 @@ resource "azurerm_key_vault" "key_vault" {
   }
 
   lifecycle {
-      ignore_changes = [
-          tags
-      ]
+    ignore_changes = [
+      tags
+    ]
   }
 }
 

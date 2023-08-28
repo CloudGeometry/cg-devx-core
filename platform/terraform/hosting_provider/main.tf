@@ -1,30 +1,36 @@
 terraform {
-  backend "s3" {
-    bucket = ""
-    key    = "terraform/aws/terraform.tfstate"
-
-    region  = ""
-    encrypt = true
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-  default_tags {
-    tags = {
-      ClusterName   = "cgdevx-demo"
-      ProvisionedBy = "cgdevx"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "3.50"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
     }
   }
 }
 
-module "hosting-provider" {
-  source = "../modules/cloud-aws"
-
-  # aws_account_id     = var.aws_account_id
-  # cluster_name       = "cgdevx-demo"
-  # node_capacity_type = "ON_DEMAND"
-  # ami_type           = var.ami_type
-  # instance_type      = var.instance_type
+provider "azurerm" {
+  features {}
 }
 
+module "hosting-provider-azure" {
+  source = "../modules/cloud_azure"
+
+  resource_group_name = "DevX-rg"
+  location            = "westeurope"
+  aks_cluster_name    = "DevXAks"
+
+  # Default node group
+  default_node_pool_vm_size            = "Standard_B2s"
+  default_node_pool_availability_zones = ["2", "3"]
+  default_node_pool_min_count          = 1
+  default_node_pool_max_count          = 5
+  default_node_pool_node_count         = 3
+
+  tags = {
+    createdWith   = "Terraform"
+    ProvisionedBy = "local"
+  }
+}
