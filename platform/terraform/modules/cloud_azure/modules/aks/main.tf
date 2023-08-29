@@ -112,78 +112,64 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   }
 }
 
-/* resource "azurerm_monitor_diagnostic_setting" "settings" {
+ resource "azurerm_monitor_diagnostic_setting" "settings" {
   name                       = "DiagnosticsSettings"
   target_resource_id         = azurerm_kubernetes_cluster.aks_cluster.id
   log_analytics_workspace_id = var.log_analytics_workspace_id
 
-  log {
+  enabled_log {
     category = "kube-apiserver"
-    enabled  = true
 
     retention_policy {
       enabled = true  
-      days    = var.log_analytics_retention_days
     }
   }
 
-  log {
+  enabled_log {
     category = "kube-audit"
-    enabled  = true
 
     retention_policy {
       enabled = true
-      days    = var.log_analytics_retention_days
     }
   }
 
-  log {
+  enabled_log {
     category = "kube-audit-admin"
-    enabled  = true
 
     retention_policy {
       enabled = true
-      days    = var.log_analytics_retention_days
     }
   }
 
-  log {
+  enabled_log {
     category = "kube-controller-manager"
-    enabled  = true
 
     retention_policy {
       enabled = true
-      days    = var.log_analytics_retention_days
     }
   }
 
-  log {
+  enabled_log {
     category = "kube-scheduler"
-    enabled  = true
 
     retention_policy {
       enabled = true
-      days    = var.log_analytics_retention_days
     }
   }
 
-  log {
+  enabled_log {
     category = "cluster-autoscaler"
-    enabled  = true
 
     retention_policy {
       enabled = true
-      days    = var.log_analytics_retention_days
     }
   }
 
-  log {
+  enabled_log {
     category = "guard"
-    enabled  = true
 
     retention_policy {
       enabled = true
-      days    = var.log_analytics_retention_days
     }
   }
 
@@ -192,7 +178,6 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
 
     retention_policy {
       enabled = true
-      days    = var.log_analytics_retention_days
     }
   }
-} */
+}

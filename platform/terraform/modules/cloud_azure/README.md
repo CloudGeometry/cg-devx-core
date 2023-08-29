@@ -23,6 +23,8 @@ Service Principal is created with Contributor rights for the entire subscription
 
 - Add service principal data to main file (inside of provider block) or environment parameters(or other **[options](https://learn.microsoft.com/en-us/azure/developer/terraform/authenticate-to-azure?tabs=bash#terraform-and-azure-authentication-scenarios)**)
   
+- Add your public ssh key to the variable **"ssh_public_key"** inside of main variable file.
+
 - Navigate to the /cg-devx-core/platform/terraform/hosting_provider/ folder (or cd ../../hosting_provider/ if you're in the cloud_azure folder).
   
 - You can change a small number of variables inside the main.ft file, for example: resource_group_name, location, aks_cluster_name etc. You can find more parameters in the folder with the module - cloud_azure.

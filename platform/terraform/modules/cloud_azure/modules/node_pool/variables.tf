@@ -16,7 +16,7 @@ variable "vm_size" {
 variable "availability_zones" {
   description = "(Optional) A list of Availability Zones where the Nodes in this Node Pool should be created in. Changing this forces a new resource to be created."
   type        = list(string)
-  default     = ["1", "2", "3"]
+  default     = ["2", "3"]
 }
 
 variable "enable_auto_scaling" {

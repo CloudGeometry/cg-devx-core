@@ -10,3 +10,7 @@ output "private_fqdn" {
   description = "The FQDN for the Kubernetes Cluster."
 }
 
+output "public_ip_address" {
+  description = "Specifies the private IP address of the firewall."
+  value       = module.firewall.public_ip_address
+}

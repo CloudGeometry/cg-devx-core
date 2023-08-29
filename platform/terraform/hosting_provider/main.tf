@@ -34,3 +34,18 @@ module "hosting-provider-azure" {
     ProvisionedBy = "local"
   }
 }
+output "kube_config_raw" {
+  value       = module.hosting-provider-azure.kube_config_raw
+  sensitive   = true
+  description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
+}
+
+output "private_fqdn" {
+  value       = module.hosting-provider-azure.private_fqdn
+  sensitive   = true
+  description = "The FQDN for the Kubernetes Cluster."
+}
+output "private_ip_address" {
+  description = "Specifies the private IP address of the firewall."
+  value       = module.hosting-provider-azure.public_ip_address
+}

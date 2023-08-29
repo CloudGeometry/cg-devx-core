@@ -33,7 +33,7 @@ variable "log_analytics_workspace_name" {
 variable "log_analytics_retention_days" {
   description = "Specifies the number of days of the retention policy"
   type        = number
-  default     = 30
+  default     = 15
 }
 
 /**
@@ -125,7 +125,7 @@ variable "aks_cluster_name" {
 
 variable "aks_private_cluster" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "admin_group_object_ids" {
@@ -175,9 +175,8 @@ variable "default_node_pool_node_count" {
   type        = number
   default     = 3
 }
-
 variable "ssh_public_key" {
-  description = "(Required) Specifies the SSH public key for the jumpbox virtual machine and AKS worker nodes."
+  description = "(Required) Specifies the SSH public key for AKS worker nodes."
   type        = string
   default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzkaoqP5dPnw+9p2mwo2ZVkft970st3sd0PmTV/Q4kKVCmPE3PilwSMN3ryWGuSUqkWUXkOypFMw83DU06HwvOv2o+KJxMUZRSswaHbpU4HmjGlK8zkQAz0IRGOCcW+CiLnNbVgjq7jB6ESD9yRU4XhmEb1TGt7wmQgKkWqR1hmsd0jDCzQHHztuWbeipjeNsJhpSMzJD9iv7/tdPrnBABZ4/4mS9h8NfOVokbXVcgG30qZM6RHH0PUiWaem5ntA2WXHjjTa2oGDPy3p4jC+O8C2yXY7VgqN5cGSmmIpBGc9qrZhDNx+1ZtGOUp8fEotZ5KHtzPmPqdvz86Fq45y2j mikhailkhviadchenia@Mikhails-MBP"
 }
@@ -257,72 +256,6 @@ variable "additional_node_pool_vm_size" {
   default     = "Standard_B2s"
 }
 
-variable "additional_node_pool_availability_zones" {
-  description = "(Optional) A list of Availability Zones where the Nodes in this Node Pool should be created in. Changing this forces a new resource to be created."
-  type        = list(string)
-  default     = ["2", "3"]
-}
-
-variable "additional_node_pool_enable_auto_scaling" {
-  description = "(Optional) Whether to enable auto-scaler. Defaults to false."
-  type        = bool
-  default     = true
-}
-
-variable "additional_node_pool_enable_host_encryption" {
-  description = "(Optional) Should the nodes in this Node Pool have host encryption enabled? Defaults to false."
-  type        = bool
-  default     = false
-}
-
-variable "additional_node_pool_enable_node_public_ip" {
-  description = "(Optional) Should each node have a Public IP Address? Defaults to false. Changing this forces a new resource to be created."
-  type        = bool
-  default     = false
-}
-
-variable "additional_node_pool_max_pods" {
-  description = "(Optional) The maximum number of pods that can run on each agent. Changing this forces a new resource to be created."
-  type        = number
-  default     = 50
-}
-
-variable "additional_node_pool_mode" {
-  description = "(Optional) Should this Node Pool be used for System or User resources? Possible values are System and User. Defaults to User."
-  type        = string
-  default     = "User"
-}
-
-variable "additional_node_pool_node_labels" {
-  description = "(Optional) A list of Kubernetes taints which should be applied to nodes in the agent pool (e.g key=value:NoSchedule). Changing this forces a new resource to be created."
-  type        = map(any)
-  default     = {}
-}
-
-variable "additional_node_pool_node_taints" {
-  description = "(Optional) A map of Kubernetes labels which should be applied to nodes in this Node Pool. Changing this forces a new resource to be created."
-  type        = list(string)
-  default     = ["CriticalAddonsOnly=true:NoSchedule"]
-}
-
-variable "additional_node_pool_os_disk_type" {
-  description = "(Optional) The type of disk which should be used for the Operating System. Possible values are Ephemeral and Managed. Defaults to Managed. Changing this forces a new resource to be created."
-  type        = string
-  default     = "Managed"
-}
-
-variable "additional_node_pool_os_type" {
-  description = "(Optional) The Operating System which should be used for this Node Pool. Changing this forces a new resource to be created. Possible values are Linux and Windows. Defaults to Linux."
-  type        = string
-  default     = "Linux"
-}
-
-variable "additional_node_pool_priority" {
-  description = "(Optional) The Priority for Virtual Machines within the Virtual Machine Scale Set that powers this Node Pool. Possible values are Regular and Spot. Defaults to Regular. Changing this forces a new resource to be created."
-  type        = string
-  default     = "Regular"
-}
-
 variable "additional_node_pool_max_count" {
   description = "(Required) The maximum number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be greater than or equal to min_count."
   type        = number
@@ -334,46 +267,3 @@ variable "additional_node_pool_min_count" {
   type        = number
   default     = 0
 }
-
-variable "additional_node_pool_node_count" {
-  description = "(Optional) The initial number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be a value in the range min_count - max_count."
-  type        = number
-  default     = 0
-}
-
-variable "acr_name" {
-  description = "Specifies the name of the container registry"
-  type        = string
-  default     = "DevXAcr"
-}
-
-variable "acr_sku" {
-  description = "Specifies the name of the container registry"
-  type        = string
-  default     = "Premium"
-
-  validation {
-    condition     = contains(["Basic", "Standard", "Premium"], var.acr_sku)
-    error_message = "The container registry sku is invalid."
-  }
-}
-
-variable "acr_admin_enabled" {
-  description = "Specifies whether admin is enabled for the container registry"
-  type        = bool
-  default     = true
-}
-
-variable "acr_georeplication_locations" {
-  description = "(Optional) A list of Azure locations where the container registry should be geo-replicated."
-  type        = list(string)
-  default     = []
-}
-
-variable "bastion_host_name" {
-  description = "(Optional) Specifies the name of the bastion host"
-  default     = "DevXBastionHost"
-  type        = string
-}
-
-
