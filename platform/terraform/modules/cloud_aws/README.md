@@ -1,11 +1,14 @@
-terraform {
+# cloud_aws terraform module for cgdevx
 
-#Placeholder for remote backend configuration
+Example Usage:
+
+```
+terraform {
 }
 
 locals {
-  name            = "<PRIMARY_CLUSTER_NAME>"
-  ProvisionedBy   = "cgdevx"
+  name          = "cgdevx-demo-cluster"
+  ProvisionedBy = "cgdevx"
 }
 
 # configure cloud provider through env variables
@@ -13,6 +16,7 @@ locals {
 # so, for loval run required:
 # export AWS_REGION="<CLOUD_REGION>"
 # export AWS_PROFILE="<CLOUD_PROFILE>"
+#
 provider "aws" {
   default_tags {
     tags = {
@@ -32,9 +36,29 @@ provider "kubernetes" {
     args = ["eks", "get-token", "--cluster-name", module.hosting-provider.cluster_name]
   }
 }
+
 module "hosting-provider" {
-  source          = "../modules/cloud_<CLOUD_PROVIDER>"
+#path to the module here
+  source          = "../modules/cloud_aws"
   cluster_name    = local.name
+  node_groups = [
+    {
+      name           = "gr1"
+      instance_types = ["t3.medium"]
+      min_size       = 1
+      max_size       = 3
+      desired_size   = 2
+      capacity_type  = "ON_DEMAND"
+
+    },
+    {
+      name           = "gr2-spot"
+      instance_types = ["t3.medium", "t3.small"]
+      min_size       = 1
+      max_size       = 3
+      desired_size   = 2
+      capacity_type  = "SPOT"
+    }
+  ]
 }
-
-
+```
