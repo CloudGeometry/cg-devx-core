@@ -6,7 +6,7 @@ module "hosting-provider-azure" {
   source = "../modules/cloud_azure"
 
   region            = "westeurope"
-  aks_cluster_name    = "devxaks" #only letters and numbers
+  cluster_name    = "devxaks" #only letters and numbers
   cluster_version     = "1.26"
 
   # Default node group

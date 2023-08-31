@@ -117,7 +117,7 @@ variable "route_name" {
  * AKS cluster variables
  */
 
-variable "aks_cluster_name" {
+variable "cluster_name" {
   description = "(Required) Specifies the name of the AKS cluster."
   default     = "DevXAks"
   type        = string

@@ -27,7 +27,7 @@ Service Principal is created with Contributor rights for the entire subscription
 
 - Navigate to the /cg-devx-core/platform/terraform/hosting_provider/ folder (or cd ../../hosting_provider/ if you're in the cloud_azure folder).
   
-- You can change a small number of variables inside the main.ft file, for example: resource_group_name, location, aks_cluster_name etc. You can find more parameters in the folder with the module - cloud_azure.
+- You can change a small number of variables inside the main.ft file, for example: region, cluster_name etc. You can find more parameters in the folder with the module - cloud_azure.
 
 - Run terraform
 

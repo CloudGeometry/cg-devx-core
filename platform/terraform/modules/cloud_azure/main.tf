@@ -25,7 +25,7 @@ locals {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_resource_group" "rg" {
-  name     = "${var.aks_cluster_name}-rg"
+  name     = "${var.cluster_name}-rg"
   location = var.region
   tags     = var.tags
 }
@@ -35,7 +35,7 @@ resource "random_pet" "key_vault_name" {}
 module "log_analytics_workspace" {
   source = "./modules/log_analytics"
 
-  name                = "${var.aks_cluster_name}-law"
+  name                = "${var.cluster_name}-law"
   region            = var.region
   resource_group_name = azurerm_resource_group.rg.name
   tags                = var.tags
@@ -75,7 +75,7 @@ module "vnet_peering" {
 module "firewall" {
   source = "./modules/firewall"
 
-  name                         = "${var.aks_cluster_name}-fw"
+  name                         = "${var.cluster_name}-fw"
   resource_group_name          = azurerm_resource_group.rg.name
   region                     = var.region
   pip_name                     = "${var.firewall_name}PublicIp"
@@ -121,8 +121,8 @@ module "routetable" {
 module "aks_cluster" {
   source = "./modules/aks"
 
-  name                    = var.aks_cluster_name
-  dns_prefix              = lower(var.aks_cluster_name)
+  name                    = var.cluster_name
+  dns_prefix              = lower(var.cluster_name)
   region                = var.region
   resource_group_name     = azurerm_resource_group.rg.name
   resource_group_id       = azurerm_resource_group.rg.id
@@ -178,7 +178,7 @@ resource "random_string" "random_suffix" {
 module "storage_account" {
   source = "./modules/storage_account"
 
-  name                = lower("${var.aks_cluster_name}${random_string.random_suffix.result}sa")
+  name                = lower("${var.cluster_name}${random_string.random_suffix.result}sa")
   region            = var.region
   resource_group_name = azurerm_resource_group.rg.name
 }
@@ -222,7 +222,7 @@ module "storage_account" {
 
 module "key_vault" {
   source = "./modules/key_vault"
-  name   = "${var.aks_cluster_name}-kv"
+  name   = "${var.cluster_name}-kv"
 
   region            = var.region
   resource_group_name = azurerm_resource_group.rg.name
