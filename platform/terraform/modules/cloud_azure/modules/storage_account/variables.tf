@@ -8,7 +8,7 @@ variable "name" {
   type        = string
 }
 
-variable "location" {
+variable "region" {
   description = "(Required) Specifies the location of the storage account"
   type        = string
 }

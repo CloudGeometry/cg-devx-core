@@ -13,7 +13,7 @@ variable "resource_group_id" {
   type        = string
 }
 
-variable "location" {
+variable "region" {
   description = "(Required) Specifies the location where the AKS cluster will be deployed."
   type        = string
 }
@@ -69,7 +69,7 @@ variable "sku_tier" {
   }
 }
 
-variable "kubernetes_version" {
+variable "cluster_version" {
   description = "(Optional )Specifies the AKS Kubernetes version"
   default     = "1.26"
   type        = string
@@ -77,7 +77,7 @@ variable "kubernetes_version" {
 
 variable "default_node_pool_vm_size" {
   description = "Specifies the vm size of the default node pool"
-  default     = "Standard_B2s"
+  default     = "Standard_B2s_v2"
   type        = string
 }
 

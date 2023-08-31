@@ -17,7 +17,7 @@ locals {
 
 resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
   name                = var.name
-  location            = var.location
+  location            = var.region
   resource_group_name = var.resource_group_name
   sku                 = var.sku
   tags                = local.tags
@@ -34,7 +34,7 @@ resource "azurerm_log_analytics_solution" "la_solution" {
   for_each = var.solution_plan_map
 
   solution_name         = each.key
-  location              = var.location
+  location              = var.region
   resource_group_name   = var.resource_group_name
   workspace_resource_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   workspace_name        = azurerm_log_analytics_workspace.log_analytics_workspace.name

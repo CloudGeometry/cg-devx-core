@@ -1,16 +1,3 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "3.50"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "3.5.1"
-    }
-  }
-}
-
 provider "azurerm" {
   features {}
 }
@@ -18,13 +5,13 @@ provider "azurerm" {
 module "hosting-provider-azure" {
   source = "../modules/cloud_azure"
 
-  resource_group_name = "DevX-rg"
-  location            = "westeurope"
-  aks_cluster_name    = "DevXAks"
+  region            = "westeurope"
+  aks_cluster_name    = "devxaks" #only letters and numbers
+  cluster_version     = "1.26"
 
   # Default node group
-  default_node_pool_vm_size            = "Standard_B2s"
-  default_node_pool_availability_zones = ["2", "3"]
+  default_node_pool_vm_size            = "Standard_B2s_v2"
+  default_node_pool_availability_zones = ["1", "2", "3"]
   default_node_pool_min_count          = 1
   default_node_pool_max_count          = 5
   default_node_pool_node_count         = 3
@@ -34,6 +21,8 @@ module "hosting-provider-azure" {
     ProvisionedBy = "local"
   }
 }
+
+# Output part 
 output "kube_config_raw" {
   value       = module.hosting-provider-azure.kube_config_raw
   sensitive   = true

@@ -11,7 +11,7 @@ terraform {
 resource "azurerm_public_ip" "pip" {
   name                = var.pip_name
   resource_group_name = var.resource_group_name
-  location            = var.location
+  location            = var.region
   zones               = var.zones
   allocation_method   = "Static"
   sku                 = "Standard"
@@ -27,7 +27,7 @@ resource "azurerm_public_ip" "pip" {
 resource "azurerm_firewall" "firewall" {
   name                = var.name
   resource_group_name = var.resource_group_name
-  location            = var.location
+  location            = var.region
   zones               = var.zones
   threat_intel_mode   = var.threat_intel_mode
   sku_name            = var.sku_name
@@ -53,7 +53,7 @@ resource "azurerm_firewall" "firewall" {
 resource "azurerm_firewall_policy" "policy" {
   name                = "${var.name}Policy"
   resource_group_name = var.resource_group_name
-  location            = var.location
+  location            = var.region
 
   lifecycle {
     ignore_changes = [

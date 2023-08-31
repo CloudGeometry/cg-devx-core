@@ -3,7 +3,7 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "location" {
+variable "region" {
   description = "Location in which to deploy the network"
   type        = string
 }
@@ -79,3 +79,4 @@ variable "log_analytics_retention_days" {
 #   default     = ["10.0.48.0/20"]
 #   type        = list(string)
 # }
+

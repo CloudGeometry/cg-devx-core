@@ -1,7 +1,7 @@
 /**
  * Global variables
  */
-variable "location" {
+variable "region" {
   description = "Specifies the location for the resource group and all the resources"
   default     = "westeurope"
   type        = string
@@ -190,10 +190,10 @@ variable "workload_identity_enabled" {
 /**
  * Storage account variables
  */
-variable "storage_account_prefix" {
+/* variable "storage_account_prefix" {
   type    = string
   default = "boot"
-}
+} */
 
 /**
  * Key vault variables
@@ -236,7 +236,6 @@ variable "key_vault_purge_protection_enabled" {
 variable "private_dns_zones" {
   type = map(any)
   default = {
-    "AcrPrivate"      = "privatelink.azurecr.io",
     "KeyVaultPrivate" = "privatelink.vaultcore.azure.net",
     "BlobPrivate"     = "privatelink.blob.core.windows.net"
   }
@@ -253,7 +252,7 @@ variable "additional_node_pool_name" {
 variable "additional_node_pool_vm_size" {
   description = "(Required) The SKU which should be used for the Virtual Machines used in this Node Pool. Changing this forces a new resource to be created."
   type        = string
-  default     = "Standard_B2s"
+  default     = "Standard_B2s_v2"
 }
 
 variable "additional_node_pool_max_count" {
@@ -266,4 +265,10 @@ variable "additional_node_pool_min_count" {
   description = "(Required) The minimum number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be less than or equal to max_count."
   type        = number
   default     = 0
+}
+
+variable "cluster_version" {
+  description = "(Optional )Specifies the AKS Kubernetes version"
+  default     = "1.26"
+  type        = string
 }

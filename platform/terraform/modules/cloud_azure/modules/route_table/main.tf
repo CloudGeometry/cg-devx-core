@@ -13,7 +13,7 @@ data "azurerm_client_config" "current" {
 
 resource "azurerm_route_table" "rt" {
   name                = var.route_table_name
-  location            = var.location
+  location            = var.region
   resource_group_name = var.resource_group_name
   tags                = var.tags
 

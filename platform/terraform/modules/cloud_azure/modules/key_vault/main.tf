@@ -13,7 +13,7 @@ resource "random_pet" "key_vault_name" {
 
 resource "azurerm_key_vault" "key_vault" {
   name                            = "DevXKV-${random_pet.key_vault_name.id}"
-  location                        = var.location
+  location                        = var.region
   resource_group_name             = var.resource_group_name
   tenant_id                       = var.tenant_id
   sku_name                        = var.sku_name

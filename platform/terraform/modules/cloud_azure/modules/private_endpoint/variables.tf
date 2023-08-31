@@ -13,7 +13,7 @@ variable "private_connection_resource_id" {
   type        = string
 }
 
-variable "location" {
+variable "region" {
   description = "(Required) Specifies the supported Azure location where the resource exists. Changing this forces a new resource to be created."
   type        = string
 }

@@ -30,7 +30,7 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "location" {
+variable "region" {
   description = "Specifies the location where firewall will be deployed"
   type        = string
 }

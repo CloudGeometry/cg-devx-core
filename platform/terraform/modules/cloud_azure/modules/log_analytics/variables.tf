@@ -3,7 +3,7 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "location" {
+variable "region" {
   description = "(Required) Specifies the location of the log analytics workspace"
   type        = string
 }

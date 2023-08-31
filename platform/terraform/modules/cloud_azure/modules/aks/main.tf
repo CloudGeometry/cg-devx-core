@@ -8,9 +8,10 @@ terraform {
   required_version = ">= 0.14.9"
 }
 
+
 resource "azurerm_user_assigned_identity" "aks_identity" {
   resource_group_name = var.resource_group_name
-  location            = var.location
+  location            = var.region
   tags                = var.tags
 
   name = "${var.name}Identity"
@@ -24,9 +25,9 @@ resource "azurerm_user_assigned_identity" "aks_identity" {
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                             = var.name
-  location                         = var.location
+  location                         = var.region
   resource_group_name              = var.resource_group_name
-  kubernetes_version               = var.kubernetes_version
+  kubernetes_version               = var.cluster_version
   dns_prefix                       = var.dns_prefix
   private_cluster_enabled          = var.private_cluster_enabled
   automatic_channel_upgrade        = var.automatic_channel_upgrade
@@ -98,11 +99,6 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     azure_rbac_enabled     = var.azure_rbac_enabled
   }
 
-  # Seems to be broken in Azure api
-  # workload_autoscaler_profile {
-  #   keda_enabled                    = var.keda_enabled
-  #   vertical_pod_autoscaler_enabled = var.vertical_pod_autoscaler_enabled
-  # }
 
   lifecycle {
     ignore_changes = [
@@ -112,7 +108,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   }
 }
 
- resource "azurerm_monitor_diagnostic_setting" "settings" {
+ /* resource "azurerm_monitor_diagnostic_setting" "settings" {
   name                       = "DiagnosticsSettings"
   target_resource_id         = azurerm_kubernetes_cluster.aks_cluster.id
   log_analytics_workspace_id = var.log_analytics_workspace_id
@@ -180,4 +176,4 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
       enabled = true
     }
   }
-}
+} */

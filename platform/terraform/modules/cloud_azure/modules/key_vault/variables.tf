@@ -9,7 +9,7 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "location" {
+variable "region" {
   description = "(Required) Specifies the location where the key vault will be deployed."
   type        = string
 }

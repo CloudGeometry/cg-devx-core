@@ -1,3 +1,16 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "3.50"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
+    }
+  }
+}
+
 locals {
   # Some glue to ensure correct indices 
   subnet_lookup = {
@@ -12,8 +25,8 @@ locals {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_resource_group" "rg" {
-  name     = var.resource_group_name
-  location = var.location
+  name     = "${var.aks_cluster_name}-rg"
+  location = var.region
   tags     = var.tags
 }
 
@@ -22,8 +35,8 @@ resource "random_pet" "key_vault_name" {}
 module "log_analytics_workspace" {
   source = "./modules/log_analytics"
 
-  name                = var.log_analytics_workspace_name
-  location            = var.location
+  name                = "${var.aks_cluster_name}-law"
+  region            = var.region
   resource_group_name = azurerm_resource_group.rg.name
   tags                = var.tags
 }
@@ -34,7 +47,7 @@ module "network" {
   source   = "./modules/virtual_network"
 
   resource_group_name = azurerm_resource_group.rg.name
-  location            = var.location
+  region            = var.region
   vnet_name           = each.value.vnet_name
   address_space       = each.value.address_space
   subnets             = each.value.subnets
@@ -62,9 +75,9 @@ module "vnet_peering" {
 module "firewall" {
   source = "./modules/firewall"
 
-  name                         = var.firewall_name
+  name                         = "${var.aks_cluster_name}-fw"
   resource_group_name          = azurerm_resource_group.rg.name
-  location                     = var.location
+  region                     = var.region
   pip_name                     = "${var.firewall_name}PublicIp"
   subnet_id                    = module.network["hub"].subnet_ids[var.networks.hub.subnets[local.subnet_lookup["firewall"]].name]
   log_analytics_workspace_id   = module.log_analytics_workspace.id
@@ -75,7 +88,7 @@ module "routetable" {
   source = "./modules/route_table"
 
   resource_group_name = azurerm_resource_group.rg.name
-  location            = var.location
+  region            = var.region
   route_table_name    = var.route_table_name
   route_name          = var.route_name
   firewall_private_ip = module.firewall.private_ip_address
@@ -97,7 +110,7 @@ module "routetable" {
   source                       = "./modules/container_registry"
   name                         = var.acr_name
   resource_group_name          = azurerm_resource_group.rg.name
-  location                     = var.location
+  region                     = var.region
   sku                          = var.acr_sku
   admin_enabled                = var.acr_admin_enabled
   georeplication_locations     = var.acr_georeplication_locations
@@ -110,7 +123,7 @@ module "aks_cluster" {
 
   name                    = var.aks_cluster_name
   dns_prefix              = lower(var.aks_cluster_name)
-  location                = var.location
+  region                = var.region
   resource_group_name     = azurerm_resource_group.rg.name
   resource_group_id       = azurerm_resource_group.rg.id
   private_cluster_enabled = var.aks_private_cluster
@@ -165,15 +178,15 @@ resource "random_string" "random_suffix" {
 module "storage_account" {
   source = "./modules/storage_account"
 
-  name                = "${var.storage_account_prefix}${random_string.random_suffix.result}"
-  location            = var.location
+  name                = lower("${var.aks_cluster_name}${random_string.random_suffix.result}sa")
+  region            = var.region
   resource_group_name = azurerm_resource_group.rg.name
 }
 
 /* module "bastion_host" {
   source                       = "./modules/bastion_host"
   name                         = var.bastion_host_name
-  location                     = var.location
+  region                     = var.region
   resource_group_name          = azurerm_resource_group.rg.name
   subnet_id                    = module.hub_network.subnet_ids["AzureBastionSubnet"]
   log_analytics_workspace_id   = module.log_analytics_workspace.id
@@ -209,9 +222,9 @@ module "storage_account" {
 
 module "key_vault" {
   source = "./modules/key_vault"
-  name   = "DevXKV-${random_pet.key_vault_name.id}"
+  name   = "${var.aks_cluster_name}-kv"
 
-  location            = var.location
+  region            = var.region
   resource_group_name = azurerm_resource_group.rg.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
   tags                = var.tags
@@ -248,7 +261,7 @@ module "private_dns_zones" {
 /* module "acr_private_endpoint" {
   source                         = "./modules/private_endpoint"
   name                           = "${module.container_registry.name}PrivateEndpoint"
-  location                       = var.location
+  region                       = var.region
   resource_group_name            = azurerm_resource_group.rg.name
   subnet_id                      = module.aks_network.subnet_ids[var.vm_subnet_name]
   tags                           = var.tags
@@ -263,7 +276,7 @@ module "key_vault_private_endpoint" {
   source = "./modules/private_endpoint"
 
   name                           = "${title(module.key_vault.name)}PrivateEndpoint"
-  location                       = var.location
+  region                       = var.region
   resource_group_name            = azurerm_resource_group.rg.name
   subnet_id                      = module.network["aks"].subnet_ids[var.networks.aks.subnets[local.subnet_lookup["vms"]].name]
   tags                           = var.tags
@@ -277,7 +290,7 @@ module "blob_private_endpoint" {
   source = "./modules/private_endpoint"
 
   name                           = "${title(module.storage_account.name)}PrivateEndpoint"
-  location                       = var.location
+  region                       = var.region
   resource_group_name            = azurerm_resource_group.rg.name
   subnet_id                      = module.network["aks"].subnet_ids[var.networks.aks.subnets[local.subnet_lookup["vms"]].name]
   tags                           = var.tags

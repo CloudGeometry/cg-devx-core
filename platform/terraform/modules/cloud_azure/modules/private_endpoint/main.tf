@@ -10,7 +10,7 @@ terraform {
 
 resource "azurerm_private_endpoint" "private_endpoint" {
   name                = var.name
-  location            = var.location
+  location            = var.region
   resource_group_name = var.resource_group_name
   subnet_id           = var.subnet_id
   tags                = var.tags
