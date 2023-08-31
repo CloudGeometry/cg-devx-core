@@ -51,4 +51,4 @@ module "hosting-provider" {
   ]
 }
 ```
-See module's variables here [a relative link](TERRAFORM-README.md)
+See module's variables [here](TERRAFORM-README.md)
