@@ -10,8 +10,8 @@ module "hosting-provider-azure" {
   cluster_version     = "1.26"
 
   # Default node group
-  default_node_pool_vm_size            = "Standard_B2s_v2"
-  default_node_pool_availability_zones = ["1", "2", "3"]
+  default_node_pool_vm_size            = "Standard_B2s"
+  default_node_pool_availability_zones = ["1"]
   default_node_pool_min_count          = 1
   default_node_pool_max_count          = 5
   default_node_pool_node_count         = 3
