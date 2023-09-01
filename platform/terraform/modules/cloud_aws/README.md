@@ -7,7 +7,7 @@ terraform {
 }
 
 locals {
-  name          = "cgdevx-demo-cluster"
+  name          = "demo-cluster"
   ProvisionedBy = "cgdevx"
 }
 
