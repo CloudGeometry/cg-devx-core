@@ -79,3 +79,10 @@ variable "tags" {
   description = "(Optional) Specifies the tags of the storage account"
   default     = {}
 }
+
+
+variable "public_network_access_enabled" {
+  description = "Optional) Whether the public network access is enabled? Defaults to true."
+  type        = bool
+  default     = false
+}
