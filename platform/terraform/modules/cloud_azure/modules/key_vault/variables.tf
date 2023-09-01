@@ -114,3 +114,9 @@ variable "log_analytics_retention_days" {
   type        = number
   default     = 7
 }
+
+variable "public_network_access_enabled" {
+  description = "(Optional) Whether public network access is allowed for this Key Vault. Defaults to true"
+  type        = bool
+  default     = false
+}
