@@ -29,12 +29,14 @@ output "kube_config_raw" {
   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
 }
 
-output "private_fqdn" {
-  value       = module.hosting-provider-azure.private_fqdn
-  sensitive   = true
-  description = "The FQDN for the Kubernetes Cluster."
-}
+
 output "private_ip_address" {
   description = "Specifies the private IP address of the firewall."
   value       = module.hosting-provider-azure.public_ip_address
+}
+
+
+output "fqdn" {
+  value       = module.hosting-provider-azure.fqdn
+  description = "he FQDN of the Azure Kubernetes Managed Cluster."
 }
