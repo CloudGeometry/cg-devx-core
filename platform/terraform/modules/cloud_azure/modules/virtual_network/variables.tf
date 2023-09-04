@@ -18,14 +18,25 @@ variable "address_space" {
   type        = list(string)
 }
 
+# variable "subnets" {
+#   description = "Subnets configuration"
+#   type = list(object({
+#     name                                          = string
+#     address_prefixes                              = list(string)
+#     private_endpoint_network_policies_enabled     = bool
+#     private_link_service_network_policies_enabled = bool
+#   }))
+# }
+
 variable "subnets" {
   description = "Subnets configuration"
-  type = list(object({
-    name                                          = string
-    address_prefixes                              = list(string)
-    private_endpoint_network_policies_enabled     = bool
-    private_link_service_network_policies_enabled = bool
-  }))
+  # type = list(object({
+  #   name                                          = string
+  #   address_prefixes                              = list(string)
+  #   private_endpoint_network_policies_enabled     = bool
+  #   private_link_service_network_policies_enabled = bool
+  # }))
+  type = any
 }
 
 variable "tags" {

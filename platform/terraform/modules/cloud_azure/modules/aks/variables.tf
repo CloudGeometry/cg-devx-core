@@ -108,7 +108,7 @@ variable "network_plugin" {
 variable "outbound_type" {
   description = "(Optional) The outbound (egress) routing method which should be used for this Kubernetes Cluster. Possible values are loadBalancer and userDefinedRouting. Defaults to loadBalancer."
   type        = string
-  default     = "userDefinedRouting"
+  default     = "loadBalancer"
 
   validation {
     condition     = contains(["loadBalancer", "userDefinedRouting"], var.outbound_type)
@@ -265,7 +265,7 @@ variable "admin_username" {
 variable "ssh_public_key" {
   description = "(Required) Specifies the SSH public key used to access the cluster. Changing this forces a new resource to be created."
   type        = string
-  default = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzkaoqP5dPnw+9p2mwo2ZVkft970st3sd0PmTV/Q4kKVCmPE3PilwSMN3ryWGuSUqkWUXkOypFMw83DU06HwvOv2o+KJxMUZRSswaHbpU4HmjGlK8zkQAz0IRGOCcW+CiLnNbVgjq7jB6ESD9yRU4XhmEb1TGt7wmQgKkWqR1hmsd0jDCzQHHztuWbeipjeNsJhpSMzJD9iv7/tdPrnBABZ4/4mS9h8NfOVokbXVcgG30qZM6RHH0PUiWaem5ntA2WXHjjTa2oGDPy3p4jC+O8C2yXY7VgqN5cGSmmIpBGc9qrZhDNx+1ZtGOUp8fEotZ5KHtzPmPqdvz86Fq45y2j mikhailkhviadchenia@Mikhails-MBP"
+  default     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCzkaoqP5dPnw+9p2mwo2ZVkft970st3sd0PmTV/Q4kKVCmPE3PilwSMN3ryWGuSUqkWUXkOypFMw83DU06HwvOv2o+KJxMUZRSswaHbpU4HmjGlK8zkQAz0IRGOCcW+CiLnNbVgjq7jB6ESD9yRU4XhmEb1TGt7wmQgKkWqR1hmsd0jDCzQHHztuWbeipjeNsJhpSMzJD9iv7/tdPrnBABZ4/4mS9h8NfOVokbXVcgG30qZM6RHH0PUiWaem5ntA2WXHjjTa2oGDPy3p4jC+O8C2yXY7VgqN5cGSmmIpBGc9qrZhDNx+1ZtGOUp8fEotZ5KHtzPmPqdvz86Fq45y2j mikhailkhviadchenia@Mikhails-MBP"
 }
 
 variable "keda_enabled" {

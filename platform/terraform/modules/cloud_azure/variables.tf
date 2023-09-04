@@ -43,43 +43,43 @@ variable "log_analytics_retention_days" {
 
 variable "networks" {
   default = {
-    hub = {
+/*     hub = {
       vnet_name     = "DevXHubVNet",
       address_space = ["10.1.0.0/16"]
       subnets = [
         {
-          name                                          = "AzureFirewallSubnet"
-          address_prefixes                              = ["10.1.0.0/24"]
+          name = "AzureFirewallSubnet"
+          #address_prefixes                              = ["10.1.0.0/24"]
           private_endpoint_network_policies_enabled     = true
           private_link_service_network_policies_enabled = false
         }
       ]
-    },
+    }, */
     aks = {
       vnet_name     = "DevXAksVNet",
       address_space = ["10.0.0.0/16"],
       subnets = [
         {
-          name                                          = "SystemSubnet"
-          address_prefixes                              = ["10.0.0.0/20"]
+          name = "SystemSubnet"
+          #address_prefixes                              = ["10.0.0.0/20"]
           private_endpoint_network_policies_enabled     = true
           private_link_service_network_policies_enabled = false
         },
         {
-          name                                          = "UserSubnet"
-          address_prefixes                              = ["10.0.16.0/20"]
+          name = "UserSubnet"
+          #address_prefixes                              = ["10.0.16.0/20"]
           private_endpoint_network_policies_enabled     = true
           private_link_service_network_policies_enabled = false
         },
         {
-          name                                          = "PodSubnet"
-          address_prefixes                              = ["10.0.32.0/20"]
+          name = "PodSubnet"
+          #address_prefixes                              = ["10.0.32.0/20"]
           private_endpoint_network_policies_enabled     = true
           private_link_service_network_policies_enabled = false
         },
         {
-          name                                          = "DevXGeneralSubnet"
-          address_prefixes                              = ["10.0.48.0/20"]
+          name = "DevXGeneralSubnet"
+          #address_prefixes                              = ["10.0.48.0/20"]
           private_endpoint_network_policies_enabled     = true
           private_link_service_network_policies_enabled = false
         }
@@ -241,7 +241,24 @@ variable "private_dns_zones" {
   }
 }
 
-###################################################################################################################
+
+/**
+ * extra node pools variables
+ */
+
+variable "additional_node_pools" {
+  type    = any
+  default = []
+  validation {
+    condition     = alltrue([for i in var.additional_node_pools : can(i.node_pool_name)])
+    error_message = "All extra node pools have to have `node_pool_name` field specified."
+  }
+}
+
+/**
+ * defaults for all extra node pools
+ * if not specified in list those variables will be used
+ */
 
 variable "additional_node_pool_name" {
   description = "(Required) Specifies the name of the node pool."
@@ -258,13 +275,28 @@ variable "additional_node_pool_vm_size" {
 variable "additional_node_pool_max_count" {
   description = "(Required) The maximum number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be greater than or equal to min_count."
   type        = number
-  default     = 0
+  default     = 5
 }
 
 variable "additional_node_pool_min_count" {
   description = "(Required) The minimum number of nodes which should exist within this Node Pool. Valid values are between 0 and 1000 and must be less than or equal to max_count."
   type        = number
-  default     = 0
+  default     = 3
+}
+
+variable "additional_node_pool_node_count" {
+  type    = number
+  default = 3
+}
+
+variable "additional_node_pool_availability_zones" {
+  type    = list(string)
+  default = ["2", "3"]
+}
+
+variable "additional_node_pool_enable_auto_scaling" {
+  type    = bool
+  default = true
 }
 
 variable "cluster_version" {

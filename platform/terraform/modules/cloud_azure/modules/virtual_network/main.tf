@@ -22,15 +22,27 @@ resource "azurerm_virtual_network" "vnet" {
   }
 }
 
-resource "azurerm_subnet" "subnet" {
-  for_each = { for subnet in var.subnets : subnet.name => subnet }
+# resource "azurerm_subnet" "subnet" {
+#   for_each = { for subnet in var.subnets : subnet.name => subnet }
 
-  name                                          = each.key
+#   name                                          = each.key
+#   resource_group_name                           = var.resource_group_name
+#   virtual_network_name                          = azurerm_virtual_network.vnet.name
+#   address_prefixes                              = each.value.address_prefixes
+#   private_endpoint_network_policies_enabled     = each.value.private_endpoint_network_policies_enabled
+#   private_link_service_network_policies_enabled = each.value.private_link_service_network_policies_enabled
+# }
+
+resource "azurerm_subnet" "subnet" {
+  count = length(var.subnets)
+
+  name                                          = var.subnets[count.index].name
   resource_group_name                           = var.resource_group_name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
-  address_prefixes                              = each.value.address_prefixes
-  private_endpoint_network_policies_enabled     = each.value.private_endpoint_network_policies_enabled
-  private_link_service_network_policies_enabled = each.value.private_link_service_network_policies_enabled
+  address_prefixes                              = [for range in var.address_space : cidrsubnet(range, 4, count.index)]
+  private_endpoint_network_policies_enabled     = var.subnets[count.index].private_endpoint_network_policies_enabled
+  private_link_service_network_policies_enabled = var.subnets[count.index].private_link_service_network_policies_enabled
+
 }
 
 /* resource "azurerm_monitor_diagnostic_setting" "settings" {
