@@ -20,7 +20,7 @@ module "hosting-provider-azure" {
   # Additional node groups
   # omited variables will be substitued by module-wide 
   # additional_node_pool_* variables
-  additional_node_pools = [
+/*   additional_node_pools = [
     {
       node_pool_name               = "additional1"
       node_pool_vm_size            = "Standard_B2s"
@@ -34,7 +34,7 @@ module "hosting-provider-azure" {
       node_pool_availability_zones = ["2"]
     }
   ]
-  additional_node_pool_min_count = 2
+  additional_node_pool_min_count = 2 */
 
   tags = {
     createdWith   = "Terraform"
