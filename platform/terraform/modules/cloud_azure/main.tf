@@ -13,14 +13,18 @@ terraform {
 
 locals {
   # Some glue to ensure correct indices 
-  subnet_lookup = {
-    system   = index(var.networks["aks"].subnets.*.name, "SystemSubnet"),
-    user     = index(var.networks["aks"].subnets.*.name, "UserSubnet"),
-    pods     = index(var.networks["aks"].subnets.*.name, "PodSubnet"),
-    vms      = index(var.networks["aks"].subnets.*.name, "DevXGeneralSubnet")
-/*     firewall = index(var.networks["hub"].subnets.*.name, "AzureFirewallSubnet") */
+  # subnet_lookup = {
+  #   system   = index(var.networks["aks"].subnets.*.name, "SystemSubnet"),
+  #   user     = index(var.networks["aks"].subnets.*.name, "UserSubnet"),
+  #   pods     = index(var.networks["aks"].subnets.*.name, "PodSubnet"),
+  #   vms      = index(var.networks["aks"].subnets.*.name, "DevXGeneralSubnet")
+  #   firewall = index(var.networks["hub"].subnets.*.name, "AzureFirewallSubnet")
+  # }
+  subnet_names = {
+    for subnet in var.subnets : subnet => "${var.vnet_name}-${subnet}"
   }
 }
+
 
 data "azurerm_client_config" "current" {}
 
@@ -43,14 +47,14 @@ module "log_analytics_workspace" {
 
 
 module "network" {
-  for_each = var.networks
+//  for_each = var.networks
   source   = "./modules/virtual_network"
 
   resource_group_name = azurerm_resource_group.rg.name
   region              = var.region
-  vnet_name           = each.value.vnet_name
-  address_space       = each.value.address_space
-  subnets             = each.value.subnets
+  vnet_name           = var.vnet_name
+  address_space       = [var.cluster_network_cidr]
+  subnets             = var.subnets
 
   tags = var.tags
 
@@ -58,53 +62,53 @@ module "network" {
   log_analytics_retention_days = var.log_analytics_retention_days
 }
 
-/* 
-module "vnet_peering" {
-  source = "./modules/virtual_network_peering"
 
-  vnet_1_name         = module.network["hub"].name
-  vnet_1_id           = module.network["hub"].vnet_id
-  vnet_1_rg           = azurerm_resource_group.rg.name
-  vnet_2_name         = module.network["aks"].name
-  vnet_2_id           = module.network["aks"].vnet_id
-  vnet_2_rg           = azurerm_resource_group.rg.name
-  peering_name_1_to_2 = "${module.network["hub"].name}To${module.network["aks"].name}"
-  peering_name_2_to_1 = "${module.network["aks"].name}To${module.network["hub"].name}"
-} */
-/* 
-module "firewall" {
-  source = "./modules/firewall"
+# module "vnet_peering" {
+#   source = "./modules/virtual_network_peering"
 
-  name                         = "${var.cluster_name}-fw"
-  resource_group_name          = azurerm_resource_group.rg.name
-  region                       = var.region
-  pip_name                     = "${var.firewall_name}PublicIp"
-  subnet_id                    = module.network["hub"].subnet_ids[var.networks.hub.subnets[local.subnet_lookup["firewall"]].name]
-  log_analytics_workspace_id   = module.log_analytics_workspace.id
-  log_analytics_retention_days = var.log_analytics_retention_days
-} */
-/* 
-module "routetable" {
-  source = "./modules/route_table"
+#   vnet_1_name         = module.network["hub"].name
+#   vnet_1_id           = module.network["hub"].vnet_id
+#   vnet_1_rg           = azurerm_resource_group.rg.name
+#   vnet_2_name         = module.network["aks"].name
+#   vnet_2_id           = module.network["aks"].vnet_id
+#   vnet_2_rg           = azurerm_resource_group.rg.name
+#   peering_name_1_to_2 = "${module.network["hub"].name}To${module.network["aks"].name}"
+#   peering_name_2_to_1 = "${module.network["aks"].name}To${module.network["hub"].name}"
+# }
 
-  resource_group_name = azurerm_resource_group.rg.name
-  region              = var.region
-  route_table_name    = var.route_table_name
-  route_name          = var.route_name
-  firewall_private_ip = module.firewall.private_ip_address
-  subnets_to_associate = {
-    (var.networks.aks.subnets[local.subnet_lookup["system"]].name) = {
-      subscription_id      = data.azurerm_client_config.current.subscription_id
-      resource_group_name  = azurerm_resource_group.rg.name
-      virtual_network_name = module.network["aks"].name
-    }
-    (var.networks.aks.subnets[local.subnet_lookup["user"]].name) = {
-      subscription_id      = data.azurerm_client_config.current.subscription_id
-      resource_group_name  = azurerm_resource_group.rg.name
-      virtual_network_name = module.network["aks"].name
-    }
-  }
-} */
+# module "firewall" {
+#   source = "./modules/firewall"
+
+#   name                         = "${var.cluster_name}-fw"
+#   resource_group_name          = azurerm_resource_group.rg.name
+#   region                       = var.region
+#   pip_name                     = "${var.firewall_name}PublicIp"
+#   subnet_id                    = module.network["hub"].subnet_ids[var.networks.hub.subnets[local.subnet_lookup["firewall"]].name]
+#   log_analytics_workspace_id   = module.log_analytics_workspace.id
+#   log_analytics_retention_days = var.log_analytics_retention_days
+# }
+
+# module "routetable" {
+#   source = "./modules/route_table"
+
+#   resource_group_name = azurerm_resource_group.rg.name
+#   region              = var.region
+#   route_table_name    = var.route_table_name
+#   route_name          = var.route_name
+#   firewall_private_ip = module.firewall.private_ip_address
+#   subnets_to_associate = {
+#     (var.networks.aks.subnets[local.subnet_lookup["system"]].name) = {
+#       subscription_id      = data.azurerm_client_config.current.subscription_id
+#       resource_group_name  = azurerm_resource_group.rg.name
+#       virtual_network_name = module.network["aks"].name
+#     }
+#     (var.networks.aks.subnets[local.subnet_lookup["user"]].name) = {
+#       subscription_id      = data.azurerm_client_config.current.subscription_id
+#       resource_group_name  = azurerm_resource_group.rg.name
+#       virtual_network_name = module.network["aks"].name
+#     }
+#   }
+# }
 
 /* module "container_registry" {
   source                       = "./modules/container_registry"
@@ -127,7 +131,7 @@ module "aks_cluster" {
   resource_group_name     = azurerm_resource_group.rg.name
   resource_group_id       = azurerm_resource_group.rg.id
   private_cluster_enabled = var.aks_private_cluster
-  vnet_subnet_id          = module.network["aks"].subnet_ids[var.networks.aks.subnets[local.subnet_lookup["system"]].name]
+  vnet_subnet_id          = module.network.subnet_ids[local.subnet_names["priv"]]
   cluster_version         = var.cluster_version
 
   default_node_pool_vm_size            = var.default_node_pool_vm_size
@@ -148,7 +152,7 @@ module "aks_cluster" {
   ssh_public_key            = var.ssh_public_key
   workload_identity_enabled = var.workload_identity_enabled
 
-  depends_on = [module.network]
+  # depends_on = [module.routetable]
 }
 
 /* 
@@ -205,7 +209,7 @@ module "node_pool" {
   name                 = each.key
   vm_size              = try(each.value.node_pool_vm_size, var.additional_node_pool_vm_size)
   availability_zones   = try(each.value.node_pool_availability_zones, var.additional_node_pool_availability_zones)
-  vnet_subnet_id       = module.network["aks"].subnet_ids[var.networks.aks.subnets[local.subnet_lookup["user"]].name]
+  vnet_subnet_id       = module.network.subnet_ids[local.subnet_names["priv"]]
   orchestrator_version = var.cluster_version
   enable_auto_scaling  = try(each.value.enable_auto_scaling, var.additional_node_pool_enable_auto_scaling)
 
@@ -245,11 +249,7 @@ module "private_dns_zones" {
   name                = each.value
   resource_group_name = azurerm_resource_group.rg.name
   virtual_networks_to_link = {
-/*     (var.networks.hub.vnet_name) = {
-      subscription_id     = data.azurerm_client_config.current.subscription_id
-      resource_group_name = azurerm_resource_group.rg.name
-    } */
-    (var.networks.aks.vnet_name) = {
+    (var.vnet_name) = {
       subscription_id     = data.azurerm_client_config.current.subscription_id
       resource_group_name = azurerm_resource_group.rg.name
     }
@@ -277,7 +277,7 @@ module "key_vault_private_endpoint" {
   name                           = "${title(module.key_vault.name)}PrivateEndpoint"
   region                         = var.region
   resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.network["aks"].subnet_ids[var.networks.aks.subnets[local.subnet_lookup["vms"]].name]
+  subnet_id                      = module.network.subnet_ids[local.subnet_names["priv"]]
   tags                           = var.tags
   private_connection_resource_id = module.key_vault.id
   subresource_name               = "vault"
@@ -291,7 +291,7 @@ module "blob_private_endpoint" {
   name                           = "${title(module.storage_account.name)}PrivateEndpoint"
   region                         = var.region
   resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.network["aks"].subnet_ids[var.networks.aks.subnets[local.subnet_lookup["vms"]].name]
+  subnet_id                      = module.network.subnet_ids[local.subnet_names["priv"]]
   tags                           = var.tags
   private_connection_resource_id = module.storage_account.id
   subresource_name               = "blob"

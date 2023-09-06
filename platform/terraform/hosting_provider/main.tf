@@ -9,6 +9,7 @@ module "hosting-provider-azure" {
   region          = "westeurope"
   cluster_name    = "devxaks" # only letters and numbers
   cluster_version = "1.26"
+  cluster_network_cidr = "10.1.0.0/16"
 
   # Default node group
   default_node_pool_vm_size            = "Standard_B2s"
@@ -20,7 +21,7 @@ module "hosting-provider-azure" {
   # Additional node groups
   # omited variables will be substitued by module-wide 
   # additional_node_pool_* variables
-/*   additional_node_pools = [
+  additional_node_pools = [
     {
       node_pool_name               = "additional1"
       node_pool_vm_size            = "Standard_B2s"
@@ -34,7 +35,7 @@ module "hosting-provider-azure" {
       node_pool_availability_zones = ["2"]
     }
   ]
-  additional_node_pool_min_count = 2 */
+  additional_node_pool_min_count = 2
 
   tags = {
     createdWith   = "Terraform"
@@ -50,10 +51,10 @@ output "kube_config_raw" {
 }
 
 
-/* output "private_ip_address" {
-  description = "Specifies the private IP address of the firewall."
-  value       = module.hosting-provider-azure.public_ip_address
-} */
+# output "private_ip_address" {
+#   description = "Specifies the private IP address of the firewall."
+#   value       = module.hosting-provider-azure.public_ip_address
+# }
 
 
 output "fqdn" {

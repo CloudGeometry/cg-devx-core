@@ -40,54 +40,71 @@ variable "log_analytics_retention_days" {
  * Netowrking configuration
  */
 
-
-variable "networks" {
-  default = {
-/*     hub = {
-      vnet_name     = "DevXHubVNet",
-      address_space = ["10.1.0.0/16"]
-      subnets = [
-        {
-          name = "AzureFirewallSubnet"
-          #address_prefixes                              = ["10.1.0.0/24"]
-          private_endpoint_network_policies_enabled     = true
-          private_link_service_network_policies_enabled = false
-        }
-      ]
-    }, */
-    aks = {
-      vnet_name     = "DevXAksVNet",
-      address_space = ["10.0.0.0/16"],
-      subnets = [
-        {
-          name = "SystemSubnet"
-          #address_prefixes                              = ["10.0.0.0/20"]
-          private_endpoint_network_policies_enabled     = true
-          private_link_service_network_policies_enabled = false
-        },
-        {
-          name = "UserSubnet"
-          #address_prefixes                              = ["10.0.16.0/20"]
-          private_endpoint_network_policies_enabled     = true
-          private_link_service_network_policies_enabled = false
-        },
-        {
-          name = "PodSubnet"
-          #address_prefixes                              = ["10.0.32.0/20"]
-          private_endpoint_network_policies_enabled     = true
-          private_link_service_network_policies_enabled = false
-        },
-        {
-          name = "DevXGeneralSubnet"
-          #address_prefixes                              = ["10.0.48.0/20"]
-          private_endpoint_network_policies_enabled     = true
-          private_link_service_network_policies_enabled = false
-        }
-      ]
-    }
-  }
-  type = map(any)
+variable "cluster_network_cidr" {
+  type = string
+  default = "10.0.0.0/16"
 }
+
+variable "vnet_name" {
+  type = string
+  default = "DevXAksVNet"
+}
+
+variable "subnets" {
+  type = list(string)
+  description = "maximum 16"
+  default = [
+    "pub", "priv", "int"
+  ]  
+}
+
+# variable "networks" {
+#   default = {
+#     hub = {
+#       vnet_name     = "DevXHubVNet",
+#       address_space = ["10.1.0.0/16"]
+#       subnets = [
+#         {
+#           name = "AzureFirewallSubnet"
+#           #address_prefixes                              = ["10.1.0.0/24"]
+#           private_endpoint_network_policies_enabled     = true
+#           private_link_service_network_policies_enabled = false
+#         }
+#       ]
+#     },
+#     aks = {
+#       vnet_name     = "DevXAksVNet",
+#       address_space = ["10.0.0.0/16"],
+#       subnets = [
+#         {
+#           name = "SystemSubnet"
+#           #address_prefixes                              = ["10.0.0.0/20"]
+#           private_endpoint_network_policies_enabled     = true
+#           private_link_service_network_policies_enabled = false
+#         },
+#         {
+#           name = "UserSubnet"
+#           #address_prefixes                              = ["10.0.16.0/20"]
+#           private_endpoint_network_policies_enabled     = true
+#           private_link_service_network_policies_enabled = false
+#         },
+#         {
+#           name = "PodSubnet"
+#           #address_prefixes                              = ["10.0.32.0/20"]
+#           private_endpoint_network_policies_enabled     = true
+#           private_link_service_network_policies_enabled = false
+#         },
+#         {
+#           name = "DevXGeneralSubnet"
+#           #address_prefixes                              = ["10.0.48.0/20"]
+#           private_endpoint_network_policies_enabled     = true
+#           private_link_service_network_policies_enabled = false
+#         }
+#       ]
+#     }
+#   }
+#   type = map(any)
+# }
 
 /**
  * Firewall variables
