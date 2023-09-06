@@ -1,31 +1,60 @@
-# How to use this module to deploy a Kubernetes cluster on AWS
-CGDevX is designed to take all of the relevant information for deploying a cluster on the command line, but for now you can use Terraform directly to deploy a cluster.
-## Prerequisites:
-- You must to have terraform installed and configured.
-- You must to have the AWS CLI tool installed and configured with an AWS Access Key ID and AWS Secret Access Key.
-- You must be able to clone the CGDevX repo.
-Follow these steps:
-1. Clone the repo: 
-`git clone git@github.com:CloudGeometry/CGDevX-core.git`
-2. Change to the folder with the template file, main.tf
-`cd CGDevX-core/platform/terraform/hosting_provider`
-3. Edit main.tf to include your own information. Because the file is structured to receive parameters from the Pythin CLI, you will need to manually replace the file’s content. Remove everything from main.tf and replace it with the terraform code block here:
+# AWS provisioning module
 
-```
+This provisioning module is designed to hide the complexity associated with provisioning and management of EKS cluster
+and all underlying and connected resources.
+Our intention is to follow all the best practices described in, so you should not worry about them:
+
+- [Well-Architected Framework](https://wa.aws.amazon.com/index.en.html)
+- [EKS best practices](https://github.com/aws/aws-eks-best-practices)
+
+CGDevX is designed to use this module internally, but you can use it directly to deploy a K8s cluster.
+
+## Adding and testing your changes
+
+To be able to contribute and rung this module you should follow simple steps described below.
+
+### Prerequisites
+
+You should have:
+
+- terraform installed and configured;
+- AWS CLI tool installed and configured to access your target AWS account;
+- (optionally) K8s CLI - kubectl;
+- CGDevX repo.
+
+Please note that CGDevX uses specific versions of terraform and kubectl.
+
+### Development
+
+_Please note that cloud module must follow input and output parameter schema
+described [here](../../hosting_provider/README.md). Cloud module serves as abstraction layer and hides cloud specific
+implementation details from the consumer. All the AWS specific configuration and services dependencies should be kept
+within `cloud_aws`._
+
+When done changes please make sure that you've updated terraform docs and module architecture diagrams.
+
+### How to run locally
+
+1. Navigate to the terraform entry point [folder](../../hosting_provider) containing the template
+   file [main.tf](../../hosting_provider/main.tf)
+   `cd platform/terraform/hosting_provider`
+2. As [main.tf](../../hosting_provider/main.tf) is a entry point with all the content generated programmatically, you
+   must fill in terraform provider calls manually We suggest you remove all the content from main.tf and replace it with
+   the snippet below:
+
+```terraform
 terraform {
 }
 
 locals {
-  name          = "demo-cluster"
+  name          = "test-cluster"
   ProvisionedBy = "cgdevx"
 }
 
-# configure cloud provider through env variables
-# AWS_REGION and AWS_PROFILE for local run and through assuming IAM role in CI runner
-# so, for loval run required:
+# configure through env variables AWS_REGION and AWS_PROFILE for local
 # export AWS_REGION="<CLOUD_REGION>"
 # export AWS_PROFILE="<CLOUD_PROFILE>"
-#
+
 provider "aws" {
   default_tags {
     tags = {
@@ -36,7 +65,7 @@ provider "aws" {
 }
 
 module "hosting-provider" {
-#path to the module here
+# path to the module here
   source          = "../modules/cloud_aws"
   cluster_name    = local.name
   node_groups = [
@@ -60,15 +89,23 @@ module "hosting-provider" {
   ]
 }
 ```
-4. Set the environment variables main.tf if you are using a named AWS profile
+
+3. Set the `AWS_REGION` and `AWS_PROFILE` environment variables in main.tf if you are using a named AWS profile, as
+   shown in an example below:
+
 ```
 export AWS_REGION="us-west-1"
-export AWS_PROFILE="REPLACE_HERE" # name of your profile here
+export AWS_PROFILE="REPLACE_ME_WITH_PROFILE_NAME"
 ```
-5. Run `terraform init` and `apply`.
-`terraform init & terraform apply -auto-approve`
-6. Wait for 15-20 minutes. When the script is finished, you'll see the Kubernetes cluster running in your Amazone Elastic Kubernete Service console.
-7. Remember, you're paying for these resources! You can clean up when you're finished with the `destroy` command.
-`terrafrom destroy`
 
-See module's variables [here](TERRAFORM-README.md)
+4. Run `terraform init` followed by `terraform apply`. You could use this one-liner with auto approve
+   flag `terraform init & terraform apply -auto-approve`.
+
+The whole process could take around 15-20 minutes, or more, depending on resource availability in a chosen region. When
+finished, you should be able to see the K8s cluster running in
+your [Amazon EKS console](https://console.aws.amazon.com/eks/home?#/clusters).
+
+Remember, those resources are not free. Please clean up when you're done with your changes by
+running `terraform destroy` command.
+
+For more details please see module's variables [here](TERRAFORM-README.md)

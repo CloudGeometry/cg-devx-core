@@ -10,7 +10,7 @@ locals {
 
 # configure cloud provider through env variables
 # AWS_REGION and AWS_PROFILE for local run and through assuming IAM role in CI runner
-# so, for loval run required:
+# so, for local run required:
 # export AWS_REGION="<CLOUD_REGION>"
 # export AWS_PROFILE="<CLOUD_PROFILE>"
 provider "aws" {

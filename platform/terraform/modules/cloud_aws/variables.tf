@@ -3,16 +3,7 @@ variable "aws_region" {
   type    = string
   default = "eu-west-1"
 }
-/*
-variable "aws_account" {
-  type    = string
-  default = "test"
-}
 
-variable "hosted_zone_name" {
-  type = string
-}
-*/
 variable "cluster_network_cidr" {
   type    = string
   default = "10.0.0.0/16"
@@ -55,21 +46,19 @@ variable "node_groups" {
     min_size       = optional(number, 2)
     max_size       = optional(number, 5)
     desired_size   = optional(number, 3)
-    }
-    )
+  }
+  )
   )
   #  default = [{}]
 }
 
 variable "cluster_node_labels" {
-  type = map(any)
+  type    = map(any)
   default = {
-    "node.kubernetes.io/node_label1" = "value1"
-    "node.kubernetes.io/node_label2" = "value2"
+    "node.kubernetes.io/provisioned_by" = "cgdevx"
   }
 }
-/*
+
 variable "alert_emails" {
   type = list(string)
 }
-*/
