@@ -1,30 +1,23 @@
-provider "azurerm" {
-  features {}
+terraform {
+
+#Placeholder for remote backend configuration
 }
 
+locals {
+  name            = "<PRIMARY_CLUSTER_NAME>"
+  ProvisionedBy   = "cgdevx"
+}
 
-module "hosting-provider-azure" {
-  source = "../modules/cloud_azure"
-
-  region               = "westeurope"
-  cluster_name         = "devxaks" # only letters and numbers
-  cluster_version      = "1.26"
-  cluster_network_cidr = "10.1.0.0/16"
-
-  az_count = 1
-  node_groups = [
-    {
-      name          = "default",
-      instance_type = "Standard_B2s",
-      min_size      = 1,
-      max_size      = 5,
-      desired_size  = 3
-      }, {
-      name          = "extra",
-      instance_type = "Standard_B2s_v2",
-      min_size      = 1,
-      max_size      = 1,
-      desired_size  = 1
+# configure cloud provider through env variables
+# AWS_REGION and AWS_PROFILE for local run and through assuming IAM role in CI runner
+# so, for local run required:
+# export AWS_REGION="<CLOUD_REGION>"
+# export AWS_PROFILE="<CLOUD_PROFILE>"
+provider "aws" {
+  default_tags {
+    tags = {
+      ClusterName   = local.name
+      ProvisionedBy = local.ProvisionedBy
     }
   ]
   cluster_node_labels = {
@@ -36,12 +29,11 @@ module "hosting-provider-azure" {
   }
 }
 
-# Output part 
-output "kube_config_raw" {
-  value       = module.hosting-provider-azure.kube_config_raw
-  sensitive   = true
-  description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
+module "hosting-provider" {
+  source          = "../modules/cloud_<CLOUD_PROVIDER>"
+  cluster_name    = local.name
 }
+
 
 
 output "fqdn" {
