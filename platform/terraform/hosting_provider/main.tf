@@ -1,30 +1,30 @@
 terraform {
-  backend "s3" {
-    bucket = ""
-    key    = "terraform/aws/terraform.tfstate"
 
-    region  = ""
-    encrypt = true
-  }
+#Placeholder for remote backend configuration
 }
 
+locals {
+  name            = "<PRIMARY_CLUSTER_NAME>"
+  ProvisionedBy   = "cgdevx"
+}
+
+# configure cloud provider through env variables
+# AWS_REGION and AWS_PROFILE for local run and through assuming IAM role in CI runner
+# so, for local run required:
+# export AWS_REGION="<CLOUD_REGION>"
+# export AWS_PROFILE="<CLOUD_PROFILE>"
 provider "aws" {
-  region = var.aws_region
   default_tags {
     tags = {
-      ClusterName   = "cgdevx-demo"
-      ProvisionedBy = "cgdevx"
+      ClusterName   = local.name
+      ProvisionedBy = local.ProvisionedBy
     }
   }
 }
 
 module "hosting-provider" {
-  source = "../modules/cloud-aws"
-
-  # aws_account_id     = var.aws_account_id
-  # cluster_name       = "cgdevx-demo"
-  # node_capacity_type = "ON_DEMAND"
-  # ami_type           = var.ami_type
-  # instance_type      = var.instance_type
+  source          = "../modules/cloud_<CLOUD_PROVIDER>"
+  cluster_name    = local.name
 }
+
 

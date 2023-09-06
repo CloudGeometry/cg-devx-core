@@ -1,0 +1,7 @@
+.terraform
+*.tfstate
+*.tfstate.backup
+old_*
+*DS_*
+*.txt
+get_it_here*
