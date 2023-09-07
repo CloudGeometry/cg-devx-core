@@ -19,6 +19,8 @@ Service Principal is created with Contributor rights for the entire subscription
 (Optional) Add the User Access Administrator role for the service principal.
 
 
+To successfully connect to the cluster, you need to install the **kubelogin** tool. You can use **[THIS](https://azure.github.io/kubelogin/install.html)**) guide to install.
+
 ## Usage
 
 - Add service principal data to main file (inside of provider block) or environment parameters(or other **[options](https://learn.microsoft.com/en-us/azure/developer/terraform/authenticate-to-azure?tabs=bash#terraform-and-azure-authentication-scenarios)**)
@@ -33,10 +35,10 @@ Service Principal is created with Contributor rights for the entire subscription
 
 ## How to connect to AKS cluster
 
-After successfully deploying the code, you will be able to **[connect to your cluster](https://learn.microsoft.com/en-us/azure/developer/terraform/authenticate-to-azure?tabs=bash#terraform-and-azure-authentication-scenarios)**.
-By default, the credentials are merged into the .kube/config file so kubectl can use them.
+After successfully deploying the code, you will be able to **[connect to your cluster](https://learn.microsoft.com/en-us/azure/architecture/guide/security/access-azure-kubernetes-service-cluster-api-server#access-the-aks-cluster-over-the-internet)**.
+By default, the credentials are merged into the .kube/config file so kubectl can use them. **For full access to the AKS cluster, you need to get administrator credentials**
 
-> az aks get-credentials --name MyManagedCluster --resource-group MyResourceGroup
+> az aks get-credentials --name devxaks --resource-group devxaks-rg --admin
 
 If you are using the default settings, you need to run:
 > az aks get-credentials --name DevXAks --resource-group DevX-rg
