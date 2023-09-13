@@ -5,7 +5,7 @@ from typing import Any
 
 import yaml
 
-from cli.common.const.const import STATE_INPUT_PARAMS, LOCAL_FOLDER, STATE_CHECKPOINTS
+from cli.common.const.const import STATE_INPUT_PARAMS, LOCAL_FOLDER, STATE_CHECKPOINTS, STATE_INTERNAL_PARAMS
 from cli.common.const.parameter_names import CLOUD_PROVIDER, GIT_PROVIDER, DNS_REGISTRAR
 from cli.common.enums.cloud_providers import CloudProviders
 from cli.common.enums.dns_registrars import DnsRegistrars
@@ -18,6 +18,7 @@ class StateStore:
     def __init__(self, input_params={}):
         self.__store[STATE_INPUT_PARAMS] = input_params
         self.__store[STATE_CHECKPOINTS] = []
+        self.__store[STATE_INTERNAL_PARAMS] = {}
 
     @property
     def cloud_provider(self) -> CloudProviders:
@@ -42,19 +43,31 @@ class StateStore:
         else:
             return None
 
-    def __getitem__(self, key: str) -> Any:
-        return self.__store[STATE_INPUT_PARAMS].__getitem__(key)
-
-    def __setitem__(self, key: str, value) -> None:
-        return self.__store[STATE_INPUT_PARAMS].__setitem__(key, [value])
-
     @classmethod
     def update_input_params(self, input_params: dict):
         self.__store[STATE_INPUT_PARAMS].update(input_params)
 
+    @property
+    def input_param(self):
+        return self.__store[STATE_INPUT_PARAMS]
+
     @classmethod
     def validate_input_params(self, validator):
         return validator(self)
+
+    # def __getitem__(self, key: str) -> Any:
+    #     return self.__store[STATE_INPUT_PARAMS].__getitem__(key)
+    #
+    # def __setitem__(self, key: str, value) -> None:
+    #     return self.__store[STATE_INPUT_PARAMS].__setitem__(key, [value])
+
+    @property
+    def parameters(self):
+        return self.__store[STATE_INTERNAL_PARAMS]
+
+    @classmethod
+    def set_parameter(self, key, value):
+        self.__store[STATE_INTERNAL_PARAMS][key] = value
 
     @classmethod
     def set_checkpoint(self, name: str):

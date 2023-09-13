@@ -14,3 +14,10 @@ class GitProviderManager:
         :return: True or False
             """
         pass
+
+    def create_tf_module_snippet(self):
+        """
+        Create tf git provider snippet
+        :return: Snippet
+            """
+        pass

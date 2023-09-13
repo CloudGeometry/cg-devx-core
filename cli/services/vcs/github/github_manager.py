@@ -53,12 +53,5 @@ class GitHubProviderManager(GitProviderManager):
         except HTTPError as e:
             return False
 
-    def _clone(self):
-        pass
-        # https://gitpython.readthedocs.io/en/stable/tutorial.html#tutorial-label
-        # try:
-        #     git.Repo.clone_from(f'https://null:null@github.com/{user.git_user}/{user.git_repos}.git',
-        #                         f'temp/{user.name}/')
-        # except git.exc.GitError:
-        #     print(f'ERROR! {user.name}: {user.git_user}/{user.git_repos} does not exist')
-        # repo = git.Repo.clone_from(self._small_repo_url(), os.path.join(rw_dir, "repo"), branch="master")
+    def create_tf_module_snippet(self):
+        return 'provider "github" {}'

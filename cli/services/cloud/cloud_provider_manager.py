@@ -15,9 +15,23 @@ class CloudProviderManager:
         """
         pass
 
-    def create_iac_state_storage(self, bucket: str, region: str = None):
+    def create_iac_state_storage(self, bucket: str):
         """
         Creates cloud native terraform remote state storage
         :return: Resource identifier
+        """
+        pass
+
+    def create_iac_backend_snippet(self, location: str, region: str = None):
+        """
+        Creates terraform backend snippet
+        :return: Code snippet
+        """
+        pass
+
+    def create_hosting_provider_snippet(self, location: str, region: str = None):
+        """
+        Creates terraform hosting provider snippet
+        :return: Code snippet
         """
         pass

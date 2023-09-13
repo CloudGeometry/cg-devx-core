@@ -1,3 +1,5 @@
+import textwrap
+
 from cli.common.utils.os_utils import detect_command_presence
 from cli.services.cloud.aws.aws_sdk import AwsSdk
 from cli.services.cloud.aws.iam_permissions import vpc_permissions, eks_permissions, s3_permissions, \
@@ -13,16 +15,44 @@ class AWSManager(CloudProviderManager):
     def __init__(self, region, profile, key, secret):
         self.__aws_sdk = AwsSdk(region, profile, key, secret)
 
+    @property
+    def region(self):
+        return self.__aws_sdk.region
+
     def detect_cli_presence(self) -> bool:
         """Check whether `name` is on PATH and marked as executable."""
         return detect_command_presence(CLI)
 
-    def create_iac_state_storage(self, bucket: str, region: str = None):
+    def create_iac_state_storage(self, bucket: str):
         """
         Creates cloud native terraform remote state storage
-        :return: Resource identifier
+        :return: Resource identifier, Region
         """
-        return self.__aws_sdk.create_bucket(bucket, region)
+        return self.__aws_sdk.create_bucket(bucket)
+
+    def create_iac_backend_snippet(self, location: str, region: str, service="default"):
+        if region is None:
+            region = self.region
+        # TODO: consider replacing with file template
+        return textwrap.dedent('''\
+        backend "s3" {{
+          bucket = "{bucket}"
+          key    = "terraform/{service}/terraform.tfstate"
+          region  = "{region}"
+          encrypt = true
+        }}'''.format(bucket=location, region=region, service=service))
+
+    def create_hosting_provider_snippet(self):
+        # TODO: consider replacing with file template
+        return textwrap.dedent('''\
+        provider "aws" {
+          default_tags {
+            tags = {
+              ClusterName   = local.name
+              ProvisionedBy = local.ProvisionedBy
+            }
+          }
+        }''')
 
     def evaluate_permissions(self) -> bool:
         """

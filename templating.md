@@ -32,10 +32,8 @@ Templating variables generated during setup process
 
 ### Internal values
 
-- `<GIT_REPOSITORY_HTTP_URL>` - Target git repository HTTP URL
 - `<GIT_REPOSITORY_GIT_URL>` - Target git repository Git URL
 - `<GIT_REPOSITORY_ROOT>` - Git repository URL used for referencing repos including wildcard
-- `<CLOUD_BINARY_ARTIFACTS_STORE>` - Binary artifat store
 - `<CC_CLUSTER_FQDN>` - K8s Control Center (AKA primary) cluster FQDN
 - `<HARBOR_REGISTRY_URL>`
 
@@ -55,7 +53,7 @@ IAM roles for core components created during setup process
 
 ### Ingress
 
-Ingress URLs for core components. Note!: URL does not contain protocol suffix
+Ingress URLs for core components. Note!: URL does not contain protocol prefix
 
 - `<VAULT_INGRESS_URL>`
 - `<ARGO_CD_INGRESS_URL>`
@@ -78,7 +76,7 @@ bot user's keypair
 
 ### OIDC
 
-OIDC provider configuration Note!: URL does not contain protocol suffix
+OIDC provider configuration Note!: URL does not contain protocol prefix
 
 - `<OIDC_PROVIDER_URL>`
 - `<OIDC_PROVIDER_AUTHORIZE_URL>`
