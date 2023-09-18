@@ -23,13 +23,13 @@ class StateStore:
         self.__store[STATE_INPUT_PARAMS] = {}
 
         file_path = Path().home() / LOCAL_FOLDER / "state.yaml"
-        os.path.exists(file_path)
-        with open(file_path, "r+") as infile:
-            config = yaml.safe_load(infile)
-            self.__store[STATE_CHECKPOINTS] = config[STATE_CHECKPOINTS]
-            self.__store[STATE_PARAMS] = config[STATE_PARAMS]
-            self.__store[STATE_INTERNAL_PARAMS] = config[STATE_INTERNAL_PARAMS]
-            self.__store[STATE_INPUT_PARAMS] = config[STATE_INPUT_PARAMS]
+        if os.path.exists(file_path):
+            with open(file_path, "r+") as infile:
+                config = yaml.safe_load(infile)
+                self.__store[STATE_CHECKPOINTS] = config[STATE_CHECKPOINTS]
+                self.__store[STATE_PARAMS] = config[STATE_PARAMS]
+                self.__store[STATE_INTERNAL_PARAMS] = config[STATE_INTERNAL_PARAMS]
+                self.__store[STATE_INPUT_PARAMS] = config[STATE_INPUT_PARAMS]
 
         self.__store[STATE_INPUT_PARAMS].update(input_params)
 

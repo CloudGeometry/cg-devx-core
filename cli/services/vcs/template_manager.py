@@ -93,6 +93,9 @@ class GitOpsTemplateManager:
         shutil.move(gitops_folder / "platform" / "terraform", gitops_folder / "terraform")
         shutil.move(gitops_folder / "platform" / "gitops-pipelines", gitops_folder / "gitops-pipelines")
         for src_file in Path(gitops_folder / "platform").glob('*.*'):
+            # workaround for mac, should not happen
+            if src_file.name.endswith(".DS_Store"):
+                continue
             shutil.move(src_file, gitops_folder)
         shutil.rmtree(gitops_folder / "platform")
 
@@ -130,16 +133,18 @@ class GitOpsTemplateManager:
 
     @staticmethod
     def __file_replace(params, folder):
-        for root, dirs, files in os.walk(folder):
-            for name in files:
-                file_path = os.path.join(root, name)
-                with open(file_path, "r") as file:
-                    data = file.read()
-                    for k, v in params.items():
-                        data = data.replace(k, v)
-                with open(file_path, "w") as file:
-                    file.write(data)
-
+        try:
+            for root, dirs, files in os.walk(folder):
+                for name in files:
+                    file_path = os.path.join(root, name)
+                    with open(file_path, "r") as file:
+                        data = file.read()
+                        for k, v in params.items():
+                            data = data.replace(k, v)
+                    with open(file_path, "w") as file:
+                        file.write(data)
+        except Exception as e:
+            raise e
         # tf_executable = Path().home() / LOCAL_FOLDER / "tools" / "terraform"
         # if os.path.exists(tf_executable):
         # t = Terraform(terraform_bin_path=str(tf_executable))

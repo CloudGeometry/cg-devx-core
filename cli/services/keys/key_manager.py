@@ -60,4 +60,4 @@ class KeyManager:
 
         os.chmod(private_key_path, stat.S_IRUSR | stat.S_IWUSR)
 
-        return pk, public_key_path, private_key_path
+        return pk, str(public_key_path), str(private_key_path)

@@ -83,11 +83,13 @@ class DependencyManager:
                 return False
 
     def check_tf(self):
-        tf = TfWrapper()
-        if tf.version() == self.tf_version:
-            return True
-        else:
-            return False
+        tf_executable = Path().home() / LOCAL_FOLDER / "tools" / "terraform"
+        if os.path.exists(tf_executable):
+            tf = TfWrapper()
+            if tf.version() == self.tf_version:
+                return True
+
+        return False
 
     def check_kubectl(self):
         kctl_executable = Path().home() / LOCAL_FOLDER / "tools" / "kubectl"

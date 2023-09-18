@@ -160,7 +160,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
 
         # Optional K8s cluster keys
-        k8s_public_key, k8s_public_key_path, k8s_private_key_path = KeyManager.create_keys()
+        k8s_public_key, k8s_public_key_path, k8s_private_key_path = KeyManager.create_rsa_keys()
         p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
         p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
         p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
@@ -219,42 +219,41 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     else:
         click.echo("Skipped dependencies check.")
 
-    if not any(p.parameters):
-        # promote input params
-        # TODO: move to appropriate place
-        p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL)
-        p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
-        p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
-        p.parameters["<GIT_PROVIDER>"] = p.git_provider
-        p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
-        p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
-        p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
-        p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
+    # promote input params
+    # TODO: move to appropriate place
+    p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL)
+    p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
+    p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
+    p.parameters["<GIT_PROVIDER>"] = p.git_provider
+    p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
+    p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
+    p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
+    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
 
-        p.parameters["<ATLANTIS_WEBHOOK_SECRET>"] = random_string_generator(20)
+    p.parameters["<ATLANTIS_WEBHOOK_SECRET>"] = random_string_generator(20)
 
-        # Ingress URLs for core components. Note!: URL does not contain protocol
-        cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
-        p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
-        p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
-        p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
-        p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
-        p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
-        p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
-        p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
-        p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
+    # Ingress URLs for core components. Note!: URL does not contain protocol
+    cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
+    p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
+    p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
+    p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
+    p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
+    p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
+    p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
+    p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
+    p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
 
-        # OIDC config
-        vault_i = p.parameters["<VAULT_INGRESS_URL>"]
-        p.parameters["<OIDC_PROVIDER_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx'
-        p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{vault_i}/ui/vault/identity/oidc/provider/cgdevx/authorize'
-        p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/token'
-        p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/userinfo'
+    # OIDC config
+    vault_i = p.parameters["<VAULT_INGRESS_URL>"]
+    p.parameters["<OIDC_PROVIDER_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx'
+    p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{vault_i}/ui/vault/identity/oidc/provider/cgdevx/authorize'
+    p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/token'
+    p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/userinfo'
 
-        p.parameters["<ARGO_CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ARGO_CD_INGRESS_URL>"]}/oauth2/callback'
-        p.parameters["<HARBOR_REGISTRY_URL>"] = f'{p.parameters["<HARBOR_INGRESS_URL>"]}'
+    p.parameters["<ARGO_CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ARGO_CD_INGRESS_URL>"]}/oauth2/callback'
+    p.parameters["<HARBOR_REGISTRY_URL>"] = f'{p.parameters["<HARBOR_INGRESS_URL>"]}'
 
-        p.save_checkpoint()
+    p.save_checkpoint()
 
     # params section end
 
@@ -306,7 +305,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         vcs_out = tf_wrapper.output()
 
         # store out params
-        p.parameters["<GIT_REPOSITORY_GIT_URL>"] = vcs_out["repo_git_ssh_clone_url"]
+        p.parameters["<GIT_REPOSITORY_GIT_URL>"] = vcs_out["gitops_repo_ssh_clone_url"]
 
         # unset envs as no longer needed
         for k in vcs_tf_env_vars.keys():
