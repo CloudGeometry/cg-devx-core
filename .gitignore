@@ -1,10 +1,10 @@
 .idea
-**/*.env
-**/.env
-**/.terraform/
-**/.terraform.lock.hcl
-**/.terraform.tfstate.lock.info
-**/terraform.tfstate
-**/terraform.tfstate.backup
+*.env
+.env
+.terraform/
+.terraform.lock.hcl
+.terraform.tfstate.lock.info
+terraform.tfstate
+terraform.tfstate.backup
 .vscode
 .DS_Store

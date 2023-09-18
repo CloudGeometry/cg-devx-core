@@ -54,6 +54,10 @@ class AWSManager(CloudProviderManager):
           }
         }''')
 
+    def create_k8s_rol_binding_snippet(self):
+        # TODO: consider replacing with file template
+        return "serviceAccountName"
+
     def evaluate_permissions(self) -> bool:
         """
         Check if provided credentials have required permissions

@@ -100,7 +100,6 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     # save checkpoint
     p.save_checkpoint()
 
-    click.echo("Executing pre-flight checks...")
     # init proper cloud provider
     if p.cloud_provider == CloudProviders.AWS:
         cm: CloudProviderManager = AWSManager(p.get_input_param(CLOUD_REGION),
@@ -127,105 +126,156 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
     p.parameters["<CLOUD_REGION>"] = cm.region
 
-    cloud_provider_check(cm, p)
-    click.echo("Cloud provider pre-flight check. Done!")
-
     # init proper git provider
     if p.git_provider == GitProviders.GitHub:
         gm: GitProviderManager = GitHubProviderManager(p.get_input_param(GIT_ACCESS_TOKEN),
                                                        p.get_input_param(GIT_ORGANIZATION_NAME))
 
-    git_provider_check(gm, p)
-    click.echo("Git provider pre-flight check. Done!")
-    p.parameters["# <GIT_PROVIDER_MODULE>"] = gm.create_tf_module_snippet()
-
     # init proper dns registrar provider
     # Note!: Route53 is initialised with AWS Cloud Provider
 
-    dns_provider_check(dm, p)
-    click.echo("DNS provider pre-flight check. Done!")
+    if not p.has_checkpoint("preflight"):
+        click.echo("Executing pre-flight checks...")
 
-    # create ssh keys
-    click.echo("Generating ssh keys...")
-    default_public_key = KeyManager.create_ed_keys()
-    p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
-    # Optional K8s cluster keys
-    # k8s_public_key = KeyManager.create_keys("k8s-cgdevx-rsa")
-    # p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
-    click.echo("Generating ssh keys. Done!")
+        cloud_provider_check(cm, p)
+        click.echo("Cloud provider pre-flight check. Done!")
 
-    # create terraform storage backend
-    click.echo("Creating tf backend storage...")
-    tf_backend_storage_name: str = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
-    # # debug
-    # tf_backend_storage_name = 'cg-devx-gitops-lf49vhtx'
-    tf_backend_location = cm.create_iac_state_storage(tf_backend_storage_name)
-    p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cm.create_iac_backend_snippet(tf_backend_storage_name, cm.region, "vcs")
-    p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cm.create_iac_backend_snippet(tf_backend_storage_name, cm.region,
-                                                                                  "hosting_provider")
-    p.parameters["# <TF_HOSTING_PROVIDER>"] = cm.create_hosting_provider_snippet()
+        git_provider_check(gm, p)
+        click.echo("Git provider pre-flight check. Done!")
 
-    click.echo("Creating tf backend storage. Done!")
+        git_user_login, git_user_name, git_user_email = gm.get_current_user_info()
+        p.internals["GIT_USER_LOGIN"] = git_user_login
+        p.internals["GIT_USER_NAME"] = git_user_name
+        p.internals["GIT_USER_EMAIL"] = git_user_email
+        p.parameters["# <GIT_PROVIDER_MODULE>"] = gm.create_tf_module_snippet()
 
-    p.set_checkpoint("preflight")
-    p.save_checkpoint()
+        dns_provider_check(dm, p)
+        click.echo("DNS provider pre-flight check. Done!")
 
-    click.echo("Checking dependencies...")
+        # create ssh keys
+        click.echo("Generating ssh keys...")
+        default_public_key, public_key_path, private_key_path = KeyManager.create_ed_keys()
+        p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
+        p.internals["DEFAULT_SSH_PUBLIC_KEY_PATH"] = public_key_path
+        p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
+
+        # Optional K8s cluster keys
+        k8s_public_key, k8s_public_key_path, k8s_private_key_path = KeyManager.create_keys()
+        p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
+        p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
+        p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
+
+        click.echo("Generating ssh keys. Done!")
+
+        # create terraform storage backend
+        click.echo("Creating tf backend storage...")
+        tf_backend_storage_name: str = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
+
+        tf_backend_location = cm.create_iac_state_storage(tf_backend_storage_name)
+
+        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cm.create_iac_backend_snippet(tf_backend_storage_name, cm.region,
+                                                                                  "vcs")
+        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cm.create_iac_backend_snippet(tf_backend_storage_name,
+                                                                                      cm.region,
+                                                                                      "hosting_provider")
+        p.parameters["# <TF_HOSTING_PROVIDER>"] = cm.create_hosting_provider_snippet()
+
+        p.parameters["<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>"] = cm.create_k8s_rol_binding_snippet()
+
+        click.echo("Creating tf backend storage. Done!")
+
+        p.set_checkpoint("preflight")
+        p.save_checkpoint()
+        click.echo("Pre-flight checks. Done!")
+
+    # end preflight check section
+    else:
+        click.echo("Skipped pre-flight checks.")
 
     dm: DependencyManager = DependencyManager()
 
-    # terraform
-    if dm.check_tf():
-        click.echo("tf is installed. Continuing...")
+    if not p.has_checkpoint("dependencies"):
+        click.echo("Dependencies check...")
+
+        # terraform
+        if dm.check_tf():
+            click.echo("tf is installed. Continuing...")
+        else:
+            click.echo("Downloading and installing tf...")
+            dm.install_tf()
+            click.echo("tf is installed.")
+
+        # kubectl
+        if dm.check_kubectl():
+            click.echo("kubectl is installed. Continuing...")
+        else:
+            click.echo("Downloading and installing kubectl...")
+            dm.install_kubectl()
+            click.echo("kubectl is installed.")
+
+        click.echo("Dependencies check. Done!")
+        p.set_checkpoint("dependencies")
+        p.save_checkpoint()
     else:
-        click.echo("Downloading and installing tf...")
-        dm.install_tf()
-        click.echo("tf is installed.")
+        click.echo("Skipped dependencies check.")
 
-    # kubectl
-    if dm.check_kubectl():
-        click.echo("kubectl is installed. Continuing...")
-    else:
-        click.echo("Downloading and installing kubectl...")
-        dm.install_kubectl()
-        click.echo("kubectl is installed.")
+    if not any(p.parameters):
+        # promote input params
+        # TODO: move to appropriate place
+        p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL)
+        p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
+        p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
+        p.parameters["<GIT_PROVIDER>"] = p.git_provider
+        p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
+        p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
+        p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
+        p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
 
-    # promote input params
-    # TODO: move to appropriate place
-    p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL)
-    p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
-    p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
-    p.parameters["<GIT_PROVIDER>"] = p.git_provider
-    p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
+        p.parameters["<ATLANTIS_WEBHOOK_SECRET>"] = random_string_generator(20)
 
-    p.parameters["ATLANTIS_WEBHOOK_SECRET"] = random_string_generator(20)
+        # Ingress URLs for core components. Note!: URL does not contain protocol
+        cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
+        p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
+        p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
+        p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
+        p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
+        p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
+        p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
+        p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
+        p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
 
-    # Ingress URLs for core components. Note!: URL does not contain protocol
-    cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
-    p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
-    p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
-    p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
-    p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
-    p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
-    p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
-    p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
-    p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
+        # OIDC config
+        vault_i = p.parameters["<VAULT_INGRESS_URL>"]
+        p.parameters["<OIDC_PROVIDER_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx'
+        p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{vault_i}/ui/vault/identity/oidc/provider/cgdevx/authorize'
+        p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/token'
+        p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/userinfo'
 
-    # # debug
-    # p.parameters[
-    #     "<VCS_BOT_SSH_PUBLIC_KEY>"] = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsZEhPoIoCFuyKVMI2YU/CMBVJW6dobLNrbsgowwaL4DGHxM7QfshjzyamHb44JyHAg2MM9HVnrSFBpskM+JgHSPdMkf7Q4bkVZ1pfcCjzoEyRrc7do2w1SEbbbdr2+B5Btc0Y7lHitqoCjfElX6FL+lP5AbXFcwg1Z8AN+0IO6MgUvA+/hFQHyOiValbxZHn0ps+vx8hOabJCjs8UaguL45cxV4/8ZSnACaX26YC0ZXX2IA16D5AoB2D3/IsNlJS3N5//DynAuMvx3xdJy6RiDGF8PyC8GlujAM0x2hBOmpJYaj1mRcIy+q0klA+mXUq7J6LrRdjGqEl9YttnRzyb"
+        p.parameters["<ARGO_CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ARGO_CD_INGRESS_URL>"]}/oauth2/callback'
+        p.parameters["<HARBOR_REGISTRY_URL>"] = f'{p.parameters["<HARBOR_INGRESS_URL>"]}'
 
-    click.echo("Preparing your GitOps code...")
+        p.save_checkpoint()
+
+    # params section end
 
     tm = GitOpsTemplateManager(p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_URL),
                                p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_BRANCH),
                                p.get_input_param(GIT_ACCESS_TOKEN))
-    tm.check_repository_existence()
-    tm.clone()
-    tm.restructure_template()
-    tm.parametrise_tf(p.parameters)
 
-    click.echo("Preparing your GitOps code. Done!")
+    if not p.has_checkpoint("repo-prep"):
+        click.echo("Preparing your GitOps code...")
+
+        tm.check_repository_existence()
+        tm.clone()
+        tm.restructure_template()
+        tm.parametrise_tf(p.parameters)
+
+        p.set_checkpoint("repo-prep")
+        p.save_checkpoint()
+
+        click.echo("Preparing your GitOps code. Done!")
+    else:
+        click.echo("Skipped GitOps code prep.")
 
     click.echo("Provisioning VCS...")
     # use to enable tf debug
@@ -239,51 +289,96 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     }.items() if v}
     tf_folder = Path().home() / LOCAL_FOLDER / "gitops" / "terraform"
 
-    # vcs env vars
-    vcs_tf_env_vars = tf_env_vars | {"GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-                                     "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME)}
+    # VCS section
+    if not p.has_checkpoint("vcs-tf"):
+        # vcs env vars
+        vcs_tf_env_vars = tf_env_vars | {"GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
+                                         "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME)}
 
-    # set envs as required by tf
-    for k, v in vcs_tf_env_vars.items():
-        os.environ[k] = v
+        # set envs as required by tf
+        for k, vault_i in vcs_tf_env_vars.items():
+            os.environ[k] = vault_i
 
-    tf_wrapper = TfWrapper(tf_folder / "vcs")
-    tf_wrapper.init()
-    tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["ATLANTIS_WEBHOOK_SECRET"],
-                      "vcs_bot_ssh_public_key": p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"]})
+        tf_wrapper = TfWrapper(tf_folder / "vcs")
+        tf_wrapper.init()
+        tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["<ATLANTIS_WEBHOOK_SECRET>"],
+                          "vcs_bot_ssh_public_key": p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"]})
+        vcs_out = tf_wrapper.output()
 
-    # unset envs as no longer needed
-    for k in vcs_tf_env_vars.keys():
-        os.environ.pop(k)
+        # store out params
+        p.parameters["<GIT_REPOSITORY_GIT_URL>"] = vcs_out["repo_git_ssh_clone_url"]
 
-    click.echo("Provisioning VCS. Done!")
+        # unset envs as no longer needed
+        for k in vcs_tf_env_vars.keys():
+            os.environ.pop(k)
 
-    click.echo("Provisioning K8s cluster...")
+        p.set_checkpoint("vcs-tf")
+        p.save_checkpoint()
 
-    # run hosting provider tf to create K8s cluster
-    hp_tf_env_vars = {
-        **{}, # add vars here
-        **tf_env_vars}
-    # set envs as required by tf
-    for k, v in hp_tf_env_vars.items():
-        os.environ[k] = v
+        click.echo("Provisioning VCS. Done!")
+    else:
+        click.echo("Skipped VCS provisioning.")
 
-    tf_wrapper = TfWrapper(tf_folder / "hosting_provider")
-    tf_wrapper.init()
-    tf_wrapper.apply()
-    # tf_wrapper.destroy()
+    # K8s Cluster section
+    if not p.has_checkpoint("k8s-tf"):
+        click.echo("Provisioning K8s cluster...")
 
-    # unset envs as no longer needed
-    for k in hp_tf_env_vars.keys():
-        os.environ.pop(k)
+        # run hosting provider tf to create K8s cluster
+        hp_tf_env_vars = {
+            **{},  # add vars here
+            **tf_env_vars}
+        # set envs as required by tf
+        for k, vault_i in hp_tf_env_vars.items():
+            os.environ[k] = vault_i
 
-    click.echo("Provisioning K8s cluster. Done!")
+        tf_wrapper = TfWrapper(tf_folder / "hosting_provider")
+        tf_wrapper.init()
+        tf_wrapper.apply()
+        hp_out = tf_wrapper.output()
 
-    click.echo("Pushing GitOps code...")
+        # store out params
+        # network
+        p.parameters["<NETWORK_ID>"] = hp_out["network_id"]
+        # roles
+        p.parameters["<ARGO_WORKFLOW_IAM_ROLE_RN>"] = hp_out["iam_argoworkflow_role"]
+        p.parameters["<ARGO_CD_IAM_ROLE_RN>"] = hp_out["iam_argoworkflow_role"]  # TODO: use own role
+        p.parameters["<ATLANTIS_IAM_ROLE_RN>"] = hp_out["atlantis_role"]
+        p.parameters["<CERT_MANAGER_IAM_ROLE_RN>"] = hp_out["cert_manager_role"]
+        p.parameters["<HARBOR_IAM_ROLE_RN>"] = hp_out["harbor_role"]
+        p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
+        p.parameters["<VAULT_IAM_ROLE_RN>"] = hp_out["vault_role"]
+        # cluster
+        p.parameters["<CC_CLUSTER_ENDPOINT>"] = hp_out["cluster_endpoint"]
+        p.parameters["<CC_CLUSTER_OIDC_PROVIDER>"] = hp_out["cluster_oidc_provider"]  # do we need it?
 
-    # TODO: implement
+        # unset envs as no longer needed
+        for k in hp_tf_env_vars.keys():
+            os.environ.pop(k)
 
-    click.echo("Pushing GitOps code. Done!")
+        p.set_checkpoint("k8s-tf")
+        p.save_checkpoint()
+
+        click.echo("Provisioning K8s cluster. Done!")
+    else:
+        click.echo("Skipped VCS provisioning.")
+
+    if not p.has_checkpoint("gitops-vcs"):
+        tm.parametrise_registry(p.parameters)
+        tm.parametrise_root(p.parameters)
+
+        click.echo("Pushing GitOps code...")
+
+        tm.upload(p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+                  p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+                  p.internals["GIT_USER_NAME"],
+                  p.internals["GIT_USER_EMAIL"])
+
+        click.echo("Pushing GitOps code. Done!")
+
+        p.set_checkpoint("gitops-vcs")
+        p.save_checkpoint()
+    else:
+        click.echo("Skipped GitOps repo initialization.")
 
     return True
 

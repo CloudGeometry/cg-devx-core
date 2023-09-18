@@ -26,7 +26,7 @@ spec:
             create: true
             name: argo-server
             annotations:
-              <K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING: '<ARGO_CD_IAM_ROLE_RN>'
+              <K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>: '<ARGO_CD_IAM_ROLE_RN>'
           extraArgs:
           - --secure
           - --auth-mode=client

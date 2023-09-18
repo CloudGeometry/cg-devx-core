@@ -9,7 +9,7 @@ spec:
   project: <WORKLOAD_NAME>
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: registry/<CLUSTER_NAME>
+    path: registry/<PRIMARY_CLUSTER_NAME>
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

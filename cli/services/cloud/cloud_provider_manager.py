@@ -35,3 +35,10 @@ class CloudProviderManager:
         :return: Code snippet
         """
         pass
+
+    def create_k8s_rol_binding_snippet(self):
+        """
+        Creates service account - IAM role binding snippet
+        :return: Snippet
+        """
+        pass

@@ -17,8 +17,8 @@ resource "aws_iam_policy" "argoworkflow" {
   tags = local.tags
 }
 
-resource "aws_iam_policy" "image_registry_policy" {
-  name        = "${local.name}-image-registry-policy"
+resource "aws_iam_policy" "harbor_policy" {
+  name        = "${local.name}-harbor-policy"
   description = "Image registry (Harbor) policy for image replication"
 
   policy = jsonencode({

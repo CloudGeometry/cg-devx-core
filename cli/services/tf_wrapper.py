@@ -39,15 +39,23 @@ class TfWrapper:
     def apply(self, variables: dict = None):
         self._tf.variables = variables
 
-        return_code, stdout, stderr = self._tf.apply(skip_plan=True, input=False, no_color=IsFlagged)
+        # TODO: set capture_output=False and rewire tf logs
+        return_code, stdout, stderr = self._tf.apply(skip_plan=True, input=False)
 
         if return_code != 0:
             raise Exception("tf executable failure", return_code, stderr)
 
         return True
 
+    def output(self):
+        output = {}
+        tf_output = self._tf.output()
+        for k, v in tf_output.items():
+            output[k] = v["value"]
+        return output
+
     def destroy(self):
-        return_code, stdout, stderr = self._tf.destroy(force=IsNotFlagged, no_color=IsFlagged, auto_approve=IsFlagged)
+        return_code, stdout, stderr = self._tf.destroy(force=IsNotFlagged, auto_approve=IsFlagged)
 
         if return_code != 0:
             raise Exception("tf executable failure", return_code, stderr)

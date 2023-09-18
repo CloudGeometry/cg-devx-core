@@ -5,7 +5,8 @@ from typing import Any
 
 import yaml
 
-from cli.common.const.const import STATE_INPUT_PARAMS, LOCAL_FOLDER, STATE_CHECKPOINTS, STATE_INTERNAL_PARAMS
+from cli.common.const.const import STATE_INPUT_PARAMS, LOCAL_FOLDER, STATE_CHECKPOINTS, STATE_INTERNAL_PARAMS, \
+    STATE_PARAMS
 from cli.common.const.parameter_names import CLOUD_PROVIDER, GIT_PROVIDER, DNS_REGISTRAR
 from cli.common.enums.cloud_providers import CloudProviders
 from cli.common.enums.dns_registrars import DnsRegistrars
@@ -16,9 +17,21 @@ class StateStore:
     __store: dict = {}
 
     def __init__(self, input_params={}):
-        self.__store[STATE_INPUT_PARAMS] = input_params
         self.__store[STATE_CHECKPOINTS] = []
+        self.__store[STATE_PARAMS] = {}
         self.__store[STATE_INTERNAL_PARAMS] = {}
+        self.__store[STATE_INPUT_PARAMS] = {}
+
+        file_path = Path().home() / LOCAL_FOLDER / "state.yaml"
+        os.path.exists(file_path)
+        with open(file_path, "r+") as infile:
+            config = yaml.safe_load(infile)
+            self.__store[STATE_CHECKPOINTS] = config[STATE_CHECKPOINTS]
+            self.__store[STATE_PARAMS] = config[STATE_PARAMS]
+            self.__store[STATE_INTERNAL_PARAMS] = config[STATE_INTERNAL_PARAMS]
+            self.__store[STATE_INPUT_PARAMS] = config[STATE_INPUT_PARAMS]
+
+        self.__store[STATE_INPUT_PARAMS].update(input_params)
 
     @property
     def cloud_provider(self) -> CloudProviders:
@@ -63,6 +76,10 @@ class StateStore:
 
     @property
     def parameters(self):
+        return self.__store[STATE_PARAMS]
+
+    @property
+    def internals(self):
         return self.__store[STATE_INTERNAL_PARAMS]
 
     @classmethod
@@ -72,6 +89,10 @@ class StateStore:
     @classmethod
     def set_checkpoint(self, name: str):
         self.__store[STATE_CHECKPOINTS].append(name)
+
+    @classmethod
+    def has_checkpoint(self, name: str):
+        return name in self.__store[STATE_CHECKPOINTS]
 
     @classmethod
     def save_checkpoint(self):

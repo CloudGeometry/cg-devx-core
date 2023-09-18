@@ -22,8 +22,8 @@ variable "cluster_name" {
   type    = string
   default = "gxc"
   validation {
-    condition     = (length(var.cluster_name) <= 12) && (length(var.cluster_name) >= 2)
-    error_message = "Must be between 2 and 12 symbols long"
+    condition     = (length(var.cluster_name) <= 16) && (length(var.cluster_name) >= 2)
+    error_message = "Must be between 2 and 16 symbols long"
   }
 }
 variable "cluster_version" {

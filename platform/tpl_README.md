@@ -10,15 +10,15 @@ The `gitops` repository has 2 main sections
 
 The CG DevX services:
 
-| Application    | Namespace  | Description                        | URL (where applicable)      |
-|----------------|------------|------------------------------------|-----------------------------|
-| Vault          | vault      | Secrets Management                 | <VAULT_INGRESS_URL>         |
-| Argo CD        | argocd     | GitOps Continuous Delivery         | <ARGO_CD_INGRESS_URL>       |
-| Argo Workflows | argo       | Application Continuous Integration | <ARGO_WORKFLOW_INGRESS_URL> |
-| Atlantis       | atlantis   | Terraform Workflow Automation      | <ATLANTIS_INGRESS_URL>      |
-| Harbor         | harbor     | Image & Helm Chart Registry        | <HARBOR_INGRESS_URL>        |
-| Grafana        | monitoring | Observability                      | <GRAFANA_INGRESS_URL>       |
-| SonarQube      | sonarqube  | Code Quality                       | <SONARQUBE_INGRESS_URL>     |
+| Application    | Namespace  | Description                        | URL (where applicable)              |
+|----------------|------------|------------------------------------|-------------------------------------|
+| Vault          | vault      | Secrets Management                 | https://<VAULT_INGRESS_URL>         |
+| Argo CD        | argocd     | GitOps Continuous Delivery         | https://<ARGO_CD_INGRESS_URL>       |
+| Argo Workflows | argo       | Application Continuous Integration | https://<ARGO_WORKFLOW_INGRESS_URL> |
+| Atlantis       | atlantis   | Terraform Workflow Automation      | https://<ATLANTIS_INGRESS_URL>      |
+| Harbor         | harbor     | Image & Helm Chart Registry        | https://<HARBOR_INGRESS_URL>        |
+| Grafana        | monitoring | Observability                      | https://<GRAFANA_INGRESS_URL>       |
+| SonarQube      | sonarqube  | Code Quality                       | https://<SONARQUBE_INGRESS_URL>     |
 
 ---
 

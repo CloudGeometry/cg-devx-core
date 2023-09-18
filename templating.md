@@ -46,8 +46,6 @@ IAM roles for core components created during setup process
 - `<ARGO_WORKFLOW_IAM_ROLE_RN>`
 - `<ATLANTIS_IAM_ROLE_RN>`
 - `<HARBOR_IAM_ROLE_RN>`
-- `<GRAFANA_IAM_ROLE_RN>`
-- `<SONARQUBE_IAM_ROLE_RN>`
 - `<CERT_MANAGER_IAM_ROLE_RN>`
 - `<EXTERNAL_DNS_IAM_ROLE_RN>`
 
@@ -86,6 +84,14 @@ OIDC provider configuration Note!: URL does not contain protocol prefix
 
 ### K8s
 
+- `<CC_CLUSTER_ENDPOINT>`
+- `<CC_CLUSTER_OIDC_PROVIDER>`
 - `<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>`
 - `<K8S_AZURE_SERVICE_ACCOUNT_ROLE_MAPPING>`
 
+### Network
+
+- `<NETWORK_ID>`
+- `<PUBLIC_SUBNET_ID>`
+- `<PRIVATE_SUBNET_ID>`
+- `<AZ_IDS>`
