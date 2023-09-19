@@ -115,7 +115,7 @@ module "cert_manager_irsa_role" {
 
 
 # container registry
-module "image_registry_irsa_role" {
+module "harbor_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   role_name = "${local.name}-image-registry-role"
   oidc_providers = {
@@ -126,7 +126,7 @@ module "image_registry_irsa_role" {
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.image_registry_policy.arn
+    policy = aws_iam_policy.harbor_policy.arn
   }
 }
 

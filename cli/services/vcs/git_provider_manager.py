@@ -12,5 +12,19 @@ class GitProviderManager:
         """
         Check if provided credentials have required permissions
         :return: True or False
-            """
+        """
+        pass
+
+    def create_tf_module_snippet(self):
+        """
+        Create tf git provider snippet
+        :return: Snippet
+        """
+        pass
+
+    def get_current_user_info(self):
+        """
+        Get authenticated user info
+        :return: Login, Name, Email
+        """
         pass

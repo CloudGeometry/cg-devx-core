@@ -1,5 +1,5 @@
 #Do we really want the region setting here?
-variable "aws_region" {
+variable "region" {
   type    = string
   default = "eu-west-1"
 }
@@ -22,8 +22,8 @@ variable "cluster_name" {
   type    = string
   default = "gxc"
   validation {
-    condition     = (length(var.cluster_name) <= 12) && (length(var.cluster_name) >= 2)
-    error_message = "Must be between 2 and 12 symbols long"
+    condition     = (length(var.cluster_name) <= 16) && (length(var.cluster_name) >= 2)
+    error_message = "Must be between 2 and 16 symbols long"
   }
 }
 variable "cluster_version" {
@@ -42,21 +42,28 @@ variable "node_groups" {
   type = list(object({
     name           = optional(string, "")
     instance_types = optional(list(string), ["t3.medium", "t3.small"])
-    capacity_type  = optional(string, "on-demand")
-    min_size       = optional(number, 2)
+    capacity_type  = optional(string, "on_demand")
+    min_size       = optional(number, 3)
     max_size       = optional(number, 5)
     desired_size   = optional(number, 3)
   }
   )
   )
-  #  default = [{}]
+  default = [
+    {
+      name           = "default"
+      instance_types = ["t3.medium", "t3.small"]
+      capacity_type  = "on_demand"
+      min_size       = 3
+      max_size       = 5
+      desired_size   = 3
+    }
+  ]
 }
 
 variable "cluster_node_labels" {
   type    = map(any)
-  default = {
-    "node.kubernetes.io/provisioned_by" = "cgdevx"
-  }
+  default = {}
 }
 
 variable "alert_emails" {
