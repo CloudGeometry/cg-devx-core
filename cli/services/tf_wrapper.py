@@ -1,0 +1,63 @@
+import json
+import os
+from pathlib import Path
+
+from python_terraform import Terraform, IsFlagged, IsNotFlagged
+
+from cli.common.const.const import LOCAL_FOLDER
+
+
+class TfWrapper:
+
+    def __init__(self, working_dir: str = None):
+        tf_executable = Path().home() / LOCAL_FOLDER / "tools" / "terraform"
+        if os.path.exists(tf_executable):
+            self._tf = Terraform(terraform_bin_path=str(tf_executable),
+                                 working_dir=working_dir,
+                                 is_env_vars_included=True)
+        else:
+            raise Exception("No tf executable found")
+
+    def change_working_dir(self, working_dir: str):
+        self._tf.working_dir = working_dir
+
+    def version(self):
+        return_code, stdout, stderr = self._tf.version("-json")
+        output = json.loads(stdout)
+        if return_code != 0:
+            raise Exception("tf executable failure", return_code, stderr)
+        return output["terraform_version"]
+
+    def init(self):
+        return_code, stdout, stderr = self._tf.init()
+
+        if return_code != 0:
+            raise Exception("tf executable failure", return_code, stderr)
+
+        return True
+
+    def apply(self, variables: dict = None):
+        self._tf.variables = variables
+
+        # TODO: set capture_output=False and rewire tf logs
+        return_code, stdout, stderr = self._tf.apply(skip_plan=True, input=False)
+
+        if return_code != 0:
+            raise Exception("tf executable failure", return_code, stderr)
+
+        return True
+
+    def output(self):
+        output = {}
+        tf_output = self._tf.output()
+        for k, v in tf_output.items():
+            output[k] = v["value"]
+        return output
+
+    def destroy(self):
+        return_code, stdout, stderr = self._tf.destroy(force=IsNotFlagged, auto_approve=IsFlagged)
+
+        if return_code != 0:
+            raise Exception("tf executable failure", return_code, stderr)
+
+        return True

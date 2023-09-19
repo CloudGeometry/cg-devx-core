@@ -1,7 +1,9 @@
+import json
 from urllib.error import HTTPError
 
 import requests
 
+from cli.common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
 from cli.services.vcs.git_provider_manager import GitProviderManager
 
 
@@ -19,6 +21,8 @@ class GitHubProviderManager(GitProviderManager):
         """
         headers = {
             'Authorization': f'token {self.__token}',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
         }
         try:
             response = requests.get(f'https://api.github.com/repos/{self.__org_name}/{name}', headers=headers)
@@ -36,6 +40,8 @@ class GitHubProviderManager(GitProviderManager):
         """
         headers = {
             'Authorization': f'token {self.__token}',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
         }
         try:
             response = requests.head('https://api.github.com', headers=headers)
@@ -53,12 +59,32 @@ class GitHubProviderManager(GitProviderManager):
         except HTTPError as e:
             return False
 
-    def _clone(self):
-        pass
-        # https://gitpython.readthedocs.io/en/stable/tutorial.html#tutorial-label
-        # try:
-        #     git.Repo.clone_from(f'https://null:null@github.com/{user.git_user}/{user.git_repos}.git',
-        #                         f'temp/{user.name}/')
-        # except git.exc.GitError:
-        #     print(f'ERROR! {user.name}: {user.git_user}/{user.git_repos} does not exist')
-        # repo = git.Repo.clone_from(self._small_repo_url(), os.path.join(rw_dir, "repo"), branch="master")
+    def get_current_user_info(self):
+        """
+        Get authenticated user info
+        :return: Login, Name, Email
+        """
+        headers = {
+            'Authorization': f'token {self.__token}',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+        }
+        try:
+            response = requests.get('https://api.github.com/user', headers=headers)
+            res = json.loads(response.text)
+
+            if res["name"] is None:
+                name = FALLBACK_AUTHOR_NAME
+            else:
+                name = res["name"]
+
+            if res["email"] is None:
+                email = FALLBACK_AUTHOR_EMAIL
+            else:
+                email = res["email"]
+            return res["login"], name, email
+        except HTTPError as e:
+            raise e
+
+    def create_tf_module_snippet(self):
+        return 'provider "github" {}'
