@@ -379,6 +379,11 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     else:
         click.echo("Skipped GitOps repo initialization.")
 
+    # user could get kubeconfig by running command
+    # `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
+    # CLI could not follow this approach as aws client could be not configured properly when keys are used
+    # CLI is creating this file programmatically
+
     return True
 
 
