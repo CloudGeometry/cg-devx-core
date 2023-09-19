@@ -17,8 +17,8 @@ resource "aws_iam_policy" "argoworkflow" {
   tags = local.tags
 }
 
-resource "aws_iam_policy" "image_registry_policy" {
-  name        = "${local.name}-image-registry-policy"
+resource "aws_iam_policy" "harbor_policy" {
+  name        = "${local.name}-harbor-policy"
   description = "Image registry (Harbor) policy for image replication"
 
   policy = jsonencode({
@@ -29,7 +29,7 @@ resource "aws_iam_policy" "image_registry_policy" {
           "ecr:ReplicateImage"
         ],
         "Effect" : "Allow",
-        "Resource" : "arn:aws:ecr:${var.aws_region}:${local.aws_account}:*"
+        "Resource" : "arn:aws:ecr:${var.region}:${local.aws_account}:*"
       }
     ]
   })
@@ -44,7 +44,7 @@ resource "aws_iam_policy" "atlantis_policy" {
       {
         "Action" : "eks:*",
         "Effect" : "Allow",
-        "Resource" : "arn:aws:eks:${var.aws_region}:${local.aws_account}:*"
+        "Resource" : "arn:aws:eks:${var.region}:${local.aws_account}:*"
       }
     ]
   })
@@ -60,7 +60,7 @@ resource "aws_iam_policy" "vault_policy" {
       {
         "Action" : "secretsmanager:*",
         "Effect" : "Allow",
-        "Resource" : "arn:aws:secretsmanager:${var.aws_region}:${local.aws_account}:*"
+        "Resource" : "arn:aws:secretsmanager:${var.region}:${local.aws_account}:*"
       }
     ]
   })

@@ -32,10 +32,8 @@ Templating variables generated during setup process
 
 ### Internal values
 
-- `<GIT_REPOSITORY_HTTP_URL>` - Target git repository HTTP URL
 - `<GIT_REPOSITORY_GIT_URL>` - Target git repository Git URL
 - `<GIT_REPOSITORY_ROOT>` - Git repository URL used for referencing repos including wildcard
-- `<CLOUD_BINARY_ARTIFACTS_STORE>` - Binary artifat store
 - `<CC_CLUSTER_FQDN>` - K8s Control Center (AKA primary) cluster FQDN
 - `<HARBOR_REGISTRY_URL>`
 
@@ -48,14 +46,12 @@ IAM roles for core components created during setup process
 - `<ARGO_WORKFLOW_IAM_ROLE_RN>`
 - `<ATLANTIS_IAM_ROLE_RN>`
 - `<HARBOR_IAM_ROLE_RN>`
-- `<GRAFANA_IAM_ROLE_RN>`
-- `<SONARQUBE_IAM_ROLE_RN>`
 - `<CERT_MANAGER_IAM_ROLE_RN>`
 - `<EXTERNAL_DNS_IAM_ROLE_RN>`
 
 ### Ingress
 
-Ingress URLs for core components. Note!: URL does not contain protocol suffix
+Ingress URLs for core components. Note!: URL does not contain protocol prefix
 
 - `<VAULT_INGRESS_URL>`
 - `<ARGO_CD_INGRESS_URL>`
@@ -78,7 +74,7 @@ bot user's keypair
 
 ### OIDC
 
-OIDC provider configuration Note!: URL does not contain protocol suffix
+OIDC provider configuration Note!: URL does not contain protocol prefix
 
 - `<OIDC_PROVIDER_URL>`
 - `<OIDC_PROVIDER_AUTHORIZE_URL>`
@@ -88,6 +84,14 @@ OIDC provider configuration Note!: URL does not contain protocol suffix
 
 ### K8s
 
+- `<CC_CLUSTER_ENDPOINT>`
+- `<CC_CLUSTER_OIDC_PROVIDER>`
 - `<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>`
 - `<K8S_AZURE_SERVICE_ACCOUNT_ROLE_MAPPING>`
 
+### Network
+
+- `<NETWORK_ID>`
+- `<PUBLIC_SUBNET_ID>`
+- `<PRIVATE_SUBNET_ID>`
+- `<AZ_IDS>`
