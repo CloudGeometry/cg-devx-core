@@ -1,22 +1,28 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kyverno-components
+  name: registry
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '160'
+    argocd.argoproj.io/sync-wave: '0'
 spec:
-  project: default
+  project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: platform/gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/devsecops/kyverno
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: kyverno
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        maxDuration: 5m0s
+        factor: 2
