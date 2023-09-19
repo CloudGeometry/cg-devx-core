@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kubecost-components
+  name: trivy-components
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: '130'
@@ -9,11 +9,11 @@ spec:
   project: default
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: platform/gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/kubecost
+    path: gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/devsecops/trivy
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: kubecost
+    namespace: trivy
   syncPolicy:
     automated:
       prune: true

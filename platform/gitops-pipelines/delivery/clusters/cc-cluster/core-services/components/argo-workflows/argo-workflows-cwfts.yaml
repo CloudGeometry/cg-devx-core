@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: platform/gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/argo-workflows/cluster-workflow-templates
+    path: gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/argo-workflows/cluster-workflow-templates
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

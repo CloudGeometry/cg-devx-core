@@ -13,6 +13,10 @@ class AwsSdk:
         self._session_manager = AwsSessionManager()
         self._session_manager.create_session(region, profile, key, secret)
 
+    @property
+    def region(self):
+        return self._session_manager.session.region_name
+
     def current_user_arn(self):
         """Autodetect current user ARN.
         Method doesn't work with STS/assumed roles
@@ -84,7 +88,7 @@ class AwsSdk:
         # Create bucket
         try:
             if region is None:
-                region = self._session_manager.session.region_name
+                region = self.region
 
             s3_client = self._session_manager.session.client('s3', region_name=region)
             location = {'LocationConstraint': region}
@@ -93,7 +97,7 @@ class AwsSdk:
         except ClientError as e:
             logging.error(e)
             return False
-        return bucket["Location"]
+        return bucket_name, region
 
     def get_name_severs(self, domain_name: str) -> [str]:
         r53_client = self._session_manager.session.client('route53')

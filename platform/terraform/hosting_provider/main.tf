@@ -1,30 +1,23 @@
 terraform {
-
-#Placeholder for remote backend configuration
+  # Remote backend configuration
+  # <TF_HOSTING_REMOTE_BACKEND>
 }
 
 locals {
-  name            = "<PRIMARY_CLUSTER_NAME>"
-  ProvisionedBy   = "cgdevx"
+  name          = "<PRIMARY_CLUSTER_NAME>"
+  ProvisionedBy = "cgdevx"
+  region        = "<CLOUD_REGION>"
+  email         = ["<OWNER_EMAIL>"]
 }
 
-# configure cloud provider through env variables
-# AWS_REGION and AWS_PROFILE for local run and through assuming IAM role in CI runner
-# so, for local run required:
-# export AWS_REGION="<CLOUD_REGION>"
-# export AWS_PROFILE="<CLOUD_PROFILE>"
-provider "aws" {
-  default_tags {
-    tags = {
-      ClusterName   = local.name
-      ProvisionedBy = local.ProvisionedBy
-    }
-  }
-}
+# Provider configuration
+# <TF_HOSTING_PROVIDER>
 
 module "hosting-provider" {
-  source          = "../modules/cloud_<CLOUD_PROVIDER>"
-  cluster_name    = local.name
+  source       = "../modules/cloud_<CLOUD_PROVIDER>"
+  cluster_name = local.name
+  region       = local.region
+  alert_emails = local.email
 }
 
 

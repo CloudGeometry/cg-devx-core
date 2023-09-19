@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring-components
+  name: external-dns-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '105'
+    argocd.argoproj.io/sync-wave: '10'
 spec:
   project: default
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: platform/gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/monitoring
+    path: gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/kube-system/external-dns
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: external-dns
   syncPolicy:
     automated:
       prune: true

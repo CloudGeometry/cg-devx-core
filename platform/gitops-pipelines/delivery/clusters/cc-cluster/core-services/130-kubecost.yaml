@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vault-components
+  name: kubecost-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: '130'
 spec:
-  project: core
+  project: default
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: platform/gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/components/vault
+    path: gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/kubecost
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: vault
+    namespace: kubecost
   syncPolicy:
     automated:
       prune: true
