@@ -18,4 +18,5 @@ module "vcs" {
   atlantis_url                 = local.atlantis_url
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
+  demo_workload_enabled        = var.demo_workload_enabled
 }
