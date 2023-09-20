@@ -201,7 +201,7 @@ variable "ssh_public_key" {
 variable "workload_identity_enabled" {
   description = "(Optional) Specifies whether Azure AD Workload Identity should be enabled for the Cluster. Defaults to false."
   type        = bool
-  default     = false
+  default     = true
 }
 
 /**

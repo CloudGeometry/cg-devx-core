@@ -1,11 +1,22 @@
 terraform {
   required_providers {
     azurerm = {
-      source = "hashicorp/azurerm"
+      source  = "hashicorp/azurerm"
+      version = "3.50"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "2.23.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "2.11.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
     }
   }
-
-  required_version = ">= 0.14.9"
 }
 
 
@@ -23,6 +34,11 @@ resource "azurerm_user_assigned_identity" "aks_identity" {
   }
 }
 
+data "azurerm_client_config" "current_subscription" {}
+
+output "subscription_id" {
+  value = data.azurerm_client_config.current_subscription.subscription_id
+}
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
   name                             = var.name
@@ -109,52 +125,52 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     ]
   }
 }
-/* 
-resource "azurerm_public_ip" "aks_lb_pip" {
-  name                = "${var.name}-lb-pip"
-  location            = var.region
-  resource_group_name = var.resource_group_name
-  allocation_method   = "Static"
+
+
+## AKS service account part. 
+locals {
+  namespace_name = "atlantis"
+  ## This should match the name of the service account created by helm chart
+  service_account_name = "sa-atlantis-${var.resource_group_name}"
 }
 
-resource "azurerm_lb" "aks_lb" {
-  name                = "${var.name}-lb"
-  location            = var.region
-  resource_group_name = var.resource_group_name
+## Azure AD application that represents the app
+resource "azuread_application" "atlantis" {
+  display_name = "sp-atlantis-${var.resource_group_name}"
+}
 
-  frontend_ip_configuration {
-    name                 = "${var.name}-lb-pip"
-    public_ip_address_id = azurerm_public_ip.aks_lb_pip.id
-  }
+resource "azuread_service_principal" "atlantis" {
+  application_id = azuread_application.atlantis.application_id
+}
+
+resource "azuread_service_principal_password" "atlantis" {
+  service_principal_id = azuread_service_principal.atlantis.id
+}
+
+## Azure AD federated identity used to federate kubernetes with Azure AD
+resource "azuread_application_federated_identity_credential" "aks-atlantis-id" {
+  application_object_id = azuread_application.atlantis.object_id
+  display_name          = "fed-identity-aks-atlantis-id-${var.resource_group_name}"
+  description           = "The federated identity used to federate aks-atlantis-id with Azure AD with the app service running in k8s ${var.resource_group_name}"
+  audiences             = ["api://AzureADTokenExchange"]
+  issuer                = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
+  subject               = "system:serviceaccount:${local.namespace_name}:${local.service_account_name}"
+  depends_on =  [azurerm_kubernetes_cluster.aks_cluster]
+}
+
+output "app_client_id" {
+  value = azuread_application.atlantis.application_id
 }
 
 
-
-resource "azurerm_lb_probe" "aks_lb_probe" {
-  name                       = "${var.name}-lb-probe"
-  resource_group_name        = var.resource_group_name
-  loadbalancer_id            = azurerm_lb.aks_lb.id
-  protocol                   = "TCP"
-  port                       = 80
-  interval_in_seconds        = 15
-  number_of_probes           = 2
+## Role assignment to the application
+resource "azurerm_role_assignment" "contributor" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current_subscription.subscription_id}/resourceGroups/${var.resource_group_name}"
+  role_definition_name = "Contributor"
+  principal_id         = azuread_service_principal.atlantis.id
 }
 
-resource "azurerm_lb_backend_address_pool" "aks_lb_backend_pool" {
-  name                = "${var.name}-aks_pool"
-  resource_group_name = var.resource_group_name
-  loadbalancer_id     = azurerm_lb.aks_lb.id
-  backend_addresses = [
-    {
-      ip_address = "10.0.0.5" 
-    },
-  ]
 
-  probe {
-    id = azurerm_lb_probe.aks_lb_probe.id
-  }
-}
- */
 /* resource "azurerm_monitor_diagnostic_setting" "settings" {
   name                       = "DiagnosticsSettings"
   target_resource_id         = azurerm_kubernetes_cluster.aks_cluster.id
