@@ -13,6 +13,7 @@ import requests
 
 from cli.common.const.const import LOCAL_FOLDER
 from cli.common.utils.generators import random_string_generator
+from cli.services.tf_wrapper import TfWrapper
 
 
 class DependencyManager:
@@ -84,18 +85,15 @@ class DependencyManager:
     def check_tf(self):
         tf_executable = Path().home() / LOCAL_FOLDER / "tools" / "terraform"
         if os.path.exists(tf_executable):
-            t = Terraform(terraform_bin_path=str(tf_executable))
-            return_code, stdout, stderr = t.version("-json")
-            version = json.loads(stdout)
-            if return_code == 0 and version["terraform_version"] == self.tf_version:
+            tf = TfWrapper()
+            if tf.version() == self.tf_version:
                 return True
-            else:
-                return False
-        else:
-            return False
+
+        return False
 
     def check_kubectl(self):
         kctl_executable = Path().home() / LOCAL_FOLDER / "tools" / "kubectl"
+        # TODO: extract and check kubectl version
         if os.path.exists(kctl_executable):
             return True
         else:

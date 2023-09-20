@@ -3,7 +3,7 @@ data "aws_availability_zones" "available" {}
 locals {
   name                = var.cluster_name
   cluster_version     = var.cluster_version
-  region              = var.aws_region
+  region              = var.region
   aws_account         = data.aws_caller_identity.current.account_id
   vpc_cidr            = var.cluster_network_cidr
   azs                 = slice(data.aws_availability_zones.available.names, 0, min(var.az_count, length(data.aws_availability_zones.available.names)))
