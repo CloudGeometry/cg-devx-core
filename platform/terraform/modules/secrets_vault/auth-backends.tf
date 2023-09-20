@@ -1,10 +1,4 @@
-### is this provider really necessary?
-# provider "kubernetes" {
-#   host                   = data.aws_eks_cluster.cluster.endpoint
-#   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-#   token                  = data.aws_eks_cluster_auth.cluster.token
-# }
-
+###AWS specific data sources begin
 data "aws_eks_cluster" "cluster" {
   name = var.cluster_name
 }
@@ -12,6 +6,7 @@ data "aws_eks_cluster" "cluster" {
 data "aws_eks_cluster_auth" "cluster" {
   name = var.cluster_name
 }
+###AWS specific data sources end
 
 resource "vault_auth_backend" "k8s" {
   type = "kubernetes"
@@ -21,8 +16,8 @@ resource "vault_auth_backend" "k8s" {
 resource "vault_kubernetes_auth_backend_config" "k8s" {
   backend         = vault_auth_backend.k8s.path
   kubernetes_host = data.aws_eks_cluster.cluster.endpoint
-##remove this string later, this is only for local vault installation
-  kubernetes_ca_cert     = "-----BEGIN CERTIFICATE-----\nexample\n-----END CERTIFICATE-----"
+##uncomment this string only for local dev server vault installation
+#  kubernetes_ca_cert     = "-----BEGIN CERTIFICATE-----\nexample\n-----END CERTIFICATE-----"
 }
 
 resource "vault_kubernetes_auth_backend_role" "k8s_atlantis" {

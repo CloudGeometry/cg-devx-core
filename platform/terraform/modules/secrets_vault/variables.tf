@@ -51,3 +51,9 @@ variable "vault_token" {
   type    = string
   sensitive   = true
 }
+
+variable "demo_workload_enabled" {
+  description = "demo workload condition"
+  type    = bool
+  default = false
+}
