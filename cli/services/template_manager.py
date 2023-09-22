@@ -1,4 +1,6 @@
+import logging
 import os
+import pathlib
 import shutil
 from pathlib import Path
 from urllib.error import HTTPError
@@ -7,8 +9,8 @@ import requests
 from ghrepo import GHRepo
 from git import Repo, RemoteProgress, GitError, Actor
 
-from cli.common.const.const import LOCAL_FOLDER, GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
-import logging
+from cli.common.const.common_path import LOCAL_TF_FOLDER, LOCAL_GITOPS_FOLDER
+from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
 
 logging.basicConfig(level=logging.INFO)
 
@@ -51,24 +53,29 @@ class GitOpsTemplateManager:
             raise e
 
     def clone(self):
-        gitops_folder = Path().home() / LOCAL_FOLDER / "gitops"
-        if os.path.exists(gitops_folder):
-            shutil.rmtree(gitops_folder)
-        os.makedirs(gitops_folder)
+        if os.path.exists(LOCAL_GITOPS_FOLDER):
+            shutil.rmtree(LOCAL_GITOPS_FOLDER)
+
+        if os.environ.get("CGDEVX_CLI_CLONE_LOCAL", False):
+            source_dir = pathlib.Path().resolve().parent
+            shutil.copytree(source_dir, LOCAL_GITOPS_FOLDER)
+            return
+
+        os.makedirs(LOCAL_GITOPS_FOLDER)
         try:
-            repo = Repo.clone_from(self.__url, gitops_folder, progress=ProgressPrinter(), branch=self.__branch)
+            repo = Repo.clone_from(self.__url, LOCAL_GITOPS_FOLDER, progress=ProgressPrinter(), branch=self.__branch)
         except GitError as e:
             raise e
 
     def upload(self, path: str, key_path: str, git_user_name: str, git_user_email: str):
-        gitops_folder = Path().home() / LOCAL_FOLDER / "gitops"
-        if not os.path.exists(gitops_folder):
+
+        if not os.path.exists(LOCAL_GITOPS_FOLDER):
             raise Exception("GitOps repo does not exist")
 
         try:
             ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {key_path}'
 
-            repo = Repo.init(gitops_folder)
+            repo = Repo.init(LOCAL_GITOPS_FOLDER)
 
             with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
                 if not any(repo.remotes):
@@ -84,46 +91,55 @@ class GitOpsTemplateManager:
             raise e
 
     def restructure_template(self):
-        gitops_folder = Path().home() / LOCAL_FOLDER / "gitops"
+        # workaround for local development mode, should not happen in prod
+        for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
+            for name in files:
+                if name.endswith(".DS_Store") \
+                        or name.endswith(".terraform") \
+                        or name.endswith(".github") \
+                        or name.endswith(".idea"):
+                    path = os.path.join(root, name)
+                    if os.path.isfile(path):
+                        os.remove(path)
+                    if os.path.isdir(path):
+                        os.rmdir(path)
+
         # remove git reference
-        shutil.rmtree(gitops_folder / ".git", ignore_errors=True)
+        shutil.rmtree(LOCAL_GITOPS_FOLDER / ".git", ignore_errors=True)
         # remove cli
-        shutil.rmtree(gitops_folder / "cli", ignore_errors=True)
+        shutil.rmtree(LOCAL_GITOPS_FOLDER / "cli", ignore_errors=True)
+
         # restructure gitops
-        shutil.move(gitops_folder / "platform" / "terraform", gitops_folder / "terraform")
-        shutil.move(gitops_folder / "platform" / "gitops-pipelines", gitops_folder / "gitops-pipelines")
-        for src_file in Path(gitops_folder / "platform").glob('*.*'):
-            # workaround for mac, should not happen
-            if src_file.name.endswith(".DS_Store"):
-                continue
-            shutil.move(src_file, gitops_folder)
-        shutil.rmtree(gitops_folder / "platform")
+        shutil.move(LOCAL_GITOPS_FOLDER / "platform" / "terraform", LOCAL_GITOPS_FOLDER / "terraform")
+        shutil.move(LOCAL_GITOPS_FOLDER / "platform" / "gitops-pipelines", LOCAL_GITOPS_FOLDER / "gitops-pipelines")
+        for src_file in Path(LOCAL_GITOPS_FOLDER / "platform").glob('*.*'):
+            shutil.move(src_file, LOCAL_GITOPS_FOLDER)
+        shutil.rmtree(LOCAL_GITOPS_FOLDER / "platform")
 
         # drop all non template readme files
-        for root, dirs, files in os.walk(gitops_folder):
+        for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
             for name in files:
                 if name.endswith(".md") and not name.startswith("tpl_"):
                     os.remove(os.path.join(root, name))
 
         # rename readme file templates
-        for root, dirs, files in os.walk(gitops_folder):
+        for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
             for name in files:
                 if name.startswith("tpl_") and name.endswith(".md"):
                     s = os.path.join(root, name)
                     os.rename(s, s.replace("tpl_", ""))
 
     def parametrise_tf(self, params: dict):
-        tf_folder = Path().home() / LOCAL_FOLDER / "gitops" / "terraform"
 
-        self.__file_replace(params, tf_folder)
+        self.__file_replace(params, LOCAL_TF_FOLDER)
 
     def parametrise_registry(self, params: dict):
-        pipelines_folder = Path().home() / LOCAL_FOLDER / "gitops" / "gitops-pipelines"
+        pipelines_folder = LOCAL_GITOPS_FOLDER / "gitops-pipelines"
 
         self.__file_replace(params, pipelines_folder)
 
     def parametrise_root(self, params: dict):
-        for src_file in Path(Path().home() / LOCAL_FOLDER / "gitops").glob('*.md'):
+        for src_file in LOCAL_GITOPS_FOLDER.glob('*.md'):
             with open(src_file, "r") as file:
                 data = file.read()
                 for k, v in params.items():
@@ -145,10 +161,6 @@ class GitOpsTemplateManager:
                         file.write(data)
         except Exception as e:
             raise e
-        # tf_executable = Path().home() / LOCAL_FOLDER / "tools" / "terraform"
-        # if os.path.exists(tf_executable):
-        # t = Terraform(terraform_bin_path=str(tf_executable))
-        # t.replace("hello world", "/w.*d/", "everybody")
 
 
 class ProgressPrinter(RemoteProgress):

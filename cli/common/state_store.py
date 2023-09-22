@@ -1,11 +1,10 @@
 """Global parameter store."""
 import os
-from pathlib import Path
-from typing import Any
 
 import yaml
 
-from cli.common.const.const import STATE_INPUT_PARAMS, LOCAL_FOLDER, STATE_CHECKPOINTS, STATE_INTERNAL_PARAMS, \
+from cli.common.const.common_path import LOCAL_STATE_FILE
+from cli.common.const.const import STATE_INPUT_PARAMS, STATE_CHECKPOINTS, STATE_INTERNAL_PARAMS, \
     STATE_PARAMS
 from cli.common.const.parameter_names import CLOUD_PROVIDER, GIT_PROVIDER, DNS_REGISTRAR
 from cli.common.enums.cloud_providers import CloudProviders
@@ -22,9 +21,8 @@ class StateStore:
         self.__store[STATE_INTERNAL_PARAMS] = {}
         self.__store[STATE_INPUT_PARAMS] = {}
 
-        file_path = Path().home() / LOCAL_FOLDER / "state.yaml"
-        if os.path.exists(file_path):
-            with open(file_path, "r+") as infile:
+        if os.path.exists(LOCAL_STATE_FILE):
+            with open(LOCAL_STATE_FILE, "r+") as infile:
                 config = yaml.safe_load(infile)
                 self.__store[STATE_CHECKPOINTS] = config[STATE_CHECKPOINTS]
                 self.__store[STATE_PARAMS] = config[STATE_PARAMS]
@@ -96,9 +94,8 @@ class StateStore:
 
     @classmethod
     def save_checkpoint(self):
-        file_path = Path().home() / LOCAL_FOLDER / "state.yaml"
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "w+") as outfile:
+        os.makedirs(os.path.dirname(LOCAL_STATE_FILE), exist_ok=True)
+        with open(LOCAL_STATE_FILE, "w+") as outfile:
             yaml.dump(self.__store, outfile, default_flow_style=False)
 
 
