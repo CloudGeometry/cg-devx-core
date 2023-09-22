@@ -1,10 +1,8 @@
-import dns.resolver
-
-import httpx
-
 import dns.message
 import dns.query
 import dns.rdatatype
+import dns.resolver
+import httpx
 
 
 class DNSManager:

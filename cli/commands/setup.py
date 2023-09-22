@@ -1,27 +1,28 @@
 import os
-from pathlib import Path
 
 import click
 import yaml
 
-from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, LOCAL_FOLDER
+from cli.common.command_utils import init_cloud_provider
+from cli.common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER
+from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
 from cli.common.const.parameter_names import *
 from cli.common.enums.cloud_providers import CloudProviders
 from cli.common.enums.dns_registrars import DnsRegistrars
 from cli.common.enums.git_providers import GitProviders
 from cli.common.state_store import StateStore
 from cli.common.utils.generators import random_string_generator
-from cli.services.cloud.aws.aws_manager import AWSManager
-from cli.services.cloud.azure.azure_manager import AzureManager
 from cli.services.cloud.cloud_provider_manager import CloudProviderManager
 from cli.services.dependency_manager import DependencyManager
 from cli.services.dns.dns_provider_manager import DNSManager
-from cli.services.dns.route53.route53 import Route53Manager
+from cli.services.k8s.config_builder import create_k8s_config
+from cli.services.k8s.k8s import KubeClient, write_ca_cert
+from cli.services.kctl_wrapper import KctlWrapper
 from cli.services.keys.key_manager import KeyManager
+from cli.services.template_manager import GitOpsTemplateManager
 from cli.services.tf_wrapper import TfWrapper
 from cli.services.vcs.git_provider_manager import GitProviderManager
 from cli.services.vcs.github.github_manager import GitHubProviderManager
-from cli.services.vcs.template_manager import GitOpsTemplateManager
 
 
 @click.command()
@@ -70,6 +71,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         except yaml.YAMLError as exception:
             click.echo(exception)
+            raise exception
     else:
         # TODO: merge file with param override
         p = StateStore({
@@ -100,29 +102,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     # save checkpoint
     p.save_checkpoint()
 
-    # init proper cloud provider
-    if p.cloud_provider == CloudProviders.AWS:
-        cm: CloudProviderManager = AWSManager(p.get_input_param(CLOUD_REGION),
-                                              p.get_input_param(CLOUD_PROFILE),
-                                              p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
-                                              p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET))
-
-        # check if cloud native DNS registrar is selected
-        if p.dns_registrar == DnsRegistrars.Route53:
-            if p.get_input_param(DNS_REGISTRAR_ACCESS_KEY) is None and p.get_input_param(
-                    DNS_REGISTRAR_ACCESS_SECRET) is None:
-                # initialise with cloud account permissions
-                dm: DNSManager = Route53Manager(profile=p.get_input_param(CLOUD_PROFILE),
-                                                key=p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
-                                                secret=p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET))
-            else:
-                # initialise with provided key and secret
-                dm: DNSManager = Route53Manager(
-                    key=p.get_input_param(DNS_REGISTRAR_ACCESS_KEY),
-                    secret=p.get_input_param(DNS_REGISTRAR_ACCESS_SECRET))
-
-    if p.cloud_provider == CloudProviders.Azure:
-        cm: CloudProviderManager = AzureManager()
+    cm, dm = init_cloud_provider(p)
 
     p.parameters["<CLOUD_REGION>"] = cm.region
 
@@ -133,6 +113,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
     # init proper dns registrar provider
     # Note!: Route53 is initialised with AWS Cloud Provider
+    # TODO: DNS provider init
 
     if not p.has_checkpoint("preflight"):
         click.echo("Executing pre-flight checks...")
@@ -160,7 +141,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
 
         # Optional K8s cluster keys
-        k8s_public_key, k8s_public_key_path, k8s_private_key_path = KeyManager.create_rsa_keys()
+        k8s_public_key, k8s_public_key_path, k8s_private_key_path = KeyManager.create_ed_keys("cgdevx_k8s_ed")
         p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
         p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
         p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
@@ -169,9 +150,12 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         # create terraform storage backend
         click.echo("Creating tf backend storage...")
-        tf_backend_storage_name: str = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
 
-        tf_backend_location = cm.create_iac_state_storage(tf_backend_storage_name)
+        tf_backend_storage_name = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
+
+        tf_backend_location, tf_backend_location_region = cm.create_iac_state_storage(tf_backend_storage_name)
+        p.internals["TF_BACKEND_LOCATION"] = tf_backend_location
+        p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_storage_name
 
         p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cm.create_iac_backend_snippet(tf_backend_storage_name, cm.region,
                                                                                   "vcs")
@@ -180,9 +164,11 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
                                                                                       "hosting_provider")
         p.parameters["# <TF_HOSTING_PROVIDER>"] = cm.create_hosting_provider_snippet()
 
-        p.parameters["<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>"] = cm.create_k8s_rol_binding_snippet()
+        p.parameters["<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>"] = cm.create_k8s_role_binding_snippet()
 
         click.echo("Creating tf backend storage. Done!")
+
+        p.parameters["<CLOUD_ACCOUNT>"] = cm.account_id
 
         p.set_checkpoint("preflight")
         p.save_checkpoint()
@@ -220,42 +206,8 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         click.echo("Skipped dependencies check.")
 
     # promote input params
-    # TODO: move to appropriate place
-    p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL)
-    p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
-    p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
-    p.parameters["<GIT_PROVIDER>"] = p.git_provider
-    p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
-    p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
-    p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
-    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
-
-    p.parameters["<ATLANTIS_WEBHOOK_SECRET>"] = random_string_generator(20)
-
-    # Ingress URLs for core components. Note!: URL does not contain protocol
-    cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
-    p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
-    p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
-    p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
-    p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
-    p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
-    p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
-    p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
-    p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
-
-    # OIDC config
-    vault_i = p.parameters["<VAULT_INGRESS_URL>"]
-    p.parameters["<OIDC_PROVIDER_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx'
-    p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{vault_i}/ui/vault/identity/oidc/provider/cgdevx/authorize'
-    p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/token'
-    p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/userinfo'
-
-    p.parameters["<ARGO_CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ARGO_CD_INGRESS_URL>"]}/oauth2/callback'
-    p.parameters["<HARBOR_REGISTRY_URL>"] = f'{p.parameters["<HARBOR_INGRESS_URL>"]}'
-
+    prepare_parameters(p)
     p.save_checkpoint()
-
-    # params section end
 
     tm = GitOpsTemplateManager(p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_URL),
                                p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_BRANCH),
@@ -276,29 +228,30 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     else:
         click.echo("Skipped GitOps code prep.")
 
-    click.echo("Provisioning VCS...")
+    # VCS provisioning
+
     # use to enable tf debug
     # "TF_LOG": "DEBUG", "TF_LOG_PATH": "/Users/a1m/.cgdevx/gitops/terraform/vcs/terraform.log",
     # drop empty values
-    tf_env_vars = {k: v for k, v in {
+    cloud_provider_auth_env_vars = {k: v for k, v in {
         "AWS_PROFILE": p.get_input_param(CLOUD_PROFILE),
         "AWS_ACCESS_KEY_ID": p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
         "AWS_SECRET_ACCESS_KEY": p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET),
         "AWS_DEFAULT_REGION": p.parameters["<CLOUD_REGION>"],
     }.items() if v}
-    tf_folder = Path().home() / LOCAL_FOLDER / "gitops" / "terraform"
 
     # VCS section
     if not p.has_checkpoint("vcs-tf"):
+        click.echo("Provisioning VCS...")
         # vcs env vars
-        vcs_tf_env_vars = tf_env_vars | {"GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-                                         "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME)}
+        vcs_tf_env_vars = cloud_provider_auth_env_vars | {"GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
+                                                          "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME)}
 
         # set envs as required by tf
         for k, vault_i in vcs_tf_env_vars.items():
             os.environ[k] = vault_i
 
-        tf_wrapper = TfWrapper(tf_folder / "vcs")
+        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_VCS)
         tf_wrapper.init()
         tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["<ATLANTIS_WEBHOOK_SECRET>"],
                           "vcs_bot_ssh_public_key": p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"]})
@@ -306,6 +259,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         # store out params
         p.parameters["<GIT_REPOSITORY_GIT_URL>"] = vcs_out["gitops_repo_ssh_clone_url"]
+        p.parameters["<GIT_REPOSITORY_URL>"] = vcs_out["gitops_repo_html_url"]
 
         # unset envs as no longer needed
         for k in vcs_tf_env_vars.keys():
@@ -325,12 +279,12 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         # run hosting provider tf to create K8s cluster
         hp_tf_env_vars = {
             **{},  # add vars here
-            **tf_env_vars}
+            **cloud_provider_auth_env_vars}
         # set envs as required by tf
         for k, vault_i in hp_tf_env_vars.items():
             os.environ[k] = vault_i
 
-        tf_wrapper = TfWrapper(tf_folder / "hosting_provider")
+        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_HOSTING_PROVIDER)
         tf_wrapper.init()
         tf_wrapper.apply()
         hp_out = tf_wrapper.output()
@@ -347,12 +301,28 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
         p.parameters["<VAULT_IAM_ROLE_RN>"] = hp_out["vault_role"]
         # cluster
-        p.parameters["<CC_CLUSTER_ENDPOINT>"] = hp_out["cluster_endpoint"]
-        p.parameters["<CC_CLUSTER_OIDC_PROVIDER>"] = hp_out["cluster_oidc_provider"]  # do we need it?
+        p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
+        p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
+        p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
+        p.internals["CC_CLUSTER_OIDC_PROVIDER"] = hp_out["cluster_oidc_provider"]  # do we need it?
 
         # unset envs as no longer needed
         for k in hp_tf_env_vars.keys():
             os.environ.pop(k)
+
+        # user could get kubeconfig by running command
+        # AWS: `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
+        # CLI could not follow this approach as aws client could be not configured properly when keys are used
+        # CLI is creating this file programmatically
+        command, command_args = cm.get_k8s_auth_command()
+        kubeconfig_params = {
+            "<ENDPOINT>": p.internals["CC_CLUSTER_ENDPOINT"],
+            "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
+            "<CLUSTER_NAME>": p.parameters["<PRIMARY_CLUSTER_NAME>"],
+            "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
+        }
+        kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+        p.internals["KCTL_CONFIG_PATH"] = kctl_config_path
 
         p.set_checkpoint("k8s-tf")
         p.save_checkpoint()
@@ -372,19 +342,68 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
                   p.internals["GIT_USER_NAME"],
                   p.internals["GIT_USER_EMAIL"])
 
-        click.echo("Pushing GitOps code. Done!")
-
         p.set_checkpoint("gitops-vcs")
         p.save_checkpoint()
+
+        click.echo("Pushing GitOps code. Done!")
     else:
         click.echo("Skipped GitOps repo initialization.")
 
-    # user could get kubeconfig by running command
-    # `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
-    # CLI could not follow this approach as aws client could be not configured properly when keys are used
-    # CLI is creating this file programmatically
+    # k8s
+    # default token life-time is 14m
+    # to be safe should refresh token each time
+    k8s_token = cm.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
+    kc = KubeClient(p.internals["CC_CLUSTER_CA_CERT_PATH"], k8s_token, p.internals["CC_CLUSTER_ENDPOINT"])
+    # kc.list_pods()
+
+    kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
+    # kctl.get("pods", namespace="kube-system")
+
+    # install ArgoCD
+    if not p.has_checkpoint("k8s-delivery"):
+        click.echo("Installing ArgoCD...")
+
+        # TODO: install ArgoCD
+
+        p.set_checkpoint("k8s-delivery")
+        p.save_checkpoint()
+
+        click.echo("Installing ArgoCD. Done!")
+    else:
+        click.echo("Skipped ArgoCD installation.")
 
     return True
+
+
+def prepare_parameters(p):
+    # TODO: move to appropriate place
+    p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL)
+    p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
+    p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
+    p.parameters["<GIT_PROVIDER>"] = p.git_provider
+    p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
+    p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
+    p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
+    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
+    p.parameters["<ATLANTIS_WEBHOOK_SECRET>"] = random_string_generator(20)
+    # Ingress URLs for core components. Note!: URL does not contain protocol
+    cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
+    p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
+    p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
+    p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
+    p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
+    p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
+    p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
+    p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
+    p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
+    # OIDC config
+    vault_i = p.parameters["<VAULT_INGRESS_URL>"]
+    p.parameters["<OIDC_PROVIDER_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx'
+    p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{vault_i}/ui/vault/identity/oidc/provider/cgdevx/authorize'
+    p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/token'
+    p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/userinfo'
+    p.parameters["<ARGO_CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ARGO_CD_INGRESS_URL>"]}/oauth2/callback'
+    p.parameters["<HARBOR_REGISTRY_URL>"] = f'{p.parameters["<HARBOR_INGRESS_URL>"]}'
 
 
 def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:

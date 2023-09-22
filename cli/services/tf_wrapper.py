@@ -1,18 +1,16 @@
 import json
 import os
-from pathlib import Path
 
 from python_terraform import Terraform, IsFlagged, IsNotFlagged
 
-from cli.common.const.const import LOCAL_FOLDER
+from cli.common.const.common_path import LOCAL_TF_TOOL
 
 
 class TfWrapper:
 
     def __init__(self, working_dir: str = None):
-        tf_executable = Path().home() / LOCAL_FOLDER / "tools" / "terraform"
-        if os.path.exists(tf_executable):
-            self._tf = Terraform(terraform_bin_path=str(tf_executable),
+        if os.path.exists(LOCAL_TF_TOOL):
+            self._tf = Terraform(terraform_bin_path=str(LOCAL_TF_TOOL),
                                  working_dir=working_dir,
                                  is_env_vars_included=True)
         else:
@@ -55,7 +53,7 @@ class TfWrapper:
         return output
 
     def destroy(self):
-        return_code, stdout, stderr = self._tf.destroy(force=IsNotFlagged, auto_approve=IsFlagged)
+        return_code, stdout, stderr = self._tf.destroy(force=IsNotFlagged, auto_approve=True, input=False)
 
         if return_code != 0:
             raise Exception("tf executable failure", return_code, stderr)

@@ -1,18 +1,15 @@
 import hashlib
 import os.path
+import platform
 import re
 import shutil
 import stat
-from pathlib import Path
 from zipfile import ZipFile
-import platform
-
-from python_terraform import *
 
 import requests
+from python_terraform import *
 
-from cli.common.const.const import LOCAL_FOLDER
-from cli.common.utils.generators import random_string_generator
+from cli.common.const.common_path import LOCAL_TOOLS_FOLDER, LOCAL_TF_TOOL, LOCAL_KCTL_TOOL
 from cli.services.tf_wrapper import TfWrapper
 
 
@@ -83,8 +80,7 @@ class DependencyManager:
                 return False
 
     def check_tf(self):
-        tf_executable = Path().home() / LOCAL_FOLDER / "tools" / "terraform"
-        if os.path.exists(tf_executable):
+        if os.path.exists(LOCAL_TF_TOOL):
             tf = TfWrapper()
             if tf.version() == self.tf_version:
                 return True
@@ -92,9 +88,8 @@ class DependencyManager:
         return False
 
     def check_kubectl(self):
-        kctl_executable = Path().home() / LOCAL_FOLDER / "tools" / "kubectl"
         # TODO: extract and check kubectl version
-        if os.path.exists(kctl_executable):
+        if os.path.exists(LOCAL_KCTL_TOOL):
             return True
         else:
             return False
@@ -121,15 +116,14 @@ class DependencyManager:
 
         if not self._validate_checksum(tf_file_path, checksum):
             raise Exception("Bad checksum")
-        tools_folder = Path().home() / LOCAL_FOLDER / "tools"
-        self._unzip_file(file=tf_file_path, path=tools_folder)
 
-        tf_executable = tools_folder / "terraform"
-        self._change_permissions(tf_executable)
+        self._unzip_file(file=tf_file_path, path=LOCAL_TOOLS_FOLDER)
+
+        self._change_permissions(LOCAL_TF_TOOL)
 
         shutil.rmtree(tmp_folder)
 
-        return tf_executable
+        return str(LOCAL_TF_TOOL)
 
     def _extract_sha(self, sha_file_path, file_name):
         checksum = None
@@ -167,16 +161,14 @@ class DependencyManager:
 
         if not self._validate_checksum(kctl_file_path, checksum):
             raise Exception("Bad checksum")
-        tools_folder = Path().home() / LOCAL_FOLDER / "tools"
-        kctl_executable_path = tools_folder / file_name
 
-        shutil.move(kctl_file_path, kctl_executable_path)
+        shutil.move(kctl_file_path, LOCAL_KCTL_TOOL)
 
-        self._change_permissions(kctl_executable_path)
+        self._change_permissions(LOCAL_KCTL_TOOL)
 
         shutil.rmtree(tmp_folder)
 
-        return kctl_executable_path
+        return str(LOCAL_KCTL_TOOL)
 
     def _change_permissions(self, path):
         st = os.stat(path)
@@ -184,7 +176,7 @@ class DependencyManager:
                  st.st_mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
     def _prepare_temp_folder(self):
-        tmp_folder = Path().home() / LOCAL_FOLDER / ".tmp"
+        tmp_folder = LOCAL_TOOLS_FOLDER / ".tmp"
         if os.path.exists(tmp_folder):
             shutil.rmtree(tmp_folder)
         os.makedirs(tmp_folder)
