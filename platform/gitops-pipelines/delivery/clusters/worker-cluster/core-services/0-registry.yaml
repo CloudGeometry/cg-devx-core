@@ -1,22 +1,28 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: reloader-components
+  name: registry
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '50'
+    argocd.argoproj.io/sync-wave: '0'
 spec:
-  project: default
+  project: <WORKLOAD_NAME>
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: platform/gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/reloader
+    path: gitops-pipelines/delivery/clusters/worker-cluster/core-services
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: reloader
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        maxDuration: 5m0s
+        factor: 2

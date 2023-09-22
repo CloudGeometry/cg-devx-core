@@ -1,4 +1,4 @@
-flake8]
+[flake8]
 extend-ignore = E722,W504,E501,Q000,N802,D401,D413
 exclude =
     venv,

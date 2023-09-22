@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: trivy-components
+  name: kyverno-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '130'
+    argocd.argoproj.io/sync-wave: '160'
 spec:
   project: default
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: platform/gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/devsecops/trivy
+    path: gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/devsecops/kyverno
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: trivy
+    namespace: kyverno
   syncPolicy:
     automated:
       prune: true

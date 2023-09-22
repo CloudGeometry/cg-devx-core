@@ -15,32 +15,32 @@
 
 ## Modules
 
-| Name | Source | Version |
-|------|--------|---------|
-| <a name="module_atlantis_irsa_role"></a> [atlantis\_irsa\_role](#module\_atlantis\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| Name                                                                                                         | Source | Version |
+|--------------------------------------------------------------------------------------------------------------|--------|---------|
+| <a name="module_atlantis_irsa_role"></a> [atlantis\_irsa\_role](#module\_atlantis\_irsa\_role)               | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
 | <a name="module_cert_manager_irsa_role"></a> [cert\_manager\_irsa\_role](#module\_cert\_manager\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_ebs_csi_irsa_role"></a> [ebs\_csi\_irsa\_role](#module\_ebs\_csi\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_ebs_kms_key"></a> [ebs\_kms\_key](#module\_ebs\_kms\_key) | terraform-aws-modules/kms/aws | ~> 1.5 |
-| <a name="module_efs_csi_irsa_role"></a> [efs\_csi\_irsa\_role](#module\_efs\_csi\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | ~>19.16.0 |
+| <a name="module_ebs_csi_irsa_role"></a> [ebs\_csi\_irsa\_role](#module\_ebs\_csi\_irsa\_role)                | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| <a name="module_ebs_kms_key"></a> [ebs\_kms\_key](#module\_ebs\_kms\_key)                                    | terraform-aws-modules/kms/aws | ~> 1.5 |
+| <a name="module_efs_csi_irsa_role"></a> [efs\_csi\_irsa\_role](#module\_efs\_csi\_irsa\_role)                | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| <a name="module_eks"></a> [eks](#module\_eks)                                                                | terraform-aws-modules/eks/aws | ~>19.16.0 |
 | <a name="module_external_dns_irsa_role"></a> [external\_dns\_irsa\_role](#module\_external\_dns\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_iam_argoworkflow_role"></a> [iam\_argoworkflow\_role](#module\_iam\_argoworkflow\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_image_registry_irsa_role"></a> [image\_registry\_irsa\_role](#module\_image\_registry\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_vault_irsa_role"></a> [vault\_irsa\_role](#module\_vault\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | ~> 5.0 |
-| <a name="module_vpc_cni_irsa"></a> [vpc\_cni\_irsa](#module\_vpc\_cni\_irsa) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| <a name="module_iam_argoworkflow_role"></a> [iam\_argoworkflow\_role](#module\_iam\_argoworkflow\_role)      | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| <a name="module_harbor_irsa_role"></a> [image\_registry\_irsa\_role](#module\_image\_registry\_irsa\_role)   | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| <a name="module_vault_irsa_role"></a> [vault\_irsa\_role](#module\_vault\_irsa\_role)                        | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
+| <a name="module_vpc"></a> [vpc](#module\_vpc)                                                                | terraform-aws-modules/vpc/aws | ~> 5.0 |
+| <a name="module_vpc_cni_irsa"></a> [vpc\_cni\_irsa](#module\_vpc\_cni\_irsa)                                 | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
 
 ## Resources
 
-| Name | Type |
-|------|------|
-| [aws_iam_policy.argoworkflow](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
-| [aws_iam_policy.atlantis_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
-| [aws_iam_policy.image_registry_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
-| [aws_iam_policy.vault_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
-| [aws_ami.eks_default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
+| Name                                                                                                                                  | Type |
+|---------------------------------------------------------------------------------------------------------------------------------------|------|
+| [aws_iam_policy.argoworkflow](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy)                 | resource |
+| [aws_iam_policy.atlantis_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy)              | resource |
+| [aws_iam_policy.harbor_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy)                | resource |
+| [aws_iam_policy.vault_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy)                 | resource |
+| [aws_ami.eks_default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami)                             | data source |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
-| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity)         | data source |
 
 ## Inputs
 
@@ -90,7 +90,7 @@
 | <a name="output_iam_argoworkflow_role"></a> [iam\_argoworkflow\_role](#output\_iam\_argoworkflow\_role) | ArgoCD Workflow IAM role ARN |
 | <a name="output_igw_arn"></a> [igw\_arn](#output\_igw\_arn) | IGW ARN Generated by VPC module |
 | <a name="output_igw_id"></a> [igw\_id](#output\_igw\_id) | IGW ID Generated by VPC module |
-| <a name="output_image_registry_irsa_role"></a> [image\_registry\_irsa\_role](#output\_image\_registry\_irsa\_role) | Image registry (Harbor) Role ARN |
+| <a name="output_harbor_irsa_role"></a> [image\_registry\_irsa\_role](#output\_image\_registry\_irsa\_role) | Image registry (Harbor) Role ARN |
 | <a name="output_kms_key_arn"></a> [kms\_key\_arn](#output\_kms\_key\_arn) | The Amazon Resource Name (ARN) of the key |
 | <a name="output_kms_key_id"></a> [kms\_key\_id](#output\_kms\_key\_id) | The globally unique identifier for the key |
 | <a name="output_kms_key_policy"></a> [kms\_key\_policy](#output\_kms\_key\_policy) | The IAM resource policy set on the key |

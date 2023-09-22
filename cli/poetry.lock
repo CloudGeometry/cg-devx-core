@@ -152,17 +152,17 @@ aio = ["azure-core[aio] (>=1.28.0,<2.0.0)"]
 
 [[package]]
 name = "boto3"
-version = "1.28.29"
+version = "1.28.44"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.28.29-py3-none-any.whl", hash = "sha256:7b8e7deee9f665612b3cd7412989aaab0337d8006a0490a188c814af137bd32d"},
-    {file = "boto3-1.28.29.tar.gz", hash = "sha256:1ab375c231547db4c9ce760e29cbe90d0341fe44910571b1bc4967a72fd8276f"},
+    {file = "boto3-1.28.44-py3-none-any.whl", hash = "sha256:c53c92dfe22489ba31e918c2e7b59ff43e2e778bd3d3559e62351a739382bb5c"},
+    {file = "boto3-1.28.44.tar.gz", hash = "sha256:eea3b07e0f28c9f92bccab972af24a3b0dd951c69d93da75227b8ecd3e18f6c4"},
 ]
 
 [package.dependencies]
-botocore = ">=1.31.29,<1.32.0"
+botocore = ">=1.31.44,<1.32.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.6.0,<0.7.0"
 
@@ -386,13 +386,13 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "cloup"
-version = "3.0.0"
+version = "3.0.2"
 description = "Adds features to Click: option groups, constraints, subcommand sections and help themes."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "cloup-3.0.0-py2.py3-none-any.whl", hash = "sha256:77bf7bbff6cfcd3f4053583f2307dea4806c9c3e0492ad5ca90e66b5a1bc0682"},
-    {file = "cloup-3.0.0.tar.gz", hash = "sha256:babd4bdcfd274f86779d6d3ce39b9ea0f6cc5ab3d4efe35ba6841e6d6d037893"},
+    {file = "cloup-3.0.2-py2.py3-none-any.whl", hash = "sha256:cec42edb289bfc00d67fd712dfe68de9ebb7ddbe954f3db5af76abd7a9f3d711"},
+    {file = "cloup-3.0.2.tar.gz", hash = "sha256:cc1059610d81daa08cc607e56c7ae819fab010f19d19f3c875ceeb675183acf6"},
 ]
 
 [package.dependencies]
@@ -617,6 +617,17 @@ six = "*"
 grpc = ["gax-google-logging-v2 (>=0.8.0,<0.9dev)", "gax-google-pubsub-v1 (>=0.8.0,<0.9dev)", "google-gax (>=0.12.3,<0.13dev)", "grpc-google-logging-v2 (>=0.8.0,<0.9dev)", "grpc-google-pubsub-v1 (>=0.8.0,<0.9dev)", "grpcio (>=1.0rc1)"]
 
 [[package]]
+name = "ghrepo"
+version = "0.7.0"
+description = "Parse & construct GitHub repository URLs & specifiers"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "ghrepo-0.7.0-py3-none-any.whl", hash = "sha256:b7d71e23cae04d4a341907f21ae3841e27c9d125df281c6d9bfbef03573ab059"},
+    {file = "ghrepo-0.7.0.tar.gz", hash = "sha256:5713c7b7fbc4fcdb557685c499175e727a64b472113a6696a603f1ba2b0a0a5a"},
+]
+
+[[package]]
 name = "gitdb"
 version = "4.0.10"
 description = "Git Object Database"
@@ -802,13 +813,13 @@ files = [
 
 [[package]]
 name = "httpcore"
-version = "0.17.3"
+version = "0.18.0"
 description = "A minimal low-level HTTP client."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "httpcore-0.17.3-py3-none-any.whl", hash = "sha256:c2789b767ddddfa2a5782e3199b2b7f6894540b17b16ec26b2c4d8e103510b87"},
-    {file = "httpcore-0.17.3.tar.gz", hash = "sha256:a6f30213335e34c1ade7be6ec7c47f19f50c56db36abef1a9dfa3815b1cb3888"},
+    {file = "httpcore-0.18.0-py3-none-any.whl", hash = "sha256:adc5398ee0a476567bf87467063ee63584a8bce86078bf748e48754f60202ced"},
+    {file = "httpcore-0.18.0.tar.gz", hash = "sha256:13b5e5cd1dca1a6636a6aaea212b19f4f85cd88c366a2b82304181b769aab3c9"},
 ]
 
 [package.dependencies]
@@ -837,18 +848,18 @@ pyparsing = {version = ">=2.4.2,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.0.2 || >3.0
 
 [[package]]
 name = "httpx"
-version = "0.24.1"
+version = "0.25.0"
 description = "The next generation HTTP client."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "httpx-0.24.1-py3-none-any.whl", hash = "sha256:06781eb9ac53cde990577af654bd990a4949de37a28bdb4a230d434f3a30b9bd"},
-    {file = "httpx-0.24.1.tar.gz", hash = "sha256:5853a43053df830c20f8110c5e69fe44d035d850b2dfe795e196f00fdb774bdd"},
+    {file = "httpx-0.25.0-py3-none-any.whl", hash = "sha256:181ea7f8ba3a82578be86ef4171554dd45fec26a02556a744db029a0a27b7100"},
+    {file = "httpx-0.25.0.tar.gz", hash = "sha256:47ecda285389cb32bb2691cc6e069e3ab0205956f681c5b2ad2325719751d875"},
 ]
 
 [package.dependencies]
 certifi = "*"
-httpcore = ">=0.15.0,<0.18.0"
+httpcore = ">=0.18.0,<0.19.0"
 idna = "*"
 sniffio = "*"
 
@@ -1428,4 +1439,4 @@ test = ["websockets"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "4e6cdfc9ebd14a9653a1fe80a08f319df558e46dbf9154fc5f7453b9fdb15cbf"
+content-hash = "e36c5924b20a71301eb4e5f4e0b45578a163367b42014e6fc0b845dc4c1a6338"
