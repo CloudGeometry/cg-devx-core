@@ -13,9 +13,9 @@ class AWSManager(CloudProviderManager):
     def __init__(self, region, profile, key, secret):
         self.__aws_sdk = AwsSdk(region, profile, key, secret)
 
-    def detect_cli_presence(self) -> bool:
+    def detect_cli_presence(self, cli=CLI) -> bool:
         """Check whether `name` is on PATH and marked as executable."""
-        return detect_command_presence(CLI)
+        return super().detect_cli_presence(cli)
 
     def create_iac_state_storage(self, bucket: str, region: str = None):
         """
@@ -35,7 +35,4 @@ class AWSManager(CloudProviderManager):
         missing_permissions.extend(self.__aws_sdk.blocked(iam_permissions))
         missing_permissions.extend(self.__aws_sdk.blocked(s3_permissions))
         missing_permissions.extend(self.__aws_sdk.blocked(own_iam_permissions, [self.__aws_sdk.current_user_arn()]))
-        if len(missing_permissions) == 0:
-            return True
-        else:
-            return False
+        return len(missing_permissions) == 0

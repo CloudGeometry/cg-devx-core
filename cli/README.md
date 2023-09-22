@@ -2,29 +2,32 @@
 
 ## Getting Started
 
-You need to install:
-* **python 3.10 + pip**: 
+Required installations:
+* **python 3.10 + pip**:
 
-Using Python virtualenv is recommended. You can init the virtual environment with the following command:
+Although Python's virtualenv is an option, it's recommended to utilize `Poetry` for dependency management and virtual environment handling. To initiate a virtual environment using Poetry, follow these steps:
+
+# CG DevX CLI
+
+## Getting Started
+
+Required installations:
+* **python 3.10 + pip**:
+
+Although Python's virtualenv is an option, it's recommended to utilize `Poetry` for dependency management and virtual environment handling. To initiate a virtual environment using Poetry, follow these steps:
+
 ```bash
-# Current directory: GITROOT
+# Assumed directory: GITROOT
 
-# Initialize venv in ./venv
-# You only need to execute this once
-python3 -m cli
+# If Poetry isn't installed yet, you can do so via pip
+pip install poetry
 
-# Install dependencies
-pip install -r requirements.txt
+# To install dependencies, use:
+# NOTE: Poetry configuration and lock files are stored in the 'cli' directory.
+poetry install
 
-# Activate the venv
-# You need to run this whenever you work with the codebase
-source cli/bin/activate
-```
-
-## Code Style
-Run the command to validate code style:
-```bash
-flake8
+# Activate the virtual environment with:
+poetry shell
 ```
 
 ## SDKs

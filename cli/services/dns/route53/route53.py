@@ -15,7 +15,7 @@ class Route53Manager(DNSManager):
         Check if domain is owned by user and create liveness check record
         :return: True or False
         """
-        name_servers, zone_id, zone_is_private = self.__aws_sdk.get_name_severs(domain_name)
+        name_servers, zone_id, _ = self.__aws_sdk.get_name_severs(domain_name)
         if name_servers is not None:
             existing_ns = get_domain_ns_records(domain_name)
             if not set(existing_ns).issubset(set(name_servers)):

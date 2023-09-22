@@ -15,7 +15,9 @@ from cli.common.enums.git_providers import GitProviders
 class StateStore:
     __store: dict = {}
 
-    def __init__(self, input_params={}):
+    def __init__(self, input_params: None | dict = None):
+        if input_params is None:
+            input_params = {}
         self.__store[STATE_INPUT_PARAMS] = input_params
         self.__store[STATE_CHECKPOINTS] = []
 

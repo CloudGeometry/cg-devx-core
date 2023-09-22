@@ -28,6 +28,8 @@ from cli.services.vcs.github.github_manager import GitHubProviderManager
 @click.option('--cloud-account-key', '-cc', 'cloud_key', help='Cloud account access key', type=click.STRING)
 @click.option('--cloud-account-secret', '-cs', 'cloud_secret', help='Cloud account access secret', type=click.STRING)
 @click.option('--cloud-region', '-r', 'cloud_region', help='Cloud regions', type=click.STRING)
+@click.option('--azure-subscription-id', '-azs', 'azure_subscription_id', help='Azure subscription id',
+              type=click.STRING)
 @click.option('--cluster-name', '-n', 'cluster_name', help='Cluster name', default='cg-devx-cc', type=click.STRING)
 @click.option('--dns-registrar', '-d', 'dns_reg', help='DNS registrar',
               type=click.Choice([e.value for e in DnsRegistrars], case_sensitive=False))
@@ -48,10 +50,13 @@ from cli.services.vcs.github.github_manager import GitHubProviderManager
 @click.option('--setup-demo-workload', '-dw', 'install_demo', help='Setup demo workload', default=False,
               flag_value='setup-demo')
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
-def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_key: str, cloud_secret: str,
-          cloud_region: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str, dns_reg_key: str,
-          dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
-          gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool, config):
+def setup(
+        email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_key: str, cloud_secret: str,
+        cloud_region: str, azure_subscription_id: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
+        dns_reg_key: str, dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
+        gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool,
+        config: click.File
+):
     """Creates new CG DevX installation."""
     click.echo("Setup CG DevX installation.")
 
@@ -65,6 +70,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         except yaml.YAMLError as exception:
             click.echo(exception)
+            return
     else:
         # TODO: merge file with param override
         p = StateStore({
@@ -74,6 +80,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
             CLOUD_ACCOUNT_ACCESS_KEY: cloud_key,
             CLOUD_ACCOUNT_ACCESS_SECRET: cloud_secret,
             CLOUD_REGION: cloud_region,
+            AZURE_SUBSCRIPTION_ID: azure_subscription_id,
             PRIMARY_CLUSTER_NAME: cluster_name,
             DNS_REGISTRAR: dns_reg,
             DNS_REGISTRAR_ACCESS_TOKEN: dns_reg_token,
@@ -116,12 +123,11 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
                     key=p.get_input_param(DNS_REGISTRAR_ACCESS_KEY),
                     secret=p.get_input_param(DNS_REGISTRAR_ACCESS_SECRET))
 
-    if p.cloud_provider == CloudProviders.Azure:
-        cm: CloudProviderManager = AzureManager()
+    elif p.cloud_provider == CloudProviders.Azure:
+        cm: AzureManager = AzureManager(p.get_input_param(AZURE_SUBSCRIPTION_ID))
 
     cloud_provider_check(cm, p)
     click.echo("Cloud provider pre-flight check. Done!")
-
     # init proper git provider
     if p.git_provider == GitProviders.GitHub:
         gm: GitProviderManager = GitHubProviderManager(p.get_input_param(GIT_ACCESS_TOKEN),
@@ -174,7 +180,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     return True
 
 
-def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
+def cloud_provider_check(manager: AzureManager | AWSManager, p: StateStore) -> None:
     if not manager.detect_cli_presence():
         click.ClickException("Cloud CLI is missing")
     if not manager.evaluate_permissions():

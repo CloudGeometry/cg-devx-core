@@ -10,9 +10,9 @@ __license__ = "Apache 2.0"
 
 import click
 
-from commands.destroy import destroy
-from commands.workload.workload import workload
-from commands.setup import setup
+from cli.commands.destroy import destroy
+from cli.commands.workload.workload import workload
+from cli.commands.setup import setup
 
 
 @click.group()

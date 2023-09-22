@@ -1,12 +1,15 @@
+from cli.common.utils.os_utils import detect_command_presence
+
+
 class CloudProviderManager:
     """Cloud provider SDK wrapper to standardise cloud provider management."""
 
-    def detect_cli_presence(self) -> bool:
+    def detect_cli_presence(self, cli: str) -> bool:
         """
         Check if cloud provider CLI tools are installed
         :return: True or False
         """
-        pass
+        return detect_command_presence(cli)
 
     def evaluate_permissions(self) -> bool:
         """
