@@ -1,18 +1,24 @@
 import subprocess
-from pathlib import Path
+import sys
 
 import yaml
 
-from cli.common.const.const import LOCAL_FOLDER
+from cli.common.const.common_path import LOCAL_KCTL_TOOL
 
 
 class KctlWrapper:
-    @staticmethod
-    def __kubectl_command_builder(basic_command: str, resource=None, name=None, container_name=None,
+
+    def __init__(self, kctl_config_path: str, kctl_executable_path: str = None):
+        self._kctl_config_path = kctl_config_path
+        if kctl_executable_path is None:
+            self._kctl_executable = str(LOCAL_KCTL_TOOL)
+        else:
+            self._kctl_executable = kctl_executable_path
+
+    def __kubectl_command_builder(self, basic_command: str, resource=None, name=None, container_name=None,
                                   namespace=None, flags=None, with_definition=False):
 
-        kctl_executable = str(Path().home() / LOCAL_FOLDER / "tools" / "kubectl")
-        command = [kctl_executable, basic_command]
+        command = [self._kctl_executable, '--kubeconfig', self._kctl_config_path, basic_command]
         if resource:
             command.append(resource)
         if name:
@@ -46,3 +52,13 @@ class KctlWrapper:
     def apply(self, definition, namespace=None):
         command = self.__kubectl_command_builder('apply', namespace=namespace, flags=['--record'], with_definition=True)
         self.__run_command(command, definition)
+
+    def get(self, kind, name=None, namespace=None):
+        command = self.__kubectl_command_builder('get', resource=kind, name=name, namespace=namespace,
+                                                 flags=['-o', 'yaml'])
+        get_process = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=sys.stderr)
+        objects = yaml.safe_load(get_process.stdout)
+        if get_process.wait() != 0:
+            raise Exception
+        return objects

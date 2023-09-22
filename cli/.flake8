@@ -1,10 +1,12 @@
 [flake8]
 extend-ignore = E722,W504,E501,Q000,N802,D401,D413
 exclude =
-    venv,
-    versions,
-    __init__.py,
+    venv
+    versions
+    __init__.py
     tests
+    lib
+
 
 class-attributes-order=
     docstring,
