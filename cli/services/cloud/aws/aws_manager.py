@@ -19,6 +19,10 @@ class AWSManager(CloudProviderManager):
     def region(self):
         return self.__aws_sdk.region
 
+    @property
+    def account_id(self):
+        return self.__aws_sdk.account_id
+
     def detect_cli_presence(self) -> bool:
         """Check whether `name` is on PATH and marked as executable."""
         return detect_command_presence(CLI)
@@ -29,6 +33,12 @@ class AWSManager(CloudProviderManager):
         :return: Resource identifier, Region
         """
         return self.__aws_sdk.create_bucket(bucket)
+
+    def destroy_iac_state_storage(self, bucket: str):
+        """
+        Destroy cloud native terraform remote state storage
+        """
+        return self.__aws_sdk.delete_bucket(bucket)
 
     def create_iac_backend_snippet(self, location: str, region: str, service="default"):
         if region is None:
@@ -54,9 +64,24 @@ class AWSManager(CloudProviderManager):
           }
         }''')
 
-    def create_k8s_rol_binding_snippet(self):
+    def create_k8s_role_binding_snippet(self):
         # TODO: consider replacing with file template
         return "serviceAccountName"
+
+    def get_k8s_auth_command(self) -> str:
+        args = [
+            '--region',
+            '<CLUSTER_REGION>',
+            'eks',
+            'get-token',
+            '--cluster-name',
+            "<CLUSTER_NAME>"
+        ]
+        return "aws", args
+
+    def get_k8s_token(self, cluster_name: str) -> str:
+        token = self.__aws_sdk.get_token(cluster_name=cluster_name)
+        return token['status']['token']
 
     def evaluate_permissions(self) -> bool:
         """
