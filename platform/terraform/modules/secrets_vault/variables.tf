@@ -52,8 +52,10 @@ variable "vault_token" {
   sensitive   = true
 }
 
-variable "demo_workload_enabled" {
-  description = "demo workload condition"
-  type    = bool
-  default = false
+variable "workloads" {
+  description = "workloads vault configuration"
+  type = map(object({
+    description                  = optional(string, "")
+    }))
+  default = {}
 }

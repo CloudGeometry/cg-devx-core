@@ -29,13 +29,18 @@ provider "aws" {
 
 locals {
   cluster_name = "<PRIMARY_CLUSTER_NAME>"
+  workload_enabled = false
+  workloads   = local.workload_enabled == false ? {} : {
+    "workload-demo" = {
+    },
+  }
 }
 
 module "secrets" {
   source = "../modules/secrets_vault"
 
   cluster_name                 = local.cluster_name
-  demo_workload_enabled        = var.demo_workload_enabled
+  workloads                    = local.workloads
   cgdevxbot_ssh_public_key     = var.vcs_bot_ssh_public_key
   cgdevxbot_ssh_private_key    = var.vcs_bot_ssh_private_key
   b64_docker_auth              = var.b64_docker_auth

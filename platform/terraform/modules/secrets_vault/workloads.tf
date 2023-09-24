@@ -1,6 +1,7 @@
-module "workload_demo" {
-  source = "./vault-workload"
+module "workloads" {
+  source    = "./vault-workload"
+  for_each = var.workloads
 
-  count = var.demo_workload_enabled == true ? 1 : 0
-  workload_name = "workload-demo"
+  workload_name      = each.key
+  description        = each.value.description
 }

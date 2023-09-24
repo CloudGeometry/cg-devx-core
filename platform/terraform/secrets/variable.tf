@@ -15,7 +15,7 @@ variable "<GIT_PROVIDER>_token" {
   description = "token for git operations"
   default = ""
   type = string
-  sensitive   = true  
+  sensitive   = true
 }
 
 variable "b64_docker_auth" {
@@ -43,10 +43,4 @@ variable "vault_token" {
   default = ""
   type    = string
   sensitive   = true
-}
-
-variable "demo_workload_enabled" {
-  description = "demo workload condition"
-  type    = bool
-  default = false
 }
