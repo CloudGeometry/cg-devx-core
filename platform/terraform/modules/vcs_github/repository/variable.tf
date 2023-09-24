@@ -13,7 +13,7 @@ variable "visibility" {
 }
 
 variable "auto_init" {
-  type    = string
+  type    = bool
   default = false
 }
 
@@ -61,6 +61,7 @@ variable "atlantis_url" {
 variable "atlantis_repo_webhook_secret" {
   type = string
   default = ""
+  sensitive   = true
 }
 
 
