@@ -7,8 +7,3 @@ variable "vcs_bot_ssh_public_key" {
   type    = string
   default = ""
 }
-
-variable "demo_workload_enabled" {
-  type    = bool
-  default = false
-}
