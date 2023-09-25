@@ -328,10 +328,14 @@ variable "service_accounts" {
     sa_1 = {
       name = "atlantis"
       role_definition_name = "Contributor"
+      service_account_name = "sa_atlantis"
+      namespace = "atlantis-ns"
     }
     sa_2 = {
       name = "dns"
       role_definition_name = "DNS Zone Contributor"
+      service_account_name = "sa_dns"
+      namespace = "dns-ns"
     }
   }
 }

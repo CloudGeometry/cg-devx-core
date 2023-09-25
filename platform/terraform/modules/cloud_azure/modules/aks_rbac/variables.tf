@@ -8,17 +8,16 @@ variable "name" {
   type        = string
 }
 
-/* variable "service_accounts" {
-  description = "(Required) Specifies the name of the node pool."
-  type        = map(any)
-} */
-
-
-/* variable "service_account_name" {
-  description = "(Required) Specifies the name of the node pool."
+variable "namespace" {
+  description = "(Required) Specifies the name of the namespace."
   type        = string
 }
- */
+
+variable "service_account_name" {
+  description = "(Required) Specifies the name of the service account."
+  type        = string
+}
+
 variable "role_definition_name" {
   description = "(Required) Specifies the name of the node pool."
   type        = string

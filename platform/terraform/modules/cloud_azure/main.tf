@@ -307,5 +307,9 @@ module "aks_rbac" {
   oidc_issuer_url                 = module.aks_cluster.oidc_issuer_url
   resource_group_name             = azurerm_resource_group.rg.name
   name                            = each.value.name
+  service_account_name            = each.value.service_account_name
   role_definition_name            = each.value.role_definition_name
+  namespace                       = each.value.namespace
+
+  depends_on = [module.aks_cluster]
 }

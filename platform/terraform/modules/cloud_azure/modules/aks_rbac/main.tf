@@ -12,7 +12,7 @@ data "azurerm_client_config" "current_subscription" {}
 
 ## Azure AD application that represents the app
 resource "azuread_application" "appname" {
-  display_name = "${var.name}-${var.resource_group_name}"
+  display_name = var.name
 }
 
 resource "azuread_service_principal" "sp_name" {
@@ -26,11 +26,11 @@ resource "azuread_service_principal_password" "asp_pass" {
 ## Azure AD federated identity used to federate kubernetes with Azure AD
 resource "azuread_application_federated_identity_credential" "aks-app-id" {
   application_object_id = azuread_application.appname.object_id
-  display_name          = "fed-identity-aks-atlantis-id-${var.resource_group_name}"
-  description           = "The federated identity used to federate aks-atlantis-id with Azure AD with the app service running in k8s ${var.resource_group_name}"
+  display_name          = "fed-identity-aks-atlantis-id-${var.service_account_name}"
+  description           = "The federated identity used to federate ${var.service_account_name} with Azure AD with the app service running in k8s in ${var.resource_group_name}"
   audiences             = ["api://AzureADTokenExchange"]
   issuer                = var.oidc_issuer_url
-  subject               = "system:serviceaccount:${var.name}-ns:sp-${var.name}"
+  subject               = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
 }
 
 
