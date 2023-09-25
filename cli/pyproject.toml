@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "../cli"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.11"
 click = "8.1.7"
 cloup = "3.0.2"
 configparser = "6.0.0"
@@ -29,6 +29,7 @@ python-terraform = "0.10.1"
 azure-mgmt-authorization = "^4.0.0"
 azure-mgmt-dns = "^8.1.0"
 ghrepo = "0.7.0"
+pyinstaller = "5.13.2"
 
 
 [build-system]

@@ -1,18 +1,13 @@
 #!/usr/bin/env python
-
 """
 CG DevX CLI
 """
 
-__author__ = "Alexander Ulyanov <alexu@cloudgeometry.io>"
-__version__ = "0.1.0"
-__license__ = "Apache 2.0"
-
 import click
 
-from cli.commands.destroy import destroy
-from cli.commands.workload.workload import workload
-from cli.commands.setup import setup
+from commands.destroy import destroy
+from commands.setup import setup
+from commands.workload.workload import workload
 
 
 @click.group()

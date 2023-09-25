@@ -1,21 +1,31 @@
 import logging
 import time
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
+from awscli.customizations.eks.get_token import STSClientFactory, TokenGenerator, TOKEN_EXPIRATION_MINS
 from botocore.exceptions import ClientError
 
 from cli.services.cloud.aws.aws_session_manager import AwsSessionManager
-from cli.services.dns.dns_provider_manager import get_domain_txt_records_doh, get_domain_txt_records_dot
+from cli.services.dns.dns_provider_manager import get_domain_txt_records_dot
 
 
 class AwsSdk:
     def __init__(self, region, profile, key, secret):
+        self._account_id = None
         self._session_manager = AwsSessionManager()
         self._session_manager.create_session(region, profile, key, secret)
 
     @property
     def region(self):
         return self._session_manager.session.region_name
+
+    @property
+    def account_id(self):
+        if self._account_id is None:
+            client = self._session_manager.session.client('sts')
+            self._account_id = client.get_caller_identity()["Account"]
+        return self._account_id
 
     def current_user_arn(self):
         """Autodetect current user ARN.
@@ -77,8 +87,7 @@ class AwsSdk:
     def create_bucket(self, bucket_name, region=None):
         """Create an S3 bucket in a specified region
 
-        If a region is not specified, the bucket is created in the S3 default
-        region (us-east-1).
+        If a region is not specified, the bucket is created in the S3 default region.
 
         :param bucket_name: Bucket to create
         :param region: String region to create bucket in, e.g., 'us-west-2'
@@ -165,4 +174,58 @@ class AwsSdk:
 
             loop_count -= 1
 
+        return True
+
+    def get_token(self, cluster_name: str, role_arn: str = None) -> dict:
+        # hack to get botcore session and properly initialise client factory
+        client_factory = STSClientFactory(self._session_manager.session._session)
+        sts_client = client_factory.get_sts_client(role_arn=role_arn)
+        token = TokenGenerator(sts_client).get_token(cluster_name)
+        return {
+            "kind": "ExecCredential",
+            "apiVersion": "client.authentication.k8s.io/v1alpha1",
+            "spec": {},
+            "status": {
+                "expirationTimestamp": self._get_expiration_time(),
+                "token": token
+            }
+        }
+
+    @staticmethod
+    def _get_expiration_time():
+        token_expiration = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRATION_MINS)
+        return token_expiration.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    def delete_bucket(self, bucket_name: str, region: str = None):
+        """Deletes an S3 bucket with all content in a specified region
+
+         If a region is not specified, the bucket is created in the S3 default region.
+
+         :param bucket_name: Bucket to create
+         :param region: String region to create bucket in, e.g., 'us-west-2'
+         :return: True if bucket deleted, else False
+         """
+
+        # Delete bucket and all content
+        try:
+            if region is None:
+                region = self.region
+
+            s3_client = self._session_manager.session.client('s3', region_name=region)
+
+            objects = s3_client.get_paginator("list_objects_v2")
+
+            objects_iterator = objects.paginate(Bucket=bucket_name)
+            for res in objects_iterator:
+                if 'Versions' in res:
+                    objects = [{'Key': obj['Key'], 'VersionId': obj['VersionId']} for obj in res['Versions']]
+                    s3_client.delete_objects(Bucket=bucket_name, Delete={'Objects': objects})
+                if 'Contents' in res:
+                    objects = [{'Key': obj['Key']} for obj in res['Contents']]
+                    s3_client.delete_objects(Bucket=bucket_name, Delete={'Objects': objects})
+
+            s3_client.delete_bucket(Bucket=bucket_name)
+        except ClientError as e:
+            logging.error(e)
+            return False
         return True

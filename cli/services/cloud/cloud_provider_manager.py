@@ -1,8 +1,13 @@
-from cli.common.utils.os_utils import detect_command_presence
-
-
 class CloudProviderManager:
     """Cloud provider SDK wrapper to standardise cloud provider management."""
+
+    @property
+    def region(self) -> str:
+        pass
+
+    @property
+    def account_id(self) -> str:
+        pass
 
     def detect_cli_presence(self, cli: str) -> bool:
         """
@@ -25,7 +30,13 @@ class CloudProviderManager:
         """
         pass
 
-    def create_iac_backend_snippet(self, location: str, region: str = None):
+    def destroy_iac_state_storage(self, bucket: str):
+        """
+        Destroy cloud native terraform remote state storage
+        """
+        pass
+
+    def create_iac_backend_snippet(self, location: str, region: str = None, service="default"):
         """
         Creates terraform backend snippet
         :return: Code snippet
@@ -39,9 +50,23 @@ class CloudProviderManager:
         """
         pass
 
-    def create_k8s_rol_binding_snippet(self):
+    def create_k8s_role_binding_snippet(self):
         """
         Creates service account - IAM role binding snippet
-        :return: Snippet
+        :return: Code snippet
+        """
+        pass
+
+    def get_k8s_auth_command(self) -> str:
+        """
+        Returns kubeconfig cluster aut command
+        :return: command
+        """
+        pass
+
+    def get_k8s_token(self, cluster_name: str) -> str:
+        """
+        Creates K8s cluster API key
+        :return: API key
         """
         pass

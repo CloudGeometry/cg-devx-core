@@ -30,3 +30,6 @@ output "cluster_endpoint" {
 output "cluster_oidc_provider" {
   value = module.hosting-provider.oidc_provider
 }
+output "cluster_certificate_authority_data" {
+  value = module.hosting-provider.cluster_certificate_authority_data
+}
