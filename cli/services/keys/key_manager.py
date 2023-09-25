@@ -51,12 +51,13 @@ class KeyManager:
         )
         private_key_path = LOCAL_FOLDER / f'{key_name}'
         public_key_path = LOCAL_FOLDER / f'{key_name}.pub'
+        pub_k = public_key.decode()
+        priv_key = private_key.decode()
         with open(private_key_path, "w") as private_key_file:
-            private_key_file.write(private_key.decode())
-        pk = public_key.decode()
+            private_key_file.write(priv_key)
         with open(public_key_path, "w") as public_key_file:
-            public_key_file.write(pk)
+            public_key_file.write(pub_k)
 
         os.chmod(private_key_path, stat.S_IRUSR | stat.S_IWUSR)
 
-        return pk, str(public_key_path), str(private_key_path)
+        return pub_k, str(public_key_path), priv_key, str(private_key_path)

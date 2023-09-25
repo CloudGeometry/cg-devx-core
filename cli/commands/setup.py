@@ -1,11 +1,15 @@
+import json
 import os
+from urllib.error import HTTPError
 
 import click
 import yaml
+import requests
+from hvac.constants import client
 
 from cli.common.command_utils import init_cloud_provider
 from cli.common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER
-from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
+from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, ARGOCD_REGISTRY_APP_PATH
 from cli.common.const.parameter_names import *
 from cli.common.enums.cloud_providers import CloudProviders
 from cli.common.enums.dns_registrars import DnsRegistrars
@@ -17,7 +21,7 @@ from cli.services.dependency_manager import DependencyManager
 from cli.services.dns.dns_provider_manager import DNSManager
 from cli.services.k8s.config_builder import create_k8s_config
 from cli.services.k8s.k8s import KubeClient, write_ca_cert
-from cli.services.kctl_wrapper import KctlWrapper
+from cli.services.k8s.kctl_wrapper import KctlWrapper
 from cli.services.keys.key_manager import KeyManager
 from cli.services.template_manager import GitOpsTemplateManager
 from cli.services.tf_wrapper import TfWrapper
@@ -135,15 +139,18 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         # create ssh keys
         click.echo("Generating ssh keys...")
-        default_public_key, public_key_path, private_key_path = KeyManager.create_ed_keys()
-        p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
+        default_public_key, public_key_path, default_private_key, private_key_path = KeyManager.create_ed_keys()
+        p.internals["DEFAULT_SSH_PUBLIC_KEY"] = p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
         p.internals["DEFAULT_SSH_PUBLIC_KEY_PATH"] = public_key_path
+        p.internals["DEFAULT_SSH_PRIVATE_KEY"] = default_private_key
         p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
 
         # Optional K8s cluster keys
-        k8s_public_key, k8s_public_key_path, k8s_private_key_path = KeyManager.create_ed_keys("cgdevx_k8s_ed")
+        k8s_public_key, k8s_public_key_path, k8s_private_key, k8s_private_key_path = KeyManager.create_ed_keys(
+            "cgdevx_k8s_ed")
         p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
         p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
+        p.internals["DEFAULT_SSH_PRIVATE_KEY"] = k8s_private_key
         p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
 
         click.echo("Generating ssh keys. Done!")
@@ -354,16 +361,137 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     # to be safe should refresh token each time
     k8s_token = cm.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
     kc = KubeClient(p.internals["CC_CLUSTER_CA_CERT_PATH"], k8s_token, p.internals["CC_CLUSTER_ENDPOINT"])
-    # kc.list_pods()
-
     kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
-    # kctl.get("pods", namespace="kube-system")
 
     # install ArgoCD
+    # argocd 2.8.4
+    # https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
     if not p.has_checkpoint("k8s-delivery"):
         click.echo("Installing ArgoCD...")
 
-        # TODO: install ArgoCD
+        # get CoreDNS deployments to validate cluster
+        coredns_deployment = kc.get_deployment("kube-system", "CoreDNS")
+
+        # wait for deployment readiness
+        kc.wait_for_deployment("kube-system", "CoreDNS")
+
+        argocd_name = "argocd"
+        argocd_namespace = "argocd"
+        argocd_bootstrap_name = "argocd-bootstrap"
+        argocd_path = f'{p.parameters["<GIT_REPOSITORY_GIT_URL>"]}//gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/argocd'
+
+        kc.create_namespace(argocd_namespace)
+
+        # create argocd kubernetes secret for connectivity to private gitops repo
+        argocd_secret = {
+            "type": "git",
+            "name": f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-gitops',
+            "url": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+            "sshPrivateKey": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
+            "sshPublicKey": p.internals["DEFAULT_SSH_PUBLIC_KEY"]
+        }
+        kc.create_secret(argocd_namespace, "repo-credentials", argocd_secret)
+
+        # TODO: properly init harbor auth
+        registry_secret = {
+            "config.json": {"auths": {p.parameters["<HARBOR_REGISTRY_URL>"]: {"auth": "TODO: set token"}}}
+        }
+        kc.create_secret(argocd_namespace, "registry-config", registry_secret)
+
+        kc.create_service_account(argocd_namespace, argocd_bootstrap_name)
+        kc.create_cluster_role(argocd_namespace, argocd_bootstrap_name)
+        kc.create_cluster_role_binding(argocd_namespace, argocd_bootstrap_name, p.parameters["<ARGO_CD_IAM_ROLE_RN>"])
+        job = kc.create_job(argocd_namespace, argocd_bootstrap_name, "bitnami/kubectl",
+                            [f"kubectl apply -k '{argocd_path}'"])
+        kc.wait_for_job(argocd_namespace, job)
+        # cleanup temp resources
+        try:
+            kc.remove_service_account(argocd_namespace, argocd_bootstrap_name)
+            kc.remove_cluster_role(argocd_bootstrap_name)
+            kc.remove_cluster_role_binding(argocd_bootstrap_name)
+        except Exception as e:
+            click.echo("Could not clean up ArgoCD bootstrap temporary resources, manual clean-up is required")
+
+        # wait for ArgoCD to be ready
+
+        kc.get_stateful_set_objects(argocd_namespace, argocd_name)
+        kc.wait_for_stateful_set(argocd_namespace, argocd_name)
+
+        # 	argocd-server
+        kc.get_deployment(argocd_namespace, "argocd-server")
+        kc.wait_for_deployment(argocd_namespace, "argocd-server")
+
+        # wait for additional ArgoCD Pods to transition to Running
+        # this is related to a condition where apps attempt to deploy before
+        # repo, redis, or other health checks are passing
+        # this can cause future steps to break since the registry app
+        # may never apply
+
+        # 	argocd-repo-server
+        kc.get_deployment(argocd_namespace, "argocd-repo-server")
+        kc.wait_for_deployment(argocd_namespace, "argocd-repo-server")
+
+        # HA components
+
+        # argocd-redis-ha-haproxy Deployment
+        kc.get_deployment(argocd_namespace, "argocd-redis-ha-haproxy")
+        kc.wait_for_deployment(argocd_namespace, "argocd-redis-ha-haproxy")
+
+        # argocd-redis-ha StatefulSet
+        kc.get_stateful_set_objects(argocd_namespace, "argocd-redis-ha")
+        kc.wait_for_stateful_set(argocd_namespace, "argocd-redis-ha")
+
+        # argocd pods are ready, get and set credentials
+        argo_user, argo_pas = kc.get_secret(argocd_namespace, "argocd-initial-admin-secret")
+        p.internals["argocd_user"] = argo_user
+        p.internals["argocd_password"] = argo_pas
+
+        # get argocd auth token
+        argocd_token = get_argocd_token(p)
+        p.internals["argocd_token"] = argocd_token
+
+        # deploy registry app
+        click.echo("applying the registry application to argocd")
+        argo_obj = {
+            "TypeMeta": {
+                "Kind": "Application",
+                "APIVersion": "argoproj.io/v1alpha1",
+            },
+            "ObjectMeta": {
+                "Name": "registry",
+                "Namespace": "argocd",
+                "Annotations": {"argocd.argoproj.io/sync-wave": "1"},
+            },
+            "Spec": {
+                "Source": {
+                    "RepoURL": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+                    "Path": ARGOCD_REGISTRY_APP_PATH,
+                    "TargetRevision": "HEAD",
+                },
+                "Destination": {
+                    "Server": "https://kubernetes.default.svc",
+                    "Namespace": argocd_namespace,
+                },
+                "Project": "default",
+                "SyncPolicy": {
+                    "Automated": {
+                        "Prune": True,
+                        "SelfHeal": True,
+                    },
+                    "SyncOptions": ["CreateNamespace=true"],
+                    "Retry": {
+                        "Limit": 5,
+                        "Backoff": {
+                            "Duration": "5s",
+                            "Factor": 0,
+                            "MaxDuration": "5m0s",
+                        },
+                    },
+                },
+            },
+        }
+
+        kc.create_custom_object(argocd_namespace, argo_obj)
 
         p.set_checkpoint("k8s-delivery")
         p.save_checkpoint()
@@ -372,7 +500,55 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     else:
         click.echo("Skipped ArgoCD installation.")
 
+    # initialize and unseal vault
+    if not p.has_checkpoint("secrets-management"):
+        click.echo("Initializing Vault...")
+
+        kc.get_stateful_set_objects("vault", "vault")
+        kc.wait_for_stateful_set("vault", "vault", 600)
+
+        # client.sys.is_initialized()
+        vault_init_result = client.sys.initialize(secret_shares=5,
+                                                  secret_threshold=3,
+                                                  recovery_shares=3,
+                                                  recovery_threshold=5)
+        vault_root_token = vault_init_result['root_token']
+        vault_keys = vault_init_result['keys']
+        # client.sys.is_sealed()
+        vault_secret = {
+            "root-token": vault_root_token
+        }
+        for i, x in enumerate(vault_keys):
+            vault_secret[f"root-unseal-key-{i}"] = x
+        kc.create_secret("vault", "vault-unseal-secret", vault_secret)
+
+        # TODO: parametrise and apply vault terraform
+        # TODO: commit changes
+
+        p.set_checkpoint("secrets-management")
+        p.save_checkpoint()
+
+        click.echo("Vault initialization. Done!")
+    else:
+        click.echo("Skipped Vault initialization.")
+
     return True
+
+
+def get_argocd_token(p):
+    try:
+        response = requests.post(f'https://{p.parameters["<ARGO_CD_INGRESS_URL>"]}/api/v1/session',
+                                 data={
+                                     "Username": p.internals["argocd_user"],
+                                     "Password": p.internals["argocd_password"]
+                                 })
+        if response.status_code == requests.codes["not_found"]:
+            return None
+        elif response.ok:
+            res = json.loads(response.text)
+            return res["token"]
+    except HTTPError as e:
+        raise e
 
 
 def prepare_parameters(p):
