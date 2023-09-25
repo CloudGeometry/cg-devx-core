@@ -321,3 +321,17 @@ variable "cluster_version" {
   default     = "1.26"
   type        = string
 }
+variable "service_accounts" {
+  description = "Specifies the AKS SA names and roles."
+  type        = map(any)
+  default = {
+    sa_1 = {
+      name = "atlantis"
+      role_definition_name = "Contributor"
+    }
+    sa_2 = {
+      name = "dns"
+      role_definition_name = "DNS Zone Contributor"
+    }
+  }
+}

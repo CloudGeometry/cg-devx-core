@@ -45,3 +45,8 @@ output "fqdn" {
   value       = azurerm_kubernetes_cluster.aks_cluster.fqdn
   description = "The FQDN of the Azure Kubernetes Managed Cluster"
 }
+
+output "oidc_issuer_url" {
+  value       = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
+  description = "OIDC url for Azure Kubernetes Managed Cluster"
+}

@@ -4,14 +4,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "3.50"
     }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "2.23.0"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "2.11.0"
-    }
     random = {
       source  = "hashicorp/random"
       version = "3.5.1"
@@ -305,4 +297,15 @@ module "blob_private_endpoint" {
   subresource_name               = "blob"
   private_dns_zone_group_name    = "BlobPrivateDnsZoneGroup"
   private_dns_zone_group_ids     = [module.private_dns_zones["BlobPrivate"].id]
+}
+
+
+module "aks_rbac" {
+  source = "./modules/aks_rbac"
+
+  for_each                        = var.service_accounts
+  oidc_issuer_url                 = module.aks_cluster.oidc_issuer_url
+  resource_group_name             = azurerm_resource_group.rg.name
+  name                            = each.value.name
+  role_definition_name            = each.value.role_definition_name
 }

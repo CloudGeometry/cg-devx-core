@@ -4,14 +4,7 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "3.50"
     }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "2.23.0"
-    }
-    helm = {
-      source  = "hashicorp/helm"
-      version = "2.11.0"
-    }
+
     random = {
       source  = "hashicorp/random"
       version = "3.5.1"
@@ -32,12 +25,6 @@ resource "azurerm_user_assigned_identity" "aks_identity" {
       tags
     ]
   }
-}
-
-data "azurerm_client_config" "current_subscription" {}
-
-output "subscription_id" {
-  value = data.azurerm_client_config.current_subscription.subscription_id
 }
 
 resource "azurerm_kubernetes_cluster" "aks_cluster" {
@@ -126,49 +113,6 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   }
 }
 
-
-## AKS service account part. 
-locals {
-  namespace_name = "atlantis"
-  ## This should match the name of the service account created by helm chart
-  service_account_name = "sa-atlantis-${var.resource_group_name}"
-}
-
-## Azure AD application that represents the app
-resource "azuread_application" "atlantis" {
-  display_name = "sp-atlantis-${var.resource_group_name}"
-}
-
-resource "azuread_service_principal" "atlantis" {
-  application_id = azuread_application.atlantis.application_id
-}
-
-resource "azuread_service_principal_password" "atlantis" {
-  service_principal_id = azuread_service_principal.atlantis.id
-}
-
-## Azure AD federated identity used to federate kubernetes with Azure AD
-resource "azuread_application_federated_identity_credential" "aks-atlantis-id" {
-  application_object_id = azuread_application.atlantis.object_id
-  display_name          = "fed-identity-aks-atlantis-id-${var.resource_group_name}"
-  description           = "The federated identity used to federate aks-atlantis-id with Azure AD with the app service running in k8s ${var.resource_group_name}"
-  audiences             = ["api://AzureADTokenExchange"]
-  issuer                = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
-  subject               = "system:serviceaccount:${local.namespace_name}:${local.service_account_name}"
-  depends_on =  [azurerm_kubernetes_cluster.aks_cluster]
-}
-
-output "app_client_id" {
-  value = azuread_application.atlantis.application_id
-}
-
-
-## Role assignment to the application
-resource "azurerm_role_assignment" "contributor" {
-  scope                = "/subscriptions/${data.azurerm_client_config.current_subscription.subscription_id}/resourceGroups/${var.resource_group_name}"
-  role_definition_name = "Contributor"
-  principal_id         = azuread_service_principal.atlantis.id
-}
 
 
 /* resource "azurerm_monitor_diagnostic_setting" "settings" {
