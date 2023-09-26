@@ -14,7 +14,6 @@ from cli.common.state_store import StateStore
 from cli.common.utils.generators import random_string_generator
 from cli.services.cloud.aws.aws_manager import AWSManager
 from cli.services.cloud.azure.azure_manager import AzureManager
-from cli.services.cloud.cloud_provider_manager import CloudProviderManager
 from cli.services.dependency_manager import DependencyManager
 from cli.services.dns.dns_provider_manager import DNSManager
 from cli.services.k8s.config_builder import create_k8s_config
@@ -36,8 +35,6 @@ from cli.services.vcs.github.github_manager import GitHubProviderManager
 @click.option('--cloud-account-key', '-cc', 'cloud_key', help='Cloud account access key', type=click.STRING)
 @click.option('--cloud-account-secret', '-cs', 'cloud_secret', help='Cloud account access secret', type=click.STRING)
 @click.option('--cloud-region', '-r', 'cloud_region', help='Cloud regions', type=click.STRING)
-@click.option('--azure-subscription-id', '-azs', 'azure_subscription_id', help='Azure subscription id',
-              type=click.STRING)
 @click.option('--cluster-name', '-n', 'cluster_name', help='Cluster name', default='cg-devx-cc', type=click.STRING)
 @click.option('--dns-registrar', '-d', 'dns_reg', help='DNS registrar',
               type=click.Choice([e.value for e in DnsRegistrars], case_sensitive=False))
@@ -60,7 +57,7 @@ from cli.services.vcs.github.github_manager import GitHubProviderManager
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
 def setup(
         email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_key: str, cloud_secret: str,
-        cloud_region: str, azure_subscription_id: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
+        cloud_region: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
         dns_reg_key: str, dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
         gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool,
         config: click.File
@@ -88,7 +85,6 @@ def setup(
             CLOUD_ACCOUNT_ACCESS_KEY: cloud_key,
             CLOUD_ACCOUNT_ACCESS_SECRET: cloud_secret,
             CLOUD_REGION: cloud_region,
-            AZURE_SUBSCRIPTION_ID: azure_subscription_id,
             PRIMARY_CLUSTER_NAME: cluster_name,
             DNS_REGISTRAR: dns_reg,
             DNS_REGISTRAR_ACCESS_TOKEN: dns_reg_token,
@@ -443,9 +439,11 @@ def setup_param_validator(params: StateStore) -> bool:
             params.dns_registrar = DnsRegistrars.AzureDNS
 
     # TODO: validate parameters
-    if ((params.get_input_param(CLOUD_PROFILE) is None
-         or params.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY) is not None
-         or params.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET) is not None)
+    if (params.cloud_provider != CloudProviders.Azure and
+            (params.get_input_param(CLOUD_PROFILE) is None
+             or params.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY) is not None
+             or params.get_input_param(
+                        CLOUD_ACCOUNT_ACCESS_SECRET) is not None)
             and
             (params.get_input_param(CLOUD_PROFILE) is not None
              or params.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY) is None

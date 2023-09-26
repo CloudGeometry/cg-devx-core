@@ -32,7 +32,7 @@ def init_cloud_provider(state: StateStore):
                     key=state.get_input_param(DNS_REGISTRAR_ACCESS_KEY),
                     secret=state.get_input_param(DNS_REGISTRAR_ACCESS_SECRET))
     elif state.cloud_provider == CloudProviders.Azure:
-        cloud_manager: AzureManager = AzureManager(state.get_input_param(AZURE_SUBSCRIPTION_ID))
+        cloud_manager: AzureManager = AzureManager(state.get_input_param(CLOUD_PROFILE))
     return cloud_manager, domain_manager
 
 
