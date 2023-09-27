@@ -6,10 +6,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
 spec:
-  project: default
+  project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/kube-system/cert-issuers
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/kube-system/cert-issuers
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

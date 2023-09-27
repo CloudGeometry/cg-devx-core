@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-toolkit
+  namespace: vault
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: k8s-toolkit
+  namespace: vault
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - ''
+    resources:
+      - secrets
+      - configmaps
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: k8s-toolkit
+  namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: k8s-toolkit
+subjects:
+  - kind: ServiceAccount
+    name: k8s-toolkit
+    namespace: vault
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+  name: wait-vault-unseal
+  namespace: vault
+spec:
+  template:
+    spec:
+      containers:
+        - command:
+            - /bin/bash
+            - -c
+            - while ! kubectl get secret vault-unseal-secret --namespace vault; do echo "Waiting for secret. CTRL-C to exit."; sleep 5; done
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
+          imagePullPolicy: IfNotPresent
+          name: wait
+      restartPolicy: OnFailure
+      serviceAccountName: k8s-toolkit
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '21'
+  name: wait-vault-init-complete
+  namespace: vault
+spec:
+  template:
+    spec:
+      containers:
+        - command:
+            - /bin/bash
+            - -c
+            - while ! kubectl get configmap vault-init --namespace vault; do echo "Waiting for configmap. CTRL-C to exit."; sleep 5; done
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
+          imagePullPolicy: IfNotPresent
+          name: wait
+      restartPolicy: OnFailure
+      serviceAccountName: k8s-toolkit
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-toolkit-vault-tls
+  namespace: vault
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-toolkit-vault-tls
+  namespace: vault
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cert-manager-view
+subjects:
+  - kind: ServiceAccount
+    name: k8s-toolkit-vault-tls
+    namespace: vault
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '22'
+  name: wait-vault-tls
+  namespace: vault
+spec:
+  template:
+    spec:
+      containers:
+        - args:
+            - wait
+            - certificates.cert-manager.io/vault-tls
+            - --for=condition=Ready
+            - --namespace
+            - vault
+            - --timeout-seconds=1200s
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
+          imagePullPolicy: IfNotPresent
+          name: wait
+      restartPolicy: OnFailure
+      serviceAccountName: k8s-toolkit-vault-tls

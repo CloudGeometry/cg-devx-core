@@ -2,21 +2,7 @@
 ################################################################################
 # Supporting IAM role and policy Resources
 ################################################################################
-/*
-module "sample_role" {
-  source  = "terraform-aws-modules/iam/aws/modules/iam-role-for-service-accounts-eks"
-  version = "5.20.0"
-  tags = local.tags
-}
 
-resource "aws_iam_policy" "sample_policy" {
-
-  policy = <<EOT
-EOT
-}
-*/
-
-#Need create roles and policies for
 # CNI
 module "vpc_cni_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -64,36 +50,52 @@ module "efs_csi_irsa_role" {
   }
 
 }
-# argo workflow
-module "iam_argoworkflow_role" {
+# Cloud Native CI
+module "iam_ci_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-argoworkflow-role"
+  role_name = "${local.name}-ci-role"
 
   role_policy_arns = {
-    policy = aws_iam_policy.argoworkflow.arn
+    policy = aws_iam_policy.ci.arn
   }
 
   oidc_providers = {
     main = {
-      provider_arn               = "module.eks.oidc_provider_arn"
-      namespace_service_accounts = ["default:argo"]
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["argo:argo"]
     }
 
   }
 }
-# atlantis
-module "atlantis_irsa_role" {
+# argocd
+module "iam_cd_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-atlantis-role"
+  role_name = "${local.name}-cd-role"
+
+  role_policy_arns = {
+    policy = aws_iam_policy.cd.arn
+  }
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["argocd:argocd"]
+    }
+
+  }
+}
+# iac pr automation
+module "iac_pr_automation_irsa_role" {
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-iac_pr_automation-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
-      #need to know ns:serviceaccount
-      namespace_service_accounts = ["kube-system:atlantis"]
+      namespace_service_accounts = ["atlantis:atlantis"]
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.atlantis_policy.arn
+    policy = aws_iam_policy.iac_pr_automation_policy.arn
   }
 
 }
@@ -107,26 +109,24 @@ module "cert_manager_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:cert-manager"]
+      namespace_service_accounts = ["cert-manager:cert-manager"]
     }
   }
 
 }
 
-
 # container registry
-module "harbor_irsa_role" {
+module "registry_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   role_name = "${local.name}-image-registry-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
-      #need to know ns:serviceaccount
-      namespace_service_accounts = ["kube-system:harbor"]
+      namespace_service_accounts = ["harbor:harbor"]
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.harbor_policy.arn
+    policy = aws_iam_policy.registry_policy.arn
   }
 }
 
@@ -140,24 +140,23 @@ module "external_dns_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:external-dns"]
+      namespace_service_accounts = ["external-dns:external-dns"]
     }
   }
 
 }
-# vault
-module "vault_irsa_role" {
+# secret_manager
+module "secret_manager_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-vault-role"
+  role_name = "${local.name}-secret_manager-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
-      #need to know ns:serviceaccount
-      namespace_service_accounts = ["kube-system:vault"]
+      namespace_service_accounts = ["vault:vault"]
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.vault_policy.arn
+    policy = aws_iam_policy.secret_manager_policy.arn
   }
 
 }

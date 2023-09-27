@@ -35,17 +35,17 @@ Templating variables generated during setup process
 - `<GIT_REPOSITORY_GIT_URL>` - Target git repository Git URL
 - `<GIT_REPOSITORY_ROOT>` - Git repository URL used for referencing repos including wildcard
 - `<CC_CLUSTER_FQDN>` - K8s Control Center (AKA primary) cluster FQDN
-- `<HARBOR_REGISTRY_URL>`
+- `<REGISTRY_REGISTRY_URL>`
 
 ### IAM roles
 
 IAM roles for core components created during setup process
 
-- `<VAULT_IAM_ROLE_RN>`
-- `<ARGO_CD_IAM_ROLE_RN>`
-- `<ARGO_WORKFLOW_IAM_ROLE_RN>`
-- `<ATLANTIS_IAM_ROLE_RN>`
-- `<HARBOR_IAM_ROLE_RN>`
+- `<SECRET_MANAGER_IAM_ROLE_RN>`
+- `<CD_IAM_ROLE_RN>`
+- `<CI_IAM_ROLE_RN>`
+- `<IAC_PR_AUTOMATION_IAM_ROLE_RN>`
+- `<REGISTRY_IAM_ROLE_RN>`
 - `<CERT_MANAGER_IAM_ROLE_RN>`
 - `<EXTERNAL_DNS_IAM_ROLE_RN>`
 
@@ -53,18 +53,18 @@ IAM roles for core components created during setup process
 
 Ingress URLs for core components. Note!: URL does not contain protocol prefix
 
-- `<VAULT_INGRESS_URL>`
-- `<ARGO_CD_INGRESS_URL>`
-- `<ARGO_WORKFLOW_INGRESS_URL>`
-- `<ATLANTIS_INGRESS_URL>`
-- `<HARBOR_INGRESS_URL>`
+- `<SECRET_MANAGER_INGRESS_URL>`
+- `<CD_INGRESS_URL>`
+- `<CI_INGRESS_URL>`
+- `<IAC_PR_AUTOMATION_INGRESS_URL>`
+- `<REGISTRY_INGRESS_URL>`
 - `<GRAFANA_INGRESS_URL>`
 - `<SONARQUBE_INGRESS_URL>`
 
 ### Atlantis
 Secret for Atlantis webhook
 
-- `<ATLANTIS_WEBHOOK_SECRET>`
+- `<IAC_PR_AUTOMATION_WEBHOOK_SECRET>`
 
 ### Github
 bot user's keypair
@@ -80,14 +80,13 @@ OIDC provider configuration Note!: URL does not contain protocol prefix
 - `<OIDC_PROVIDER_AUTHORIZE_URL>`
 - `<OIDC_PROVIDER_TOKEN_URL>`
 - `<OIDC_PROVIDER_USERINFO_URL>`
-- `<ARGO_CD_OAUTH_CALLBACK_URL>`
+- `<CD_OAUTH_CALLBACK_URL>`
 
 ### K8s
 
 - `<CC_CLUSTER_ENDPOINT>`
 - `<CC_CLUSTER_OIDC_PROVIDER>`
-- `<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>`
-- `<K8S_AZURE_SERVICE_ACCOUNT_ROLE_MAPPING>`
+- `<K8S_ROLE_MAPPING>`
 
 ### Network
 

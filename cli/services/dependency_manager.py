@@ -10,20 +10,20 @@ import requests
 from python_terraform import *
 
 from cli.common.const.common_path import LOCAL_TOOLS_FOLDER, LOCAL_TF_TOOL, LOCAL_KCTL_TOOL
+from cli.common.const.const import KUBECTL_VERSION, TERRAFORM_VERSION
 from cli.services.tf_wrapper import TfWrapper
 
 
 class DependencyManager:
-    tf_version = "1.3.9"
-    tf_base_path = f'https://releases.hashicorp.com/terraform/{tf_version}/'
-    tf_mac_i_url = f'terraform_{tf_version}_darwin_amd64.zip'
-    tf_mac_as_url = f'terraform_{tf_version}_darwin_arm64.zip'
-    tf_windows_url = f'terraform_{tf_version}_windows_amd64.zip'
-    tf_linux_url = f'terraform_{tf_version}_linux_amd64.zip'
-    tf_sha = f'terraform_{tf_version}_SHA256SUMS'
-    tf_sha_sig = f'terraform_{tf_version}_SHA256SUMS.sig'
+    tf_base_path = f'https://releases.hashicorp.com/terraform/{TERRAFORM_VERSION}/'
+    tf_mac_i_url = f'terraform_{TERRAFORM_VERSION}_darwin_amd64.zip'
+    tf_mac_as_url = f'terraform_{TERRAFORM_VERSION}_darwin_arm64.zip'
+    tf_windows_url = f'terraform_{TERRAFORM_VERSION}_windows_amd64.zip'
+    tf_linux_url = f'terraform_{TERRAFORM_VERSION}_linux_amd64.zip'
+    tf_sha = f'terraform_{TERRAFORM_VERSION}_SHA256SUMS'
+    tf_sha_sig = f'terraform_{TERRAFORM_VERSION}_SHA256SUMS.sig'
 
-    kctl_version = "v1.27.4"
+    kctl_version = f'v{KUBECTL_VERSION}'
     kctl_mac_i_url = f'https://dl.k8s.io/release/{kctl_version}/bin/darwin/amd64/kubectl'
     kctl_mac_as_url = f'https://dl.k8s.io/release/{kctl_version}/bin/darwin/arm64/kubectl'
     kctl_windows_url = f'https://dl.k8s.io/release/{kctl_version}/bin/windows/amd64/kubectl.exe'
@@ -33,7 +33,8 @@ class DependencyManager:
     # Regular expression matches a line containing a hexadecimal hash, spaces, and a filename
     r = re.compile(r'(^[0-9A-Fa-f]+)\s+(\S.*)$')
 
-    def _get_filename_from_content_description(self, cd):
+    @staticmethod
+    def _get_filename_from_content_description(cd):
         """
         Get filename from content-disposition
         """
@@ -44,7 +45,8 @@ class DependencyManager:
             return None
         return file_name[0]
 
-    def _download_file(self, url: str, path: str = ""):
+    @staticmethod
+    def _download_file(url: str, path: str = ""):
         """
         Download file from url
         """
@@ -53,14 +55,16 @@ class DependencyManager:
             df.write(r.content)
         return path
 
-    def _unzip_file(self, file: str, path: str):
+    @staticmethod
+    def _unzip_file(file: str, path: str):
         """
         Unzip file/folder from path
         """
         with ZipFile(file, 'r') as z_file:
             z_file.extractall(path=path)
 
-    def _validate_checksum(self, file: str, checksum: str):
+    @staticmethod
+    def _validate_checksum(file: str, checksum: str):
         """
         Validate file checksum
         """
@@ -79,15 +83,17 @@ class DependencyManager:
                 # BAD CHECKSUM
                 return False
 
-    def check_tf(self):
+    @staticmethod
+    def check_tf():
         if os.path.exists(LOCAL_TF_TOOL):
             tf = TfWrapper()
-            if tf.version() == self.tf_version:
+            if tf.version() == TERRAFORM_VERSION:
                 return True
 
         return False
 
-    def check_kubectl(self):
+    @staticmethod
+    def check_kubectl():
         # TODO: extract and check kubectl version
         if os.path.exists(LOCAL_KCTL_TOOL):
             return True
@@ -170,12 +176,14 @@ class DependencyManager:
 
         return str(LOCAL_KCTL_TOOL)
 
-    def _change_permissions(self, path):
+    @staticmethod
+    def _change_permissions(path):
         st = os.stat(path)
         os.chmod(path,
                  st.st_mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
-    def _prepare_temp_folder(self):
+    @staticmethod
+    def _prepare_temp_folder():
         tmp_folder = LOCAL_TOOLS_FOLDER / ".tmp"
         if os.path.exists(tmp_folder):
             shutil.rmtree(tmp_folder)

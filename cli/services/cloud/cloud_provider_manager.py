@@ -36,7 +36,7 @@ class CloudProviderManager:
         """
         pass
 
-    def create_iac_backend_snippet(self, location: str, region: str = None, service="default"):
+    def create_iac_backend_snippet(self, location: str, region: str = None, service: str = "default"):
         """
         Creates terraform backend snippet
         :return: Code snippet
@@ -50,9 +50,16 @@ class CloudProviderManager:
         """
         pass
 
-    def create_k8s_role_binding_snippet(self):
+    def create_secret_manager_seal_snippet(self, role_arn: str, region: str = None):
         """
-        Creates service account - IAM role binding snippet
+        Creates helm vault seal snippet
+        :return: Helm snippet
+        """
+        pass
+
+    def create_k8s_cluster_role_mapping_snippet(self):
+        """
+        Creates K8s cluster role binding snippet
         :return: Code snippet
         """
         pass
