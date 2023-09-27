@@ -3,8 +3,8 @@ import os
 from urllib.error import HTTPError
 
 import click
-import yaml
 import requests
+import yaml
 from hvac.constants import client
 
 from cli.common.command_utils import init_cloud_provider
@@ -370,10 +370,10 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         click.echo("Installing ArgoCD...")
 
         # get CoreDNS deployments to validate cluster
-        coredns_deployment = kc.get_deployment("kube-system", "CoreDNS")
+        coredns_deployment = kc.get_deployment("kube-system", "coredns")
 
         # wait for deployment readiness
-        kc.wait_for_deployment("kube-system", "CoreDNS")
+        kc.wait_for_deployment(coredns_deployment)
 
         argocd_name = "argocd"
         argocd_namespace = "argocd"
@@ -388,22 +388,30 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
             "name": f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-gitops',
             "url": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
             "sshPrivateKey": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
-            "sshPublicKey": p.internals["DEFAULT_SSH_PUBLIC_KEY"]
+            # "sshPrivateKey": base64.b64encode(p.internals["DEFAULT_SSH_PRIVATE_KEY"].encode("ascii")).decode("ascii"),
+            "sshPublicKey": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
+            # "sshPublicKey": base64.b64encode(p.internals["DEFAULT_SSH_PUBLIC_KEY"].encode("ascii")).decode("ascii")
         }
-        kc.create_secret(argocd_namespace, "repo-credentials", argocd_secret)
+        annotations = {"managed-by": "argocd.argoproj.io"},
+        labels = {"argocd.argoproj.io/secret-type": "repository"}
+        kc.create_plain_str_secret(argocd_namespace, "repo-credentials", argocd_secret, annotations, labels)
 
         # TODO: properly init harbor auth
+        harbor_reg_url = p.parameters["<HARBOR_REGISTRY_URL>"]
         registry_secret = {
-            "config.json": {"auths": {p.parameters["<HARBOR_REGISTRY_URL>"]: {"auth": "TODO: set token"}}}
+            "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": "TODO: set token"}}})
         }
-        kc.create_secret(argocd_namespace, "registry-config", registry_secret)
+        kc.create_plain_str_secret(argocd_namespace, "registry-config", registry_secret)
 
         kc.create_service_account(argocd_namespace, argocd_bootstrap_name)
         kc.create_cluster_role(argocd_namespace, argocd_bootstrap_name)
-        kc.create_cluster_role_binding(argocd_namespace, argocd_bootstrap_name, p.parameters["<ARGO_CD_IAM_ROLE_RN>"])
-        job = kc.create_job(argocd_namespace, argocd_bootstrap_name, "bitnami/kubectl",
-                            [f"kubectl apply -k '{argocd_path}'"])
-        kc.wait_for_job(argocd_namespace, job)
+        # extract role name from arn
+        # TODO: move to tf
+        argo_cd_role_name = p.parameters["<ARGO_CD_IAM_ROLE_RN>"].split("/")[-1]
+        kc.create_cluster_role_binding(argocd_namespace, argocd_bootstrap_name, argo_cd_role_name)
+
+        job = kc.create_argocd_bootstrap_job(argocd_namespace, argocd_bootstrap_name)
+        kc.wait_for_job(job)
         # cleanup temp resources
         try:
             kc.remove_service_account(argocd_namespace, argocd_bootstrap_name)
@@ -414,12 +422,12 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         # wait for ArgoCD to be ready
 
-        kc.get_stateful_set_objects(argocd_namespace, argocd_name)
-        kc.wait_for_stateful_set(argocd_namespace, argocd_name)
+        argocd_ss = kc.get_stateful_set_objects(argocd_namespace, argocd_name)
+        kc.wait_for_stateful_set(argocd_ss)
 
         # 	argocd-server
-        kc.get_deployment(argocd_namespace, "argocd-server")
-        kc.wait_for_deployment(argocd_namespace, "argocd-server")
+        argocd_server = kc.get_deployment(argocd_namespace, "argocd-server")
+        kc.wait_for_deployment(argocd_server)
 
         # wait for additional ArgoCD Pods to transition to Running
         # this is related to a condition where apps attempt to deploy before
@@ -428,18 +436,18 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         # may never apply
 
         # 	argocd-repo-server
-        kc.get_deployment(argocd_namespace, "argocd-repo-server")
-        kc.wait_for_deployment(argocd_namespace, "argocd-repo-server")
+        argocd_repo_server = kc.get_deployment(argocd_namespace, "argocd-repo-server")
+        kc.wait_for_deployment(argocd_repo_server)
 
         # HA components
 
         # argocd-redis-ha-haproxy Deployment
-        kc.get_deployment(argocd_namespace, "argocd-redis-ha-haproxy")
-        kc.wait_for_deployment(argocd_namespace, "argocd-redis-ha-haproxy")
+        argocd_redis_ha_haproxy = kc.get_deployment(argocd_namespace, "argocd-redis-ha-haproxy")
+        kc.wait_for_deployment(argocd_redis_ha_haproxy)
 
         # argocd-redis-ha StatefulSet
-        kc.get_stateful_set_objects(argocd_namespace, "argocd-redis-ha")
-        kc.wait_for_stateful_set(argocd_namespace, "argocd-redis-ha")
+        argocd_redis_ha = kc.get_stateful_set_objects(argocd_namespace, "argocd-redis-ha")
+        kc.wait_for_stateful_set(argocd_redis_ha)
 
         # argocd pods are ready, get and set credentials
         argo_user, argo_pas = kc.get_secret(argocd_namespace, "argocd-initial-admin-secret")
@@ -504,8 +512,10 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
     if not p.has_checkpoint("secrets-management"):
         click.echo("Initializing Vault...")
 
-        kc.get_stateful_set_objects("vault", "vault")
-        kc.wait_for_stateful_set("vault", "vault", 600)
+        vault_ss = kc.get_stateful_set_objects("vault", "vault")
+        kc.wait_for_stateful_set(vault_ss, 600)
+
+        # TODO: figure out if we need port forwarding
 
         # client.sys.is_initialized()
         vault_init_result = client.sys.initialize(secret_shares=5,
@@ -520,7 +530,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         }
         for i, x in enumerate(vault_keys):
             vault_secret[f"root-unseal-key-{i}"] = x
-        kc.create_secret("vault", "vault-unseal-secret", vault_secret)
+        kc.create_plain_str_secret("vault", "vault-unseal-secret", vault_secret)
 
         # TODO: parametrise and apply vault terraform
         # TODO: commit changes

@@ -1,6 +1,6 @@
 import base64
 
-from kubernetes import client, config, watch
+from kubernetes import client, watch
 from kubernetes.client import ApiException
 
 from cli.common.const.common_path import LOCAL_FOLDER
@@ -29,11 +29,12 @@ class KubeClient:
         api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
         body = client.V1Namespace(metadata=client.V1ObjectMeta(name=name))
         try:
-            res = api_v1_instance.read_namespace("name")
+            res = api_v1_instance.read_namespace(name)
             return res
         except ApiException as e:
             # namespace doesn't exist
             pass
+
         res = api_v1_instance.create_namespace(body=body)
         return res
 
@@ -48,8 +49,9 @@ class KubeClient:
             return res
         except ApiException as e:
             # service account doesn't exist
-            res = api_v1_instance.create_namespaced_service_account(body=body)
-            return res
+            pass
+        res = api_v1_instance.create_namespaced_service_account(namespace=namespace, body=body)
+        return res
 
     def create_cluster_role(self, namespace: str, name: str):
         """
@@ -58,12 +60,16 @@ class KubeClient:
         rbac_v1_instance = client.RbacAuthorizationV1Api(client.ApiClient(self._configuration))
 
         body = client.V1ClusterRole(metadata=client.V1ObjectMeta(name=name, namespace=namespace),
-                                    rules=client.V1PolicyRule(verbs=["*"], api_groups=["*"], resources=["*"]))
+                                    rules=[client.V1PolicyRule(verbs=["*"], api_groups=["*"], resources=["*"])])
         try:
-            res = rbac_v1_instance.create_cluster_role(body=body)
+            res = rbac_v1_instance.read_cluster_role(name)
             return res
         except ApiException as e:
-            raise e
+            # role doesn't exist
+            pass
+
+        res = rbac_v1_instance.create_cluster_role(body=body)
+        return res
 
     def create_cluster_role_binding(self, namespace: str, name: str, r_name: str):
         """
@@ -76,19 +82,32 @@ class KubeClient:
             subjects=[client.V1Subject(kind="ServiceAccount", name=name, namespace=namespace)]
         )
         try:
-            rbac_v1_instance.read_cluster_role_binding(name=name)
+            res = rbac_v1_instance.read_cluster_role_binding(name=name)
+            return res
         except ApiException as e:
             # cluster role binding doesn't exist
             pass
+
         res = rbac_v1_instance.create_cluster_role_binding(body=body)
         return res
+
+    def create_custom_object(self, argocd_namespace, argo_obj):
+        custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
+        try:
+            res = custom_v1_instance.create_namespaced_custom_object(
+                namespace=argocd_namespace,
+                body=argo_obj,
+            )
+            return res
+        except ApiException as e:
+            raise e
 
     def get_deployment(self, namespace: str, deployment_name: str):
         apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
 
         try:
-            deployment = apps_v1_instance.read_namespaced_deployment(name=deployment_name, namespace=namespace)
-            return deployment
+            res = apps_v1_instance.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+            return res
         except ApiException as e:
             raise e
 
@@ -96,36 +115,29 @@ class KubeClient:
         apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
 
         try:
-            stateful_set = apps_v1_instance.read_namespaced_stateful_set(name=name, namespace=namespace)
-            return stateful_set
+            res = apps_v1_instance.read_namespaced_stateful_set(name=name, namespace=namespace)
+            return res
         except ApiException as e:
             raise e
 
-    def create_argocd_bootstrap_job(self, namespace: str, sa_name: str, image: str, command: [str], envs: dict = None):
-        env_vars = None
-        if envs is not None:
-            env_vars = []
-            for k, v in envs.items():
-                env_vars.append(client.V1EnvVar(name=k, value=v))
+    def create_argocd_bootstrap_job(self, namespace: str, sa_name: str):
+        image = "bitnami/kubectl"
+        # ‘git@github.com:CGDevX-Demo/cg-devx-gitops-test.git//gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/argocd’
+        argocd_manifest_path = "github.com:cloudgeometry/cgdevx-core.git/platform/installation-manifests/argocd?ref=main"
+
+        bootstrap_entry_point = ["/bin/sh", "-c", f"kubectl apply -k '{argocd_manifest_path}'"]
 
         job_name = "kustomize-apply-argocd"
-        volumes = [client.V1Volume(name="ssh-key-secret",
-                                   empty_dir=client.V1EmptyDirVolumeSource(medium="Memory"),
-                                   secret=client.V1SecretVolumeSource(secret_name="repo-credentials",
-                                                                      items=[client.V1KeyToPath(key="sshPrivateKey",
-                                                                                                path="id_rsa",
-                                                                                                mode=0o600),
-                                                                             client.V1KeyToPath(key="sshPublicKey",
-                                                                                                path="id_rsa.pub",
-                                                                                                mode=0o644)]))]
+
         body = client.V1Job(metadata=client.V1ObjectMeta(name=job_name, namespace=namespace),
                             spec=client.V1JobSpec(template=client.V1PodTemplateSpec(
-                                spec=client.V1PodSpec(containers=[
-                                    client.V1Container(name="main", image=image,
-                                                       command=["/bin/sh", "-c"].extend(command),
-                                                       env=env_vars,
-                                                       volumes=volumes)],
-                                    service_account_name=sa_name, restart_policy="Never")), backoff_limit=1))
+                                spec=client.V1PodSpec(
+                                    containers=[
+                                        client.V1Container(name="main", image=image,
+                                                           command=bootstrap_entry_point)],
+                                    service_account_name=sa_name,
+                                    restart_policy="Never")),
+                                backoff_limit=1))
 
         return self.create_job(namespace, job_name, body)
 
@@ -184,32 +196,41 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def wait_for_deployment(self, namespace: str, deployment_name: str, timeout: int = 120):
-        api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
+    def wait_for_deployment(self, deployment, timeout: int = 120):
+        configured_replicas = deployment.spec.replicas
+        name = deployment.metadata.name
+        namespace = deployment.metadata.namespace
+
+        apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
         w = watch.Watch()
+
         try:
-            for event in w.stream(func=api_v1_instance.list_namespaced_pod,
+            for event in w.stream(func=apps_v1_instance.list_namespaced_deployment,
                                   namespace=namespace,
-                                  label_selector=f"name in ({deployment_name})",
+                                  field_selector=f'metadata.name={name}',
                                   timeout_seconds=timeout):
-                if event["object"].status.phase == "Running":
-                    return
+                if event["object"].status.replicas == configured_replicas:
+                    w.stop()
+                    return True
                 # event.type: ADDED, MODIFIED, DELETED
                 if event["type"] == "DELETED":
                     # Pod was deleted while waiting for it to start
-                    raise Exception("%s deleted before it started", deployment_name)
+                    raise Exception("%s deleted before it started", name)
 
         except ApiException as e:
             raise e
 
-    def wait_for_job(self, namespace: str, job_name: str, timeout: int = 120):
+    def wait_for_job(self, job, timeout: int = 120):
+        job_name = job.metadata.name
+        namespace = job.metadata.namespace
+
         batch_v1_instance = client.BatchV1Api(client.ApiClient(self._configuration))
         w = watch.Watch()
 
         try:
             for event in w.stream(func=batch_v1_instance.list_namespaced_job,
                                   namespace=namespace,
-                                  label_selector=f"name in ({job_name})",
+                                  field_selector=f'metadata.name={job_name}',
                                   timeout_seconds=timeout):
                 if event["object"].status.phase == "Running":
                     return
@@ -221,7 +242,33 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def wait_for_stateful_set(self, namespace: str, name: str, timeout: int = 120):
+    def wait_for_pod(self, pod, timeout: int = 120):
+        name = pod.metadata.name
+        namespace = pod.metadata.namespace
+
+        api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
+        w = watch.Watch()
+
+        try:
+            for event in w.stream(func=api_v1_instance.list_namespaced_pod,
+                                  namespace=namespace,
+                                  field_selector=f'metadata.name={name}',
+                                  timeout_seconds=timeout):
+                if event["object"].status.phase == "Running":
+                    return
+                # event.type: ADDED, MODIFIED, DELETED
+                if event["type"] == "DELETED":
+                    # Job was deleted while waiting for it to start
+                    raise Exception("%s deleted before it started", name)
+
+        except ApiException as e:
+            raise e
+
+    def wait_for_stateful_set(self, stateful_set, timeout: int = 120):
+        configured_replicas = stateful_set.spec.replicas
+        name = stateful_set.metadata.name
+        namespace = stateful_set.metadata.namespace
+
         apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
         w = watch.Watch()
 
@@ -230,8 +277,9 @@ class KubeClient:
                                   namespace=namespace,
                                   label_selector=f"name in ({name})",
                                   timeout_seconds=timeout):
-                if event["object"].status.phase == "Running":
-                    return
+                if event["object"].status.replicas == configured_replicas:
+                    w.stop()
+                    return True
                 # event.type: ADDED, MODIFIED, DELETED
                 if event["type"] == "DELETED":
                     # Set was deleted while waiting for it to start
@@ -240,22 +288,44 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def create_secret(self, namespace: str, name: str, data: dict):
+    def create_plain_str_secret(self, namespace: str, name: str, data: dict, annotations: dict = None,
+                                labels: dict = None):
         """
         Creates secret.
         """
         api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
         body = client.V1Secret(metadata=client.V1ObjectMeta(name=name, namespace=namespace,
-                                                            annotations={"managed-by": "argocd.argoproj.io"},
-                                                            labels={"argocd.argoproj.io/secret-type": "repository"}),
+                                                            annotations=annotations,
+                                                            labels=labels),
+                               string_data=data)
+        try:
+            res = api_v1_instance.read_namespaced_secret(name=name, namespace=namespace)
+            return res
+        except ApiException as e:
+            # service account doesn't exist
+            pass
+
+        res = api_v1_instance.create_namespaced_secret(namespace=namespace, body=body)
+        return res
+
+    def create_secret(self, namespace: str, name: str, data: dict, annotations: dict = None, labels: dict = None):
+        """
+        Creates secret.
+        """
+        api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
+        body = client.V1Secret(metadata=client.V1ObjectMeta(name=name, namespace=namespace,
+                                                            annotations=annotations,
+                                                            labels=labels),
                                data=data)
         try:
             res = api_v1_instance.read_namespaced_secret(name=name, namespace=namespace)
             return res
         except ApiException as e:
             # service account doesn't exist
-            res = api_v1_instance.create_namespaced_secret(namespace=namespace, body=body)
-            return res
+            pass
+
+        res = api_v1_instance.create_namespaced_secret(namespace=namespace, body=body)
+        return res
 
     def get_secret(self, namespace: str, name: str):
         """
@@ -269,16 +339,5 @@ class KubeClient:
             k = res.metadata.name
             v = base64.b64decode(res.data['password'])
             return k, v
-        except ApiException as e:
-            raise e
-
-    def create_custom_object(self, argocd_namespace, argo_obj):
-        custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
-        try:
-            res = custom_v1_instance.create_namespaced_custom_object(
-                namespace=argocd_namespace,
-                body=argo_obj,
-            )
-            return res
         except ApiException as e:
             raise e
