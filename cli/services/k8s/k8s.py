@@ -2,6 +2,7 @@ import base64
 
 from kubernetes import client, watch
 from kubernetes.client import ApiException
+from kubernetes.dynamic import DynamicClient
 
 from cli.common.const.common_path import LOCAL_FOLDER
 
@@ -92,12 +93,14 @@ class KubeClient:
         return res
 
     def create_custom_object(self, argocd_namespace, argo_obj):
-        custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
         try:
-            res = custom_v1_instance.create_namespaced_custom_object(
-                namespace=argocd_namespace,
-                body=argo_obj,
-            )
+            custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
+
+            res = custom_v1_instance.create_namespaced_custom_object(group="argoproj.io", version="v1alpha1",
+                                                                     namespace=argocd_namespace,
+                                                                     plural="applications",
+                                                                     body=argo_obj)
+
             return res
         except ApiException as e:
             raise e
@@ -122,10 +125,9 @@ class KubeClient:
 
     def create_argocd_bootstrap_job(self, namespace: str, sa_name: str):
         image = "bitnami/kubectl"
-        # ‘git@github.com:CGDevX-Demo/cg-devx-gitops-test.git//gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/argocd’
-        argocd_manifest_path = "github.com:cloudgeometry/cgdevx-core.git/platform/installation-manifests/argocd?ref=main"
+        manifest_path = "github.com:cloudgeometry/cgdevx-core.git/platform/installation-manifests/argocd?ref=main"
 
-        bootstrap_entry_point = ["/bin/sh", "-c", f"kubectl apply -k '{argocd_manifest_path}'"]
+        bootstrap_entry_point = ["/bin/sh", "-c", f"kubectl apply -k '{manifest_path}'"]
 
         job_name = "kustomize-apply-argocd"
 
@@ -232,7 +234,8 @@ class KubeClient:
                                   namespace=namespace,
                                   field_selector=f'metadata.name={job_name}',
                                   timeout_seconds=timeout):
-                if event["object"].status.phase == "Running":
+                if bool(event["object"].status.succeeded):
+                    w.stop()
                     return
                 # event.type: ADDED, MODIFIED, DELETED
                 if event["type"] == "DELETED":
@@ -255,6 +258,7 @@ class KubeClient:
                                   field_selector=f'metadata.name={name}',
                                   timeout_seconds=timeout):
                 if event["object"].status.phase == "Running":
+                    w.stop()
                     return
                 # event.type: ADDED, MODIFIED, DELETED
                 if event["type"] == "DELETED":
@@ -275,7 +279,7 @@ class KubeClient:
         try:
             for event in w.stream(func=apps_v1_instance.list_namespaced_stateful_set,
                                   namespace=namespace,
-                                  label_selector=f"name in ({name})",
+                                  field_selector=f'metadata.name={name}',
                                   timeout_seconds=timeout):
                 if event["object"].status.replicas == configured_replicas:
                     w.stop()
@@ -336,8 +340,17 @@ class KubeClient:
         try:
             res = api_v1_instance.read_namespaced_secret(name=name, namespace=namespace)
 
-            k = res.metadata.name
-            v = base64.b64decode(res.data['password'])
-            return k, v
+            # res.metadata.name == "argocd-initial-admin-secret"
+            return base64.b64decode(res.data['password']).decode("utf-8")
         except ApiException as e:
             raise e
+
+    def port_forward(self, pod_name, namespace, pod_port, local_port):
+        api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
+        try:
+            api_response = api_v1_instance.connect_post_namespaced_pod_portforward(pod_name, namespace,
+                                                                                   path="/api/v1/session",
+                                                                                   ports=pod_port)
+            return api_response
+        except ApiException as e:
+            print("Exception when calling CoreV1Api->connect_get_namespaced_pod_portforward: %s\n" % e)

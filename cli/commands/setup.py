@@ -375,40 +375,16 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         # wait for deployment readiness
         kc.wait_for_deployment(coredns_deployment)
 
-        argocd_name = "argocd"
         argocd_namespace = "argocd"
         argocd_bootstrap_name = "argocd-bootstrap"
-        argocd_path = f'{p.parameters["<GIT_REPOSITORY_GIT_URL>"]}//gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/argocd'
 
         kc.create_namespace(argocd_namespace)
-
-        # create argocd kubernetes secret for connectivity to private gitops repo
-        argocd_secret = {
-            "type": "git",
-            "name": f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-gitops',
-            "url": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
-            "sshPrivateKey": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
-            # "sshPrivateKey": base64.b64encode(p.internals["DEFAULT_SSH_PRIVATE_KEY"].encode("ascii")).decode("ascii"),
-            "sshPublicKey": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
-            # "sshPublicKey": base64.b64encode(p.internals["DEFAULT_SSH_PUBLIC_KEY"].encode("ascii")).decode("ascii")
-        }
-        annotations = {"managed-by": "argocd.argoproj.io"},
-        labels = {"argocd.argoproj.io/secret-type": "repository"}
-        kc.create_plain_str_secret(argocd_namespace, "repo-credentials", argocd_secret, annotations, labels)
-
-        # TODO: properly init harbor auth
-        harbor_reg_url = p.parameters["<HARBOR_REGISTRY_URL>"]
-        registry_secret = {
-            "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": "TODO: set token"}}})
-        }
-        kc.create_plain_str_secret(argocd_namespace, "registry-config", registry_secret)
-
         kc.create_service_account(argocd_namespace, argocd_bootstrap_name)
         kc.create_cluster_role(argocd_namespace, argocd_bootstrap_name)
         # extract role name from arn
         # TODO: move to tf
         argo_cd_role_name = p.parameters["<ARGO_CD_IAM_ROLE_RN>"].split("/")[-1]
-        kc.create_cluster_role_binding(argocd_namespace, argocd_bootstrap_name, argo_cd_role_name)
+        kc.create_cluster_role_binding(argocd_namespace, argocd_bootstrap_name, argocd_bootstrap_name)
 
         job = kc.create_argocd_bootstrap_job(argocd_namespace, argocd_bootstrap_name)
         kc.wait_for_job(job)
@@ -422,7 +398,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         # wait for ArgoCD to be ready
 
-        argocd_ss = kc.get_stateful_set_objects(argocd_namespace, argocd_name)
+        argocd_ss = kc.get_stateful_set_objects(argocd_namespace, "argocd-application-controller")
         kc.wait_for_stateful_set(argocd_ss)
 
         # 	argocd-server
@@ -446,17 +422,54 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         kc.wait_for_deployment(argocd_redis_ha_haproxy)
 
         # argocd-redis-ha StatefulSet
-        argocd_redis_ha = kc.get_stateful_set_objects(argocd_namespace, "argocd-redis-ha")
+        argocd_redis_ha = kc.get_stateful_set_objects(argocd_namespace, "argocd-redis-ha-server")
         kc.wait_for_stateful_set(argocd_redis_ha)
 
+        # create additional namespaces
+        kc.create_namespace("argo")
+        kc.create_namespace("atlantis")
+        kc.create_namespace("external-secrets-operator")
+
+        # create additional service accounts
+        kc.create_service_account("atlantis", "atlantis")
+        kc.create_service_account("external-secrets-operator", "external-secrets")
+
+        # create argocd kubernetes secret for connectivity to private gitops repo
+        argocd_secret = {
+            "type": "git",
+            "name": f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-gitops',
+            "url": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+            "sshPrivateKey": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
+            "sshPublicKey": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
+        }
+        annotations = {"managed-by": "argocd.argoproj.io"}
+        labels = {"argocd.argoproj.io/secret-type": "repository"}
+        kc.create_plain_str_secret(argocd_namespace, "repo-credentials", argocd_secret, annotations, labels)
+
+        # TODO: properly init harbor auth
+        harbor_reg_url = p.parameters["<HARBOR_REGISTRY_URL>"]
+        registry_secret = {
+            "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": "TODO: set token"}}})
+        }
+        kc.create_plain_str_secret("argo", "docker-config", registry_secret)
+
         # argocd pods are ready, get and set credentials
-        argo_user, argo_pas = kc.get_secret(argocd_namespace, "argocd-initial-admin-secret")
-        p.internals["argocd_user"] = argo_user
+        argo_pas = kc.get_secret(argocd_namespace, "argocd-initial-admin-secret")
+        p.internals["argocd_user"] = "admin"
         p.internals["argocd_password"] = argo_pas
 
+
+        # TODO: port forward to get argocd auth token
+        # kc.port_forward(
+        #     "argocd-server",
+        #     "argocd",
+        #     8080,
+        #     8080,
+        # )
+
         # get argocd auth token
-        argocd_token = get_argocd_token(p)
-        p.internals["argocd_token"] = argocd_token
+        # argocd_token = get_argocd_token(p)
+        # p.internals["argocd_token"] = argocd_token
 
         # deploy registry app
         click.echo("applying the registry application to argocd")
@@ -467,7 +480,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
             },
             "ObjectMeta": {
                 "Name": "registry",
-                "Namespace": "argocd",
+                "Namespace": argocd_namespace,
                 "Annotations": {"argocd.argoproj.io/sync-wave": "1"},
             },
             "Spec": {
