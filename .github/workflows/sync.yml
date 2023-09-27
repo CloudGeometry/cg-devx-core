@@ -10,9 +10,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@master
-      - name: Exit if not on main branch
-        if: endsWith(github.event.base_ref, 'main') == false
-        run: exit -1
+      # - name: Exit if not on main branch
+      #   if: endsWith(github.event.base_ref, 'main') == false
+      #   run: exit -1
       - name: Run GitHub File Sync
         uses: BetaHuhn/repo-file-sync-action@v1
         with:
