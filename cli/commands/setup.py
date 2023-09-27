@@ -474,38 +474,36 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         # deploy registry app
         click.echo("applying the registry application to argocd")
         argo_obj = {
-            "TypeMeta": {
-                "Kind": "Application",
-                "APIVersion": "argoproj.io/v1alpha1",
+            "apiVersion": "argoproj.io/v1alpha1",
+            "kind": "Application",
+            "metadata": {
+                "name": "registry",
+                "namespace": argocd_namespace,
+                "annotations": {"argocd.argoproj.io/sync-wave": "1"},
             },
-            "ObjectMeta": {
-                "Name": "registry",
-                "Namespace": argocd_namespace,
-                "Annotations": {"argocd.argoproj.io/sync-wave": "1"},
-            },
-            "Spec": {
-                "Source": {
-                    "RepoURL": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
-                    "Path": ARGOCD_REGISTRY_APP_PATH,
-                    "TargetRevision": "HEAD",
+            "spec": {
+                "source": {
+                    "repoURL": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+                    "path": ARGOCD_REGISTRY_APP_PATH,
+                    "targetRevision": "HEAD",
                 },
-                "Destination": {
-                    "Server": "https://kubernetes.default.svc",
-                    "Namespace": argocd_namespace,
+                "destination": {
+                    "server": "https://kubernetes.default.svc",
+                    "namespace": argocd_namespace,
                 },
-                "Project": "default",
-                "SyncPolicy": {
-                    "Automated": {
-                        "Prune": True,
-                        "SelfHeal": True,
+                "project": "default",
+                "syncPolicy": {
+                    "automated": {
+                        "prune": True,
+                        "selfHeal": True,
                     },
-                    "SyncOptions": ["CreateNamespace=true"],
-                    "Retry": {
-                        "Limit": 5,
-                        "Backoff": {
-                            "Duration": "5s",
-                            "Factor": 0,
-                            "MaxDuration": "5m0s",
+                    "syncOptions": ["CreateNamespace=true"],
+                    "retry": {
+                        "limit": 5,
+                        "backoff": {
+                            "duration": "5s",
+                            "factor": 0,
+                            "maxDuration": "5m0s",
                         },
                     },
                 },
