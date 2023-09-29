@@ -12,14 +12,6 @@ terraform {
 }
 
 locals {
-  # Some glue to ensure correct indices 
-  # subnet_lookup = {
-  #   system   = index(var.networks["aks"].subnets.*.name, "SystemSubnet"),
-  #   user     = index(var.networks["aks"].subnets.*.name, "UserSubnet"),
-  #   pods     = index(var.networks["aks"].subnets.*.name, "PodSubnet"),
-  #   vms      = index(var.networks["aks"].subnets.*.name, "DevXGeneralSubnet")
-  #   firewall = index(var.networks["hub"].subnets.*.name, "AzureFirewallSubnet")
-  # }
   subnet_names = {
     for subnet in var.subnets : subnet => "${var.vnet_name}-${subnet}"
   }
@@ -62,66 +54,6 @@ module "network" {
   log_analytics_retention_days = var.log_analytics_retention_days
 }
 
-
-# module "vnet_peering" {
-#   source = "./modules/virtual_network_peering"
-
-#   vnet_1_name         = module.network["hub"].name
-#   vnet_1_id           = module.network["hub"].vnet_id
-#   vnet_1_rg           = azurerm_resource_group.rg.name
-#   vnet_2_name         = module.network["aks"].name
-#   vnet_2_id           = module.network["aks"].vnet_id
-#   vnet_2_rg           = azurerm_resource_group.rg.name
-#   peering_name_1_to_2 = "${module.network["hub"].name}To${module.network["aks"].name}"
-#   peering_name_2_to_1 = "${module.network["aks"].name}To${module.network["hub"].name}"
-# }
-
-# module "firewall" {
-#   source = "./modules/firewall"
-
-#   name                         = "${var.cluster_name}-fw"
-#   resource_group_name          = azurerm_resource_group.rg.name
-#   region                       = var.region
-#   pip_name                     = "${var.firewall_name}PublicIp"
-#   subnet_id                    = module.network["hub"].subnet_ids[var.networks.hub.subnets[local.subnet_lookup["firewall"]].name]
-#   log_analytics_workspace_id   = module.log_analytics_workspace.id
-#   log_analytics_retention_days = var.log_analytics_retention_days
-# }
-
-# module "routetable" {
-#   source = "./modules/route_table"
-
-#   resource_group_name = azurerm_resource_group.rg.name
-#   region              = var.region
-#   route_table_name    = var.route_table_name
-#   route_name          = var.route_name
-#   firewall_private_ip = module.firewall.private_ip_address
-#   subnets_to_associate = {
-#     (var.networks.aks.subnets[local.subnet_lookup["system"]].name) = {
-#       subscription_id      = data.azurerm_client_config.current.subscription_id
-#       resource_group_name  = azurerm_resource_group.rg.name
-#       virtual_network_name = module.network["aks"].name
-#     }
-#     (var.networks.aks.subnets[local.subnet_lookup["user"]].name) = {
-#       subscription_id      = data.azurerm_client_config.current.subscription_id
-#       resource_group_name  = azurerm_resource_group.rg.name
-#       virtual_network_name = module.network["aks"].name
-#     }
-#   }
-# }
-
-/* module "container_registry" {
-  source                       = "./modules/container_registry"
-  name                         = var.acr_name
-  resource_group_name          = azurerm_resource_group.rg.name
-  region                     = var.region
-  sku                          = var.acr_sku
-  admin_enabled                = var.acr_admin_enabled
-  georeplication_locations     = var.acr_georeplication_locations
-  log_analytics_workspace_id   = module.log_analytics_workspace.id
-  log_analytics_retention_days = var.log_analytics_retention_days
-} */
-
 module "aks_cluster" {
   source = "./modules/aks"
 
@@ -152,26 +84,9 @@ module "aks_cluster" {
   ssh_public_key            = var.ssh_public_key
   workload_identity_enabled = var.workload_identity_enabled
 
-  # depends_on = [module.routetable]
 }
 
-/* 
-Create RBAC
-resource "azurerm_role_assignment" "network_contributor" {
-  scope                = azurerm_resource_group.rg.id
-  role_definition_name = "Network Contributor"
-  principal_id         = module.aks_cluster.aks_identity_principal_id
-  skip_service_principal_aad_check = true
-} */
 
-/* resource "azurerm_role_assignment" "acr_pull" {
-  role_definition_name = "AcrPull"
-  scope                = module.container_registry.id
-  principal_id         = module.aks_cluster.kubelet_identity_object_id
-  skip_service_principal_aad_check = true
-}
- */
-# Generate randon name for storage account
 resource "random_string" "random_suffix" {
   length  = 8
   special = false
@@ -187,16 +102,6 @@ module "storage_account" {
   region              = var.region
   resource_group_name = azurerm_resource_group.rg.name
 }
-
-/* module "bastion_host" {
-  source                       = "./modules/bastion_host"
-  name                         = var.bastion_host_name
-  region                     = var.region
-  resource_group_name          = azurerm_resource_group.rg.name
-  subnet_id                    = module.hub_network.subnet_ids["AzureBastionSubnet"]
-  log_analytics_workspace_id   = module.log_analytics_workspace.id
-  log_analytics_retention_days = var.log_analytics_retention_days
-} */
 
 
 module "node_pool" {
@@ -257,19 +162,6 @@ module "private_dns_zones" {
 }
 
 
-/* module "acr_private_endpoint" {
-  source                         = "./modules/private_endpoint"
-  name                           = "${module.container_registry.name}PrivateEndpoint"
-  region                       = var.region
-  resource_group_name            = azurerm_resource_group.rg.name
-  subnet_id                      = module.aks_network.subnet_ids[var.vm_subnet_name]
-  tags                           = var.tags
-  private_connection_resource_id = module.container_registry.id
-  is_manual_connection           = false
-  subresource_name               = "registry"
-  private_dns_zone_group_name    = "AcrPrivateDnsZoneGroup"
-  private_dns_zone_group_ids     = [module.acr_private_dns_zone.id]
-} */
 
 module "key_vault_private_endpoint" {
   source = "./modules/private_endpoint"
