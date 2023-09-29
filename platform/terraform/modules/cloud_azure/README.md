@@ -54,12 +54,14 @@ Short manual you can find **[here](https://dev.to/maxx_don/implement-azure-ad-wo
 This code creates a workload identity for a service account that is located in the AKS cluster and gives it rights to the current subscription. 
 During creation, you dont need to have a Service Account or create it immediately. To create RBAC, you need to add a new value to the main variables.tf to variable **service_accounts**
 
->    sa_3 = {
->      name = "name"
->      role_definition_name = "RBAC role name"
->      service_account_name = "sa_name"
->      namespace = "namespace_name"
->   }
+```
+    sa_3 = {
+      name = "name"
+      role_definition_name = "RBAC role name"
+      service_account_name = "sa_name"
+      namespace = "namespace_name"
+   }
+```
 Here you will need to indicate the account name, service account name, namespace name, role name.
 
 All existing roles you can find **[here](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles)**.
@@ -68,5 +70,17 @@ You can use a custom role, but it must be created first.
 
 
 ## Architecture
+The architecture of the AKS cluster complies with the recommended Microsoft parameters.
+By default, the cluster and all resources are located in the West Europe region (with the exception of global resources). A master node of the cluster is created in the main resource group, all node groups are created in separate group.
 
+In addition, in the main resource group, the resources necessary for cluster archestration are created, namely:
+- Storage Account (for collecting logs, state terraforms, etc.)
+- Kay Volt (for storing secrets, keys, etc.)
+- Private DNS (for accessing resources using hostnames)
+- Log Analytics (for logs and metrics. Will be replaced by Azure Monitor).
+  
+
+Resourse group with working nodes contains nodes, a load balancer (standart tier) and a public IP address (static). The IP address is assigned to the load balancer and is used to access the cluster content. The load balancer acts as an ingress controller. In addition, the group contains identity management roles for cluster access to Azure subscription resources.
+
+Storage account and key volt will be accessible only from the internal network.
 ![Azure AKS cluster architecture](./devx_platform.drawio.png)
