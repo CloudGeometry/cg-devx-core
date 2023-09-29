@@ -44,4 +44,29 @@ If you are using the default settings, you need to run:
 > az aks get-credentials --name DevXAks --resource-group DevX-rg
 
 After that, your kubeconfig will be updated automatically.
+
+## AKS RBAC
+
+To provide access to certain roles and access to resources for System Accounts of the AKS cluster, we use 
+**[workload identities](https://learn.microsoft.com/en-us/azure/active-directory/workload-identities/workload-identities-overview)**.
+Short manual you can find **[here](https://dev.to/maxx_don/implement-azure-ad-workload-identity-on-aks-with-terraform-3oho)**. 
+
+This code creates a workload identity for a service account that is located in the AKS cluster and gives it rights to the current subscription. 
+During creation, you dont need to have a Service Account or create it immediately. To create RBAC, you need to add a new value to the main variables.tf to variable **service_accounts**
+
+>    sa_3 = {
+>      name = "name"
+>      role_definition_name = "RBAC role name"
+>      service_account_name = "sa_name"
+>      namespace = "namespace_name"
+>   }
+Here you will need to indicate the account name, service account name, namespace name, role name.
+
+All existing roles you can find **[here](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles)**.
+You can use a custom role, but it must be created first.
+
+
+
 ## Architecture
+
+![Azure AKS cluster architecture](./devx_platform.drawio.png)
