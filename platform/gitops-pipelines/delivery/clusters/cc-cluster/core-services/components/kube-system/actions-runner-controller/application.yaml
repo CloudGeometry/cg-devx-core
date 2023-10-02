@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "10"
 spec:
-  project: default
+  project: core
   source:
     repoURL: https://actions-runner-controller.github.io/actions-runner-controller
     targetRevision: 0.20.2

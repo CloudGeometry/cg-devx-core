@@ -19,3 +19,4 @@ python-terraform==0.10.1
 ghrepo==0.7.0
 pyinstaller==5.13.2
 hvac==1.2.1
+portforward==0.5.0

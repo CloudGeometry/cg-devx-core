@@ -43,7 +43,7 @@ class GitOpsTemplateManager:
             headers['Authorization'] = f'token {self.__token}'
 
         try:
-            response = requests.get(f'https://api.github.com/repos/{repo.owner}/{repo.name}/branches/{self.__branch}',
+            response = requests.get(f'{repo.api_url}/branches/{self.__branch}',
                                     headers=headers)
             if response.status_code == requests.codes["not_found"]:
                 return False
@@ -91,13 +91,11 @@ class GitOpsTemplateManager:
             raise e
 
     def restructure_template(self):
-        # workaround for local development mode, should not happen in prod
+        # workaround for local development mode, this should not happen in prod
         for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
             for name in files:
-                if name.endswith(".DS_Store") \
-                        or name.endswith(".terraform") \
-                        or name.endswith(".github") \
-                        or name.endswith(".idea"):
+                if name.endswith(".DS_Store") or name.endswith(".terraform") \
+                        or name.endswith(".github") or name.endswith(".idea"):
                     path = os.path.join(root, name)
                     if os.path.isfile(path):
                         os.remove(path)

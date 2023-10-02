@@ -6,10 +6,10 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '50'
 spec:
-  project: default
+  project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops_pipelines/delivery/clusters/cc_cluster/core_services/components/argo-workflows
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/argo-workflows
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

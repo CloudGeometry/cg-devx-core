@@ -2,7 +2,6 @@ import base64
 
 from kubernetes import client, watch
 from kubernetes.client import ApiException
-from kubernetes.dynamic import DynamicClient
 
 from cli.common.const.common_path import LOCAL_FOLDER
 
@@ -92,13 +91,13 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role_binding(body=body)
         return res
 
-    def create_custom_object(self, argocd_namespace, argo_obj):
+    def create_custom_object(self, argocd_namespace, argo_obj, group, version, plurals):
         try:
             custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
 
-            res = custom_v1_instance.create_namespaced_custom_object(group="argoproj.io", version="v1alpha1",
+            res = custom_v1_instance.create_namespaced_custom_object(group=group, version=version,
                                                                      namespace=argocd_namespace,
-                                                                     plural="applications",
+                                                                     plural=plurals,
                                                                      body=argo_obj)
 
             return res
@@ -297,7 +296,10 @@ class KubeClient:
         """
         Creates secret.
         """
+        name = name.lower()
+
         api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
+
         body = client.V1Secret(metadata=client.V1ObjectMeta(name=name, namespace=namespace,
                                                             annotations=annotations,
                                                             labels=labels),
