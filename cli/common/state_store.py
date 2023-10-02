@@ -26,11 +26,14 @@ class StateStore:
         if os.path.exists(LOCAL_STATE_FILE):
             with open(LOCAL_STATE_FILE, "r+") as infile:
                 config = yaml.safe_load(infile)
-                self.__store[STATE_CHECKPOINTS] = config[STATE_CHECKPOINTS]
-                self.__store[STATE_PARAMS] = config[STATE_PARAMS]
-                self.__store[STATE_INTERNAL_PARAMS] = config[STATE_INTERNAL_PARAMS]
-                self.__store[STATE_INPUT_PARAMS] = config[STATE_INPUT_PARAMS]
-
+                try:
+                    self.__store[STATE_CHECKPOINTS] = config[STATE_CHECKPOINTS]
+                    self.__store[STATE_PARAMS] = config[STATE_PARAMS]
+                    self.__store[STATE_INTERNAL_PARAMS] = config[STATE_INTERNAL_PARAMS]
+                    self.__store[STATE_INPUT_PARAMS] = config[STATE_INPUT_PARAMS]
+                except KeyError as error:
+                    # ToDo: Handle missing parameters
+                    pass
         self.__store[STATE_INPUT_PARAMS].update(input_params)
 
     @property

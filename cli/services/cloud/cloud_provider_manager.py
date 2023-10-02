@@ -1,3 +1,6 @@
+from cli.common.utils.os_utils import detect_command_presence
+
+
 class CloudProviderManager:
     """Cloud provider SDK wrapper to standardise cloud provider management."""
 

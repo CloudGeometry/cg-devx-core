@@ -24,6 +24,7 @@ from cli.services.template_manager import GitOpsTemplateManager
 from cli.services.tf_wrapper import TfWrapper
 from cli.services.vcs.git_provider_manager import GitProviderManager
 from cli.services.vcs.github.github_manager import GitHubProviderManager
+from cli.services.vcs.gitlab.gitlab_manager import GitLabProviderManager
 
 
 @click.command()
@@ -105,7 +106,6 @@ def setup(
 
     # save checkpoint
     p.save_checkpoint()
-
     cm, dm = init_cloud_provider(p)
 
     p.parameters["<CLOUD_REGION>"] = cm.region
@@ -114,6 +114,14 @@ def setup(
     if p.git_provider == GitProviders.GitHub:
         gm: GitProviderManager = GitHubProviderManager(p.get_input_param(GIT_ACCESS_TOKEN),
                                                        p.get_input_param(GIT_ORGANIZATION_NAME))
+    elif p.git_provider == GitProviders.GitLab:
+        gm: GitProviderManager = GitLabProviderManager(
+            p.get_input_param(GIT_ACCESS_TOKEN),
+            p.get_input_param(GIT_ORGANIZATION_NAME)
+        )
+    else:
+        click.echo('Error: None of the available Git providers were specified')
+        return
 
     # init proper dns registrar provider
     # Note!: Route53 is initialised with AWS Cloud Provider
@@ -121,7 +129,6 @@ def setup(
 
     if not p.has_checkpoint("preflight"):
         click.echo("Executing pre-flight checks...")
-
         cloud_provider_check(cm, p)
         click.echo("Cloud provider pre-flight check. Done!")
 

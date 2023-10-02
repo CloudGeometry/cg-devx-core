@@ -13,6 +13,10 @@ class GitHubProviderManager(GitProviderManager):
     def __init__(self, token: str = None, org_name: str = None):
         self.__token: str = token
         self.__org_name: str = org_name
+        self.__required_scopes = {
+            "admin:org", "admin:org_hook", "admin:public_key", "admin:repo_hook", "admin:ssh_signing_key",
+            "delete_repo", "repo"
+        }
 
     def check_repository_existence(self, name: str = "GitOps"):
         """
@@ -49,13 +53,7 @@ class GitHubProviderManager(GitProviderManager):
                 return False
             allowed_scopes = response.headers["x-oauth-scopes"].split(", ")
             # check if we need those permissions "workflow", "write:packages", "user"
-            required_scopes = set(
-                ["admin:org", "admin:org_hook", "admin:public_key", "admin:repo_hook", "admin:ssh_signing_key",
-                 "delete_repo", "repo"])
-            if required_scopes.issubset(allowed_scopes):
-                return True
-            else:
-                return False
+            return self.__required_scopes.issubset(allowed_scopes)
         except HTTPError as e:
             return False
 

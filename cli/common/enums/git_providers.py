@@ -8,6 +8,7 @@ class GitProviders(str, enum.Enum):
     """List of possible Git providers."""
 
     GitHub = 'github'
+    GitLab = 'gitlab'
 
     @classmethod
     def has_value(cls, value) -> bool:

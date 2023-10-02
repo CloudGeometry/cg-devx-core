@@ -5,9 +5,9 @@ CG DevX CLI
 
 import click
 
-from commands.destroy import destroy
-from commands.setup import setup
-from commands.workload.workload import workload
+from cli.commands.destroy import destroy
+from cli.commands.setup import setup
+from cli.commands.workload.workload import workload
 
 
 @click.group()
