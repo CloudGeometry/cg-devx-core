@@ -26,7 +26,7 @@ resource "azuread_service_principal_password" "asp_pass" {
 ## Azure AD federated identity used to federate kubernetes with Azure AD
 resource "azuread_application_federated_identity_credential" "aks-app-id" {
   application_object_id = azuread_application.appname.object_id
-  display_name          = "fed-identity-aks-atlantis-id-${var.service_account_name}"
+  display_name          = "fed-identity-aks-id-${var.service_account_name}"
   description           = "The federated identity used to federate ${var.service_account_name} with Azure AD with the app service running in k8s in ${var.resource_group_name}"
   audiences             = ["api://AzureADTokenExchange"]
   issuer                = var.oidc_issuer_url

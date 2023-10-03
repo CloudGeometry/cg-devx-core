@@ -51,13 +51,12 @@ output "kube_config_raw" {
 }
 
 
-# output "private_ip_address" {
-#   description = "Specifies the private IP address of the firewall."
-#   value       = module.hosting-provider-azure.public_ip_address
-# }
-
-
 output "fqdn" {
   value       = module.hosting-provider-azure.fqdn
-  description = "he FQDN of the Azure Kubernetes Managed Cluster."
+  description = "FQDN of the Azure Kubernetes Managed Cluster"
+}
+
+output "apps" {
+  value       = module.hosting-provider-azure.apps
+  description = "Name and ID for all AKS Rbac apps"
 }
