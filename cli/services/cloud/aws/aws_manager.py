@@ -45,12 +45,12 @@ class AWSManager(CloudProviderManager):
             region = self.region
         # TODO: consider replacing with file template
         return textwrap.dedent('''\
-        backend "s3" {{
-          bucket = "{bucket}"
-          key    = "terraform/{service}/terraform.tfstate"
-          region  = "{region}"
-          encrypt = true
-        }}'''.format(bucket=location, region=region, service=service))
+            backend "s3" {{
+            bucket = "{bucket}"
+            key    = "terraform/{service}/terraform.tfstate"
+            region  = "{region}"
+            encrypt = true
+          }}'''.format(bucket=location, region=region, service=service))
 
     def create_hosting_provider_snippet(self):
         # TODO: consider replacing with file template
@@ -63,6 +63,12 @@ class AWSManager(CloudProviderManager):
             }
           }
         }''')
+
+    def create_secret_manager_seal_snippet(self):
+        return '''seal "awskms" {
+                region     = "<CLOUD_REGION>"
+                kms_key_id = "<SECRET_MANAGER_SEAL_RN>"
+              }'''
 
     def create_k8s_role_binding_snippet(self):
         # TODO: consider replacing with file template

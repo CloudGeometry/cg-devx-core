@@ -11,6 +11,8 @@ from cli.services.dns.route53.route53 import Route53Manager
 
 
 def init_cloud_provider(state: StateStore):
+    cloud_manager = None
+    domain_manager = None
     # init proper cloud provider
     if state.cloud_provider == CloudProviders.AWS:
         cloud_manager: CloudProviderManager = AWSManager(state.get_input_param(CLOUD_REGION),

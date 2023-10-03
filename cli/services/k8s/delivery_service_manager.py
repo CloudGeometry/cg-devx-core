@@ -1,17 +1,18 @@
 from cli.common.const.const import ARGOCD_REGISTRY_APP_PATH
 from cli.common.const.namespaces import ARGOCD_NAMESPACE
 from cli.services.k8s.k8s import KubeClient
+from kubernetes import client
 
 
 class DeliveryServiceManager:
     def __init__(self, k8s_client: KubeClient, argocd_namespace: str = ARGOCD_NAMESPACE):
-        self.k8s_client = k8s_client
+        self._k8s_client = k8s_client
         self._group = "argoproj.io"
         self._version = "v1alpha1"
         self._namespace = argocd_namespace
 
     def _create_argocd_object(self, argocd_namespace, argo_obj, plurals):
-        return self.k8s_client.create_custom_object(argocd_namespace, argo_obj, self._group, self._version, plurals)
+        return self._k8s_client.create_custom_object(argocd_namespace, argo_obj, self._group, self._version, plurals)
 
     def create_project(self, project_name: str, repos=None):
         if repos is None:
@@ -84,7 +85,7 @@ class DeliveryServiceManager:
                         "limit": 5,
                         "backoff": {
                             "duration": "5s",
-                            "factor": 0,
+                            "factor": 2,
                             "maxDuration": "5m0s",
                         },
                     },
@@ -93,3 +94,26 @@ class DeliveryServiceManager:
         }
 
         return self._create_argocd_object(self._namespace, argo_app_cr, "applications")
+
+    def create_argocd_bootstrap_job(self, sa_name: str):
+        """
+        Creates ArgoCD bootstrap job
+        """
+        image = "bitnami/kubectl"
+        manifest_path = "github.com:cloudgeometry/cgdevx-core.git/platform/installation-manifests/argocd?ref=main"
+
+        bootstrap_entry_point = ["/bin/sh", "-c", f"kubectl apply -k '{manifest_path}'"]
+
+        job_name = "kustomize-apply-argocd"
+
+        body = client.V1Job(metadata=client.V1ObjectMeta(name=job_name, namespace=self._namespace),
+                            spec=client.V1JobSpec(template=client.V1PodTemplateSpec(
+                                spec=client.V1PodSpec(
+                                    containers=[
+                                        client.V1Container(name="main", image=image,
+                                                           command=bootstrap_entry_point)],
+                                    service_account_name=sa_name,
+                                    restart_policy="Never")),
+                                backoff_limit=1))
+
+        return self._k8s_client.create_job(self._namespace, job_name, body)

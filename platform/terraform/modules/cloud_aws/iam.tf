@@ -81,10 +81,27 @@ module "iam_argoworkflow_role" {
 
   }
 }
-# atlantis
-module "atlantis_irsa_role" {
+# argocd
+module "iam_argocd_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-atlantis-role"
+  role_name = "${local.name}-argocd-role"
+
+  role_policy_arns = {
+    policy = aws_iam_policy.argocd.arn
+  }
+
+  oidc_providers = {
+    main = {
+      provider_arn               = "module.eks.oidc_provider_arn"
+      namespace_service_accounts = ["default:argocd"]
+    }
+
+  }
+}
+# atlantis
+module "iac_pr_automation_irsa_role" {
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-iac_pr_automation-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
@@ -93,7 +110,7 @@ module "atlantis_irsa_role" {
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.atlantis_policy.arn
+    policy = aws_iam_policy.iac_pr_automation_policy.arn
   }
 
 }
@@ -115,7 +132,7 @@ module "cert_manager_irsa_role" {
 
 
 # container registry
-module "harbor_irsa_role" {
+module "registry_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   role_name = "${local.name}-image-registry-role"
   oidc_providers = {
@@ -126,7 +143,7 @@ module "harbor_irsa_role" {
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.harbor_policy.arn
+    policy = aws_iam_policy.registry_policy.arn
   }
 }
 
@@ -146,9 +163,9 @@ module "external_dns_irsa_role" {
 
 }
 # vault
-module "vault_irsa_role" {
+module "secret_manager_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-vault-role"
+  role_name = "${local.name}-secret_manager-role"
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
@@ -157,7 +174,7 @@ module "vault_irsa_role" {
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.vault_policy.arn
+    policy = aws_iam_policy.secret_manager_policy.arn
   }
 
 }

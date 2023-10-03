@@ -71,14 +71,14 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role(body=body)
         return res
 
-    def create_cluster_role_binding(self, namespace: str, name: str, r_name: str):
+    def create_cluster_role_binding(self, namespace: str, name: str, role_name: str):
         """
         Creates a ClusterRoleBinding
         """
         rbac_v1_instance = client.RbacAuthorizationV1Api(client.ApiClient(self._configuration))
         body = client.V1ClusterRoleBinding(
             metadata=client.V1ObjectMeta(name=name, namespace=namespace),
-            role_ref=client.V1RoleRef(name=r_name, api_group="rbac.authorization.k8s.io", kind="ClusterRole"),
+            role_ref=client.V1RoleRef(name=role_name, api_group="rbac.authorization.k8s.io", kind="ClusterRole"),
             subjects=[client.V1Subject(kind="ServiceAccount", name=name, namespace=namespace)]
         )
         try:
@@ -91,60 +91,25 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role_binding(body=body)
         return res
 
-    def create_custom_object(self, argocd_namespace, argo_obj, group, version, plurals):
+    def create_custom_object(self, argocd_namespace: str, custom_obj: dict, group: str, version: str, plurals: str):
+        """
+        Creates a custom object.
+        """
         try:
             custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
 
             res = custom_v1_instance.create_namespaced_custom_object(group=group, version=version,
                                                                      namespace=argocd_namespace,
                                                                      plural=plurals,
-                                                                     body=argo_obj)
+                                                                     body=custom_obj)
 
             return res
         except ApiException as e:
             raise e
-
-    def get_deployment(self, namespace: str, deployment_name: str):
-        apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
-
-        try:
-            res = apps_v1_instance.read_namespaced_deployment(name=deployment_name, namespace=namespace)
-            return res
-        except ApiException as e:
-            raise e
-
-    def get_stateful_set_objects(self, namespace: str, name: str):
-        apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
-
-        try:
-            res = apps_v1_instance.read_namespaced_stateful_set(name=name, namespace=namespace)
-            return res
-        except ApiException as e:
-            raise e
-
-    def create_argocd_bootstrap_job(self, namespace: str, sa_name: str):
-        image = "bitnami/kubectl"
-        manifest_path = "github.com:cloudgeometry/cgdevx-core.git/platform/installation-manifests/argocd?ref=main"
-
-        bootstrap_entry_point = ["/bin/sh", "-c", f"kubectl apply -k '{manifest_path}'"]
-
-        job_name = "kustomize-apply-argocd"
-
-        body = client.V1Job(metadata=client.V1ObjectMeta(name=job_name, namespace=namespace),
-                            spec=client.V1JobSpec(template=client.V1PodTemplateSpec(
-                                spec=client.V1PodSpec(
-                                    containers=[
-                                        client.V1Container(name="main", image=image,
-                                                           command=bootstrap_entry_point)],
-                                    service_account_name=sa_name,
-                                    restart_policy="Never")),
-                                backoff_limit=1))
-
-        return self.create_job(namespace, job_name, body)
 
     def create_job(self, namespace: str, job_name: str, body):
         """
-        Creates job.
+        Creates Job.
         """
         batch_v1_instance = client.BatchV1Api(client.ApiClient(self._configuration))
 
@@ -154,12 +119,47 @@ class KubeClient:
                 # job exists, most likely a failed job from previous run, should delete as we are going to recreate it
                 batch_v1_instance.delete_namespaced_job(name=job_name, namespace=namespace)
 
+                # wait till job is deleted
+                w = watch.Watch()
+                for event in w.stream(func=batch_v1_instance.list_namespaced_job,
+                                      namespace=namespace,
+                                      field_selector=f'metadata.name={job_name}',
+                                      timeout_seconds=30):
+                    # event.type: ADDED, MODIFIED, DELETED
+                    if event["type"] == "DELETED":
+                        w.stop()
+                        break
+
         except ApiException as e:
             # job doesn't exist
             pass
 
         res = batch_v1_instance.create_namespaced_job(namespace=namespace, body=body)
         return res
+
+    def get_deployment(self, namespace: str, deployment_name: str):
+        """
+        Reads a Deployment.
+        """
+        apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
+
+        try:
+            res = apps_v1_instance.read_namespaced_deployment(name=deployment_name, namespace=namespace)
+            return res
+        except ApiException as e:
+            raise e
+
+    def get_stateful_set_objects(self, namespace: str, name: str):
+        """
+        Reads a StatefulSet.
+        """
+        apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
+
+        try:
+            res = apps_v1_instance.read_namespaced_stateful_set(name=name, namespace=namespace)
+            return res
+        except ApiException as e:
+            raise e
 
     def remove_service_account(self, namespace: str, sa_name: str):
         """
@@ -197,7 +197,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def wait_for_deployment(self, deployment, timeout: int = 120):
+    def wait_for_deployment(self, deployment, timeout: int = 300):
         configured_replicas = deployment.spec.replicas
         name = deployment.metadata.name
         namespace = deployment.metadata.namespace
@@ -210,7 +210,7 @@ class KubeClient:
                                   namespace=namespace,
                                   field_selector=f'metadata.name={name}',
                                   timeout_seconds=timeout):
-                if event["object"].status.replicas == configured_replicas:
+                if event["object"].status.ready_replicas == configured_replicas:
                     w.stop()
                     return True
                 # event.type: ADDED, MODIFIED, DELETED
@@ -221,7 +221,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def wait_for_job(self, job, timeout: int = 120):
+    def wait_for_job(self, job, timeout: int = 300):
         job_name = job.metadata.name
         namespace = job.metadata.namespace
 
@@ -244,7 +244,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def wait_for_pod(self, pod, timeout: int = 120):
+    def wait_for_pod(self, pod, timeout: int = 300):
         name = pod.metadata.name
         namespace = pod.metadata.namespace
 
@@ -267,7 +267,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def wait_for_stateful_set(self, stateful_set, timeout: int = 120):
+    def wait_for_stateful_set(self, stateful_set, timeout: int = 300):
         configured_replicas = stateful_set.spec.replicas
         name = stateful_set.metadata.name
         namespace = stateful_set.metadata.namespace
@@ -280,7 +280,7 @@ class KubeClient:
                                   namespace=namespace,
                                   field_selector=f'metadata.name={name}',
                                   timeout_seconds=timeout):
-                if event["object"].status.replicas == configured_replicas:
+                if event["object"].status.ready_replicas == configured_replicas:
                     w.stop()
                     return True
                 # event.type: ADDED, MODIFIED, DELETED
@@ -291,10 +291,10 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def create_plain_str_secret(self, namespace: str, name: str, data: dict, annotations: dict = None,
-                                labels: dict = None):
+    def create_plain_secret(self, namespace: str, name: str, data: dict, annotations: dict = None,
+                            labels: dict = None):
         """
-        Creates secret.
+        Creates plain text secret.
         """
         name = name.lower()
 

@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://helm.releases.hashicorp.com
-    targetRevision: 0.22.0
+    targetRevision: 0.25.0
     helm:
       parameters:
         - name: server.route.host
@@ -17,7 +17,47 @@ spec:
         - name: 'server.ingress.hosts[0].host'
           value: vault.<DOMAIN_NAME>
       values: |-
-        # server:
+        server:
+          serviceAccount:
+            create: true
+            name: vault
+            annotations:
+              <K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>: '<VAULT_IAM_ROLE_RN>'
+          affinity: ""
+          ha:
+            enabled: true
+            replicas: 3
+            raft:
+              enabled: true
+            config: |
+              ui = true
+              listener "tcp" {
+                tls_disable     = 1
+                address         = "[::]:8200"
+                cluster_address = "[::]:8201"
+              }
+              # <VAULT_SEAL>
+              service_registration "kubernetes" {}
+          ingress:
+            enabled: true
+            annotations: 
+              cert-manager.io/cluster-issuer: "letsencrypt-prod"
+            ingressClassName: "nginx"
+            pathType: Prefix
+            # When HA mode is enabled and K8s service registration is being used,
+            # configure the ingress to point to the Vault active service.
+            # activeService: true
+            hosts:
+              - host: <VAULT_INGRESS_URL>
+            tls:
+              - secretName: vault-tls
+                hosts:
+                  - <VAULT_INGRESS_URL>
+          ui:
+            enabled: true
+            serviceType: "ClusterIP"
+            serviceNodePort: null
+            externalPort: 8200
     chart: vault
   destination:
     server: https://kubernetes.default.svc
@@ -28,3 +68,8 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks
