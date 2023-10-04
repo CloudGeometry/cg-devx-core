@@ -10,7 +10,7 @@ import yaml
 
 from cli.common.command_utils import init_cloud_provider
 from cli.common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER
-from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
+from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
 from cli.common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE
 from cli.common.const.parameter_names import *
@@ -176,9 +176,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
                                                                                              "hosting_provider")
         p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
-        p.parameters["# <VAULT_SEAL>"] = cloud_man.create_secret_manager_seal_snippet()
-
-        p.parameters["<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>"] = cloud_man.create_k8s_role_binding_snippet()
+        p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
         click.echo("Creating tf backend storage. Done!")
 
@@ -267,7 +265,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_VCS)
         tf_wrapper.init()
-        tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["<ATLANTIS_WEBHOOK_SECRET>"],
+        tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
                           "vcs_bot_ssh_public_key": p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"]})
         vcs_out = tf_wrapper.output()
 
@@ -307,20 +305,22 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         # network
         p.parameters["<NETWORK_ID>"] = hp_out["network_id"]
         # roles
-        p.parameters["<ARGO_CD_IAM_ROLE_RN>"] = hp_out["iam_argocd_role"]
-        p.parameters["<ARGO_WORKFLOW_IAM_ROLE_RN>"] = hp_out["iam_argoworkflow_role"]
-        p.parameters["<ATLANTIS_IAM_ROLE_RN>"] = hp_out["iac_pr_automation_role"]
+        p.parameters["<CD_IAM_ROLE_RN>"] = hp_out["iam_cd_role"]
+        p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["iam_ci_role"]
+        p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"] = hp_out["iac_pr_automation_role"]
         p.parameters["<CERT_MANAGER_IAM_ROLE_RN>"] = hp_out["cert_manager_role"]
-        p.parameters["<HARBOR_IAM_ROLE_RN>"] = hp_out["registry_role"]
+        p.parameters["<REGISTRY_IAM_ROLE_RN>"] = hp_out["registry_role"]
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
-        p.parameters["<VAULT_IAM_ROLE_RN>"] = hp_out["secret_manager_role"]
+        p.parameters["<SECRET_MANAGER_IAM_ROLE_RN>"] = hp_out["secret_manager_role"]
         # cluster
         p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
         p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
         p.internals["CC_CLUSTER_OIDC_PROVIDER"] = hp_out["cluster_oidc_provider"]  # do we need it?
         # kms keys
-        p.parameters["<SECRET_MANAGER_SEAL_RN>"] = hp_out["secret_manager_seal_key"]
+        sec_man_key = hp_out["secret_manager_seal_key"]
+        p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
+        p.parameters["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_secret_manager_seal_snippet(sec_man_key)
 
         # unset envs as no longer needed
         for k in hp_tf_env_vars.keys():
@@ -393,7 +393,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         kube_client.create_cluster_role(ARGOCD_NAMESPACE, argocd_bootstrap_name)
         # extract role name from arn
         # TODO: move to tf
-        argo_cd_role_name = p.parameters["<ARGO_CD_IAM_ROLE_RN>"].split("/")[-1]
+        argo_cd_role_name = p.parameters["<CD_IAM_ROLE_RN>"].split("/")[-1]
         kube_client.create_cluster_role_binding(ARGOCD_NAMESPACE, argocd_bootstrap_name, argocd_bootstrap_name)
 
         job = cd_man.create_argocd_bootstrap_job(argocd_bootstrap_name)
@@ -481,7 +481,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
                                         repo_labels)
 
         # TODO: properly init harbor auth
-        harbor_reg_url = p.parameters["<HARBOR_REGISTRY_URL>"]
+        harbor_reg_url = p.parameters["<REGISTRY_REGISTRY_URL>"]
         registry_secret = {
             "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": "TODO: set token"}}})
         }
@@ -593,25 +593,28 @@ def prepare_parameters(p):
     p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
     p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
-    p.parameters["<ATLANTIS_WEBHOOK_SECRET>"] = random_string_generator(20)
+    p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"] = random_string_generator(20)
+    p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
     # Ingress URLs for core components. Note!: URL does not contain protocol
-    cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
+    cluster_fqdn = f'{p.get_input_param(DOMAIN_NAME)}'
     p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
-    p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
-    p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
-    p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
-    p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
-    p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
+    p.parameters["<SECRET_MANAGER_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
+    p.parameters["<CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
+    p.parameters["<CI_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
+    p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
+    p.parameters["<REGISTRY_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
     p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
     p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
     # OIDC config
-    vault_i = p.parameters["<VAULT_INGRESS_URL>"]
-    p.parameters["<OIDC_PROVIDER_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx'
-    p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{vault_i}/ui/vault/identity/oidc/provider/cgdevx/authorize'
-    p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/token'
-    p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/userinfo'
-    p.parameters["<ARGO_CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ARGO_CD_INGRESS_URL>"]}/oauth2/callback'
-    p.parameters["<HARBOR_REGISTRY_URL>"] = f'{p.parameters["<HARBOR_INGRESS_URL>"]}'
+    sec_man_ing = p.parameters["<SECRET_MANAGER_INGRESS_URL>"]
+    p.parameters["<OIDC_PROVIDER_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx'
+    p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{sec_man_ing}/ui/vault/identity/oidc/provider/cgdevx/authorize'
+    p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx/token'
+    p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx/userinfo'
+    p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/oauth2/callback'
+    p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
+
+    return p
 
 
 def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:

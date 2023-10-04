@@ -22,22 +22,25 @@ spec:
             create: true
             name: vault
             annotations:
-              <K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>: '<VAULT_IAM_ROLE_RN>'
+              <K8S_ROLE_MAPPING>: '<SECRET_MANAGER_IAM_ROLE_RN>'
           affinity: ""
           ha:
             enabled: true
             replicas: 3
             raft:
               enabled: true
-            config: |
-              ui = true
-              listener "tcp" {
-                tls_disable     = 1
-                address         = "[::]:8200"
-                cluster_address = "[::]:8201"
-              }
-              # <VAULT_SEAL>
-              service_registration "kubernetes" {}
+              config: |
+                ui = true
+                listener "tcp" {
+                  tls_disable     = 1
+                  address         = "[::]:8200"
+                  cluster_address = "[::]:8201"
+                }
+                storage "raft" {
+                  path = "/vault/data"
+                }
+                # <SECRET_MANAGER_SEAL>
+                service_registration "kubernetes" {}
           ingress:
             enabled: true
             annotations: 
@@ -48,11 +51,11 @@ spec:
             # configure the ingress to point to the Vault active service.
             # activeService: true
             hosts:
-              - host: <VAULT_INGRESS_URL>
+              - host: <SECRET_MANAGER_INGRESS_URL>
             tls:
               - secretName: vault-tls
                 hosts:
-                  - <VAULT_INGRESS_URL>
+                  - <SECRET_MANAGER_INGRESS_URL>
           ui:
             enabled: true
             serviceType: "ClusterIP"

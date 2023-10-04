@@ -4,6 +4,6 @@ resource "aws_kms_key" "secret_manager_unseal" {
 
 }
 
-resource "aws_kms_alias" "vault_unseal" {
+resource "aws_kms_alias" "secret_manager_unseal" {
   target_key_id = aws_kms_key.secret_manager_unseal.key_id
 }

@@ -1,7 +1,7 @@
 #custom policies
-resource "aws_iam_policy" "argocd" {
-  name        = "${local.name}-argocd-policy"
-  description = "ArgoCD IAM policy"
+resource "aws_iam_policy" "cd" {
+  name        = "${local.name}-cd-policy"
+  description = "Cloud Native CD IAM policy"
 
   policy = jsonencode({
     "Version" : "2012-10-17",
@@ -17,9 +17,9 @@ resource "aws_iam_policy" "argocd" {
   tags = local.tags
 }
 
-resource "aws_iam_policy" "argoworkflow" {
-  name        = "${local.name}-argoworkflow-policy"
-  description = "ArgoWorkFlow IAM policy"
+resource "aws_iam_policy" "ci" {
+  name        = "${local.name}-ci-policy"
+  description = "Cloud Native CI IAM policy"
 
   policy = jsonencode({
     "Version" : "2012-10-17",
@@ -55,7 +55,7 @@ resource "aws_iam_policy" "registry_policy" {
 }
 resource "aws_iam_policy" "iac_pr_automation_policy" {
   name        = "${local.name}-iac-pr-automation-policy"
-  description = "Atlantis IAM policy"
+  description = "IaC PR Automation tool IAM policy"
   policy      = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -88,7 +88,7 @@ resource "aws_iam_policy" "secret_manager_policy" {
           "kms:Decrypt"
         ],
         "Effect" : "Allow",
-        "Resource" : "arn:aws:kms:${var.region}:${local.aws_account}:key/*"
+        "Resource" : "arn:aws:kms:${var.region}:${local.aws_account}:key/${aws_kms_key.secret_manager_unseal.key_id}"
       }
     ]
   })

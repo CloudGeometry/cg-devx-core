@@ -55,7 +55,7 @@ spec:
             - app.kubernetes.io/name=external-secrets-cert-controller
             - --timeout=90s
             - --watch=true
-          image: registry.hub.docker.com/bitnami/kubectl:1.27.4
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure
@@ -82,7 +82,7 @@ spec:
             - app.kubernetes.io/name=external-secrets
             - --timeout=90s
             - --watch=true
-          image: registry.hub.docker.com/bitnami/kubectl:1.27.4
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure
@@ -109,7 +109,7 @@ spec:
             - app.kubernetes.io/name=external-secrets-webhook
             - --timeout=90s
             - --watch=true
-          image: registry.hub.docker.com/bitnami/kubectl:1.27.4
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure

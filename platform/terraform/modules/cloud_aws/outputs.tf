@@ -35,13 +35,13 @@ output "efs_csi_irsa_role" {
   value       = module.efs_csi_irsa_role.iam_role_arn
 }
 
-output "iam_argocd_role" {
-  description = "ArgoCD Workflow IAM role ARN"
-  value       = module.iam_argocd_role.iam_role_arn
+output "iam_cd_role" {
+  description = "Cloud Native CD IAM role ARN"
+  value       = module.iam_cd_role.iam_role_arn
 }
-output "iam_argoworkflow_role" {
-  description = "Argo Workflow IAM role ARN"
-  value       = module.iam_argoworkflow_role.iam_role_arn
+output "iam_ci_role" {
+  description = "Cloud Native CI IAM role ARN"
+  value       = module.iam_ci_role.iam_role_arn
 }
 output "iac_pr_automation_irsa_role" {
   description = "IaC PR automation IAM Role ARN"

@@ -4,11 +4,11 @@ output "network_id" {
 }
 
 # IAM roles
-output "iam_argocd_role" {
-  value = module.hosting-provider.iam_argocd_role
+output "iam_cd_role" {
+  value = module.hosting-provider.iam_cd_role
 }
-output "iam_argoworkflow_role" {
-  value = module.hosting-provider.iam_argoworkflow_role
+output "iam_ci_role" {
+  value = module.hosting-provider.iam_ci_role
 }
 output "iac_pr_automation_role" {
   value = module.hosting-provider.iac_pr_automation_irsa_role

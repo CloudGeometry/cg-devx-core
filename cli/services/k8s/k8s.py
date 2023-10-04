@@ -280,7 +280,7 @@ class KubeClient:
                                   namespace=namespace,
                                   field_selector=f'metadata.name={name}',
                                   timeout_seconds=timeout):
-                if event["object"].status.ready_replicas == configured_replicas:
+                if event["object"].status.available_replicas == configured_replicas:
                     w.stop()
                     return True
                 # event.type: ADDED, MODIFIED, DELETED

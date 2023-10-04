@@ -8,3 +8,5 @@ STATE_CHECKPOINTS = 'checkpoints'
 FALLBACK_AUTHOR_NAME = 'cgdevx-bot'
 FALLBACK_AUTHOR_EMAIL = 'cg-devx-automation@cloudgeometry.io'
 ARGOCD_REGISTRY_APP_PATH = 'gitops-pipelines/delivery/clusters/cc-cluster/core-services'
+KUBECTL_VERSION = "1.27.4"
+TERRAFORM_VERSION = "1.3.9"

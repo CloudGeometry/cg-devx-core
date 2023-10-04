@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: argocd-cm
 data:
-  url: 'https://<ARGO_CD_INGRESS_URL>'
+  url: 'https://<CD_INGRESS_URL>'
   oidc.config: |
     name: Vault
     issuer: https://<OIDC_PROVIDER_URL>

@@ -64,41 +64,41 @@ module "efs_csi_irsa_role" {
   }
 
 }
-# argo workflow
-module "iam_argoworkflow_role" {
+# Cloud Native CI
+module "iam_ci_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-argoworkflow-role"
+  role_name = "${local.name}-ci-role"
 
   role_policy_arns = {
-    policy = aws_iam_policy.argoworkflow.arn
+    policy = aws_iam_policy.ci.arn
   }
 
   oidc_providers = {
     main = {
       provider_arn               = "module.eks.oidc_provider_arn"
-      namespace_service_accounts = ["default:argo"]
+      namespace_service_accounts = ["argo"]
     }
 
   }
 }
 # argocd
-module "iam_argocd_role" {
+module "iam_cd_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-argocd-role"
+  role_name = "${local.name}-cd-role"
 
   role_policy_arns = {
-    policy = aws_iam_policy.argocd.arn
+    policy = aws_iam_policy.cd.arn
   }
 
   oidc_providers = {
     main = {
       provider_arn               = "module.eks.oidc_provider_arn"
-      namespace_service_accounts = ["default:argocd"]
+      namespace_service_accounts = ["argocd"]
     }
 
   }
 }
-# atlantis
+# iac pr automation
 module "iac_pr_automation_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   role_name = "${local.name}-iac_pr_automation-role"
@@ -106,7 +106,7 @@ module "iac_pr_automation_irsa_role" {
     main = {
       provider_arn = module.eks.oidc_provider_arn
       #need to know ns:serviceaccount
-      namespace_service_accounts = ["kube-system:atlantis"]
+      namespace_service_accounts = ["argocd"]
     }
   }
   role_policy_arns = {
@@ -139,7 +139,7 @@ module "registry_irsa_role" {
     main = {
       provider_arn = module.eks.oidc_provider_arn
       #need to know ns:serviceaccount
-      namespace_service_accounts = ["kube-system:harbor"]
+      namespace_service_accounts = ["harbor"]
     }
   }
   role_policy_arns = {
@@ -162,7 +162,7 @@ module "external_dns_irsa_role" {
   }
 
 }
-# vault
+# secret_manager
 module "secret_manager_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   role_name = "${local.name}-secret_manager-role"
@@ -170,7 +170,7 @@ module "secret_manager_irsa_role" {
     main = {
       provider_arn = module.eks.oidc_provider_arn
       #need to know ns:serviceaccount
-      namespace_service_accounts = ["kube-system:vault"]
+      namespace_service_accounts = ["vault"]
     }
   }
   role_policy_arns = {

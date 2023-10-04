@@ -55,7 +55,7 @@ spec:
             - app=reloader-reloader
             - --timeout=90s
             - --watch=true
-          image: registry.hub.docker.com/bitnami/kubectl:1.27.4
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure
