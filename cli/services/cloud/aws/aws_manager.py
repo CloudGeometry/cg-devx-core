@@ -68,10 +68,10 @@ class AWSManager(CloudProviderManager):
         if region is None:
             region = self.region
 
-        return '''seal "awskms" {
-                  region     = "region"
-                  kms_key_id = "role_arn"
-                }'''.format(region=region, role_arn=role_arn)
+        return '''seal "awskms" {{
+                  region     = "{region}"
+                  kms_key_id = "{role_arn}"
+                }}'''.format(region=region, role_arn=role_arn)
 
     def create_k8s_cluster_role_mapping_snippet(self):
         # TODO: consider replacing with file template

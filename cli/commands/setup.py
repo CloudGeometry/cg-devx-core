@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import time
 from urllib.error import HTTPError
 
 import click
@@ -494,6 +495,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
         # TODO: need wait here as api is not available just after service ready
+        time.sleep(120)
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
                                  config_path=p.internals["KCTL_CONFIG_PATH"]):
@@ -526,6 +528,7 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         click.echo("Initializing Vault...")
 
         # TODO: need wait here as vault is not available just after argp app deployment
+        time.sleep(120)
         vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
         kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
 
