@@ -2,21 +2,7 @@
 ################################################################################
 # Supporting IAM role and policy Resources
 ################################################################################
-/*
-module "sample_role" {
-  source  = "terraform-aws-modules/iam/aws/modules/iam-role-for-service-accounts-eks"
-  version = "5.20.0"
-  tags = local.tags
-}
 
-resource "aws_iam_policy" "sample_policy" {
-
-  policy = <<EOT
-EOT
-}
-*/
-
-#Need create roles and policies for
 # CNI
 module "vpc_cni_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -75,8 +61,8 @@ module "iam_ci_role" {
 
   oidc_providers = {
     main = {
-      provider_arn               = "module.eks.oidc_provider_arn"
-      namespace_service_accounts = ["argo"]
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["argo:argo"]
     }
 
   }
@@ -92,8 +78,8 @@ module "iam_cd_role" {
 
   oidc_providers = {
     main = {
-      provider_arn               = "module.eks.oidc_provider_arn"
-      namespace_service_accounts = ["argocd"]
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["argocd:argocd"]
     }
 
   }
@@ -105,8 +91,7 @@ module "iac_pr_automation_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
-      #need to know ns:serviceaccount
-      namespace_service_accounts = ["argocd"]
+      namespace_service_accounts = ["atlantis:atlantis"]
     }
   }
   role_policy_arns = {
@@ -124,12 +109,11 @@ module "cert_manager_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:cert-manager"]
+      namespace_service_accounts = ["cert-manager:cert-manager"]
     }
   }
 
 }
-
 
 # container registry
 module "registry_irsa_role" {
@@ -138,8 +122,7 @@ module "registry_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
-      #need to know ns:serviceaccount
-      namespace_service_accounts = ["harbor"]
+      namespace_service_accounts = ["harbor:harbor"]
     }
   }
   role_policy_arns = {
@@ -157,7 +140,7 @@ module "external_dns_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:external-dns"]
+      namespace_service_accounts = ["external-dns:external-dns"]
     }
   }
 
@@ -169,8 +152,7 @@ module "secret_manager_irsa_role" {
   oidc_providers = {
     main = {
       provider_arn = module.eks.oidc_provider_arn
-      #need to know ns:serviceaccount
-      namespace_service_accounts = ["vault"]
+      namespace_service_accounts = ["vault:vault"]
     }
   }
   role_policy_arns = {
