@@ -149,6 +149,18 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    def get_pod(self, namespace: str, pod_name: str):
+        """
+        Reads a Deployment.
+        """
+        api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
+
+        try:
+            res = api_v1_instance.read_namespaced_pod(name=pod_name, namespace=namespace)
+            return res
+        except ApiException as e:
+            raise e
+
     def get_stateful_set_objects(self, namespace: str, name: str):
         """
         Reads a StatefulSet.
@@ -267,7 +279,11 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    def wait_for_stateful_set(self, stateful_set, timeout: int = 300):
+    def wait_for_stateful_set(self, stateful_set, timeout: int = 300, wait_availability: bool = True):
+        replica_state = "available_replicas"
+        if not wait_availability:
+            replica_state = "current_replicas"
+
         configured_replicas = stateful_set.spec.replicas
         name = stateful_set.metadata.name
         namespace = stateful_set.metadata.namespace
@@ -280,7 +296,7 @@ class KubeClient:
                                   namespace=namespace,
                                   field_selector=f'metadata.name={name}',
                                   timeout_seconds=timeout):
-                if event["object"].status.available_replicas == configured_replicas:
+                if getattr(event["object"].status, replica_state) == configured_replicas:
                     w.stop()
                     return True
                 # event.type: ADDED, MODIFIED, DELETED
@@ -346,13 +362,3 @@ class KubeClient:
             return base64.b64decode(res.data['password']).decode("utf-8")
         except ApiException as e:
             raise e
-
-    def port_forward(self, pod_name, namespace, pod_port, local_port):
-        api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
-        try:
-            api_response = api_v1_instance.connect_post_namespaced_pod_portforward(pod_name, namespace,
-                                                                                   path="/api/v1/session",
-                                                                                   ports=pod_port)
-            return api_response
-        except ApiException as e:
-            print("Exception when calling CoreV1Api->connect_get_namespaced_pod_portforward: %s\n" % e)

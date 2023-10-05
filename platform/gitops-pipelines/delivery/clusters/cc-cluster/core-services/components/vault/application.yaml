@@ -18,6 +18,8 @@ spec:
           value: vault.<DOMAIN_NAME>
       values: |-
         server:
+          image:
+            tag: 1.14
           serviceAccount:
             create: true
             name: vault

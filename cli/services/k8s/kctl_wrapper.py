@@ -1,5 +1,4 @@
 import subprocess
-import sys
 
 import yaml
 
@@ -15,50 +14,44 @@ class KctlWrapper:
         else:
             self._kctl_executable = kctl_executable_path
 
-    def __kubectl_command_builder(self, basic_command: str, resource=None, name=None, container_name=None,
-                                  namespace=None, flags=None, with_definition=False):
-
-        command = [self._kctl_executable, '--kubeconfig', self._kctl_config_path, basic_command]
+    def __base_command(self, base_command=None, resource=None, container=None,
+                       namespace=None, flags=None, cmd=None, with_definition=False):
+        # kubectl[basic_command][RESOURCE_TYPE][NAME][flags]
+        command = [self._kctl_executable, '--kubeconfig', self._kctl_config_path]
+        if base_command:
+            command.append(base_command)
         if resource:
             command.append(resource)
-        if name:
-            command.append(name)
-        if container_name:
-            command.extend(['-c', container_name])
         if namespace:
-            command.extend(['--namespace', namespace])
+            command += ['--namespace', namespace]
+        if container:
+            command += ['-c', container]
         if flags:
-            command.extend(flags)
+            command += flags
         if with_definition:
-            command.extend(['-f', '-'])
+            command += ['-f', '-']
         return command
 
     @staticmethod
-    def __run_command(command, *args, **kwargs):
-        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    def __run_command(command: [str], *args, **kwargs):
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = proc.communicate(yaml.dump(kwargs).encode())
-        proc.stdin.close()
+
         if proc.wait() != 0:
             raise Exception(stderr)
+        return stdout.decode("utf-8")
 
     def run(self, command: str, *args, **kwargs):
-        command = self.__kubectl_command_builder(command, *args, **kwargs)
-        self.__run_command(command, *args, **kwargs)
+        command = self.__base_command(command, *args, **kwargs)
+        return self.__run_command(command, *args, **kwargs)
 
-    def create(self, definition, namespace=None):
-        command = self.__kubectl_command_builder('create', namespace=namespace, with_definition=True)
-        self.__run_command(command, definition)
+    def exec(self, pod: str, cmd: str, container: str = None, namespace: str = None, flags: [str] = None):
+        # kubectl exec POD [-c CONTAINER] [-i] [-t] [flags] [-- COMMAND [args...]]
+        command = self.__base_command(base_command="exec", resource=pod, namespace=namespace, container=container)
 
-    def apply(self, definition, namespace=None):
-        command = self.__kubectl_command_builder('apply', namespace=namespace, flags=['--record'], with_definition=True)
-        self.__run_command(command, definition)
+        command.append("-i")
+        if flags:
+            command += flags
+        command += cmd.split(" ")
 
-    def get(self, kind, name=None, namespace=None):
-        command = self.__kubectl_command_builder('get', resource=kind, name=name, namespace=namespace,
-                                                 flags=['-o', 'yaml'])
-        get_process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=sys.stderr)
-        objects = yaml.safe_load(get_process.stdout)
-        if get_process.wait() != 0:
-            raise Exception
-        return objects
+        return self.__run_command(command)

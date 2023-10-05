@@ -1,9 +1,9 @@
 import json
 import os
+import re
 from urllib.error import HTTPError
 
 import click
-import hvac
 import portforward
 import requests
 import yaml
@@ -526,29 +526,46 @@ def setup(email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_
         click.echo("Initializing Vault...")
 
         # TODO: need wait here as vault is not available just after argp app deployment
-        vault_ss = kube_client.get_stateful_set_objects("vault", "vault")
-        kube_client.wait_for_stateful_set(vault_ss, 600)
+        vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
+        kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
 
-        with portforward.forward(VAULT_NAMESPACE, "vault-0", 8200, 8200,
-                                 config_path=p.internals["KCTL_CONFIG_PATH"]):
+        # Vault init from the UI/API is broken from Vault version 1.12.0 till now 1.14.4
+        # https://discuss.hashicorp.com/t/cant-init-1-13-2-with-awskms/54000
+        # Workaround init using kubectl
+        # with portforward.forward(VAULT_NAMESPACE, "vault-0", 8200, 8200,
+        #                          config_path=p.internals["KCTL_CONFIG_PATH"]):
+        #
+        #     vault_client = hvac.Client(url='http://127.0.0.1:8200')
+        #     if not vault_client.sys.is_initialized():
+        #         vault_init_result = vault_client.sys.initialize()
+        #         vault_root_token = vault_init_result['root_token']
+        #         vault_keys = vault_init_result['keys']
+        #
+        #     if vault_client.sys.is_sealed():
+        #         vault_secret = {
+        #             "root-token": vault_root_token
+        #         }
+        #         for i, x in enumerate(vault_keys):
+        #             vault_secret[f"root-unseal-key-{i}"] = x
+        #         kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
+        try:
+            out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
+        except Exception as e:
+            raise click.ClickException("Could not unseal vault")
 
-            # TODO: figure out if we need port forwarding
-            vault_client = hvac.Client(url='https://127.0.0.1:8200')
-            if not vault_client.sys.is_initialized():
-                vault_init_result = vault_client.sys.initialize(secret_shares=5,
-                                                                secret_threshold=3,
-                                                                recovery_shares=3,
-                                                                recovery_threshold=5)
-                vault_root_token = vault_init_result['root_token']
-                vault_keys = vault_init_result['keys']
+        vault_keys = re.findall("^Recovery\\sKey\\s(?P<index>\\d):\\s(?P<key>.+)$", out, re.MULTILINE)
+        vault_root_token = re.findall("^Initial\\sRoot\\sToken:\\s(?P<token>.+)$", out, re.MULTILINE)
 
-            if vault_client.sys.is_sealed():
-                vault_secret = {
-                    "root-token": vault_root_token
-                }
-                for i, x in enumerate(vault_keys):
-                    vault_secret[f"root-unseal-key-{i}"] = x
-                kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
+        if not vault_root_token:
+            raise click.ClickException("Could not unseal vault")
+
+        vault_secret = {
+            "root-token": vault_root_token[0]
+        }
+        for i, v in vault_keys:
+            vault_secret[f"root-unseal-key-{i}"] = v
+
+        kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
 
         # TODO: parametrise and apply vault terraform
         # TODO: add k8s cm "vault-init"
