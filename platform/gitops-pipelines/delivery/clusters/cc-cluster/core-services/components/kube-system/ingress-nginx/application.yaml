@@ -15,12 +15,12 @@ spec:
     helm:
       values: |-
         controller:
-          metrics:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-              additionalLabels:
-                release: kube-prometheus-stack
+          # metrics:
+          #   enabled: true
+          #   serviceMonitor:
+          #     enabled: true
+          #     additionalLabels:
+          #       release: kube-prometheus-stack
           publishService:
             enabled: true
           service:
