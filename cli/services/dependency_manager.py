@@ -10,20 +10,20 @@ import requests
 from python_terraform import *
 
 from cli.common.const.common_path import LOCAL_TOOLS_FOLDER, LOCAL_TF_TOOL, LOCAL_KCTL_TOOL
+from cli.common.const.const import KUBECTL_VERSION, TERRAFORM_VERSION
 from cli.services.tf_wrapper import TfWrapper
 
 
 class DependencyManager:
-    tf_version = "1.3.9"
-    tf_base_path = f'https://releases.hashicorp.com/terraform/{tf_version}/'
-    tf_mac_i_url = f'terraform_{tf_version}_darwin_amd64.zip'
-    tf_mac_as_url = f'terraform_{tf_version}_darwin_arm64.zip'
-    tf_windows_url = f'terraform_{tf_version}_windows_amd64.zip'
-    tf_linux_url = f'terraform_{tf_version}_linux_amd64.zip'
-    tf_sha = f'terraform_{tf_version}_SHA256SUMS'
-    tf_sha_sig = f'terraform_{tf_version}_SHA256SUMS.sig'
+    tf_base_path = f'https://releases.hashicorp.com/terraform/{TERRAFORM_VERSION}/'
+    tf_mac_i_url = f'terraform_{TERRAFORM_VERSION}_darwin_amd64.zip'
+    tf_mac_as_url = f'terraform_{TERRAFORM_VERSION}_darwin_arm64.zip'
+    tf_windows_url = f'terraform_{TERRAFORM_VERSION}_windows_amd64.zip'
+    tf_linux_url = f'terraform_{TERRAFORM_VERSION}_linux_amd64.zip'
+    tf_sha = f'terraform_{TERRAFORM_VERSION}_SHA256SUMS'
+    tf_sha_sig = f'terraform_{TERRAFORM_VERSION}_SHA256SUMS.sig'
 
-    kctl_version = "v1.27.4"
+    kctl_version = f'v{KUBECTL_VERSION}'
     kctl_mac_i_url = f'https://dl.k8s.io/release/{kctl_version}/bin/darwin/amd64/kubectl'
     kctl_mac_as_url = f'https://dl.k8s.io/release/{kctl_version}/bin/darwin/arm64/kubectl'
     kctl_windows_url = f'https://dl.k8s.io/release/{kctl_version}/bin/windows/amd64/kubectl.exe'
@@ -82,7 +82,7 @@ class DependencyManager:
     def check_tf(self):
         if os.path.exists(LOCAL_TF_TOOL):
             tf = TfWrapper()
-            if tf.version() == self.tf_version:
+            if tf.version() == self.TERRAFORM_VERSION:
                 return True
 
         return False
