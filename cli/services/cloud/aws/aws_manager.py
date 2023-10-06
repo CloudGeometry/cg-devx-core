@@ -40,17 +40,17 @@ class AWSManager(CloudProviderManager):
         """
         return self.__aws_sdk.delete_bucket(bucket)
 
-    def create_iac_backend_snippet(self, location: str, region: str, service="default"):
+    def create_iac_backend_snippet(self, location: str, region: str = None, service="default"):
         if region is None:
             region = self.region
         # TODO: consider replacing with file template
         return textwrap.dedent('''\
-        backend "s3" {{
-          bucket = "{bucket}"
-          key    = "terraform/{service}/terraform.tfstate"
-          region  = "{region}"
-          encrypt = true
-        }}'''.format(bucket=location, region=region, service=service))
+            backend "s3" {{
+            bucket = "{bucket}"
+            key    = "terraform/{service}/terraform.tfstate"
+            region  = "{region}"
+            encrypt = true
+          }}'''.format(bucket=location, region=region, service=service))
 
     def create_hosting_provider_snippet(self):
         # TODO: consider replacing with file template
@@ -64,9 +64,18 @@ class AWSManager(CloudProviderManager):
           }
         }''')
 
-    def create_k8s_role_binding_snippet(self):
+    def create_secret_manager_seal_snippet(self, role_arn: str, region: str = None):
+        if region is None:
+            region = self.region
+
+        return '''seal "awskms" {{
+                  region     = "{region}"
+                  kms_key_id = "{role_arn}"
+                }}'''.format(region=region, role_arn=role_arn)
+
+    def create_k8s_cluster_role_mapping_snippet(self):
         # TODO: consider replacing with file template
-        return "serviceAccountName"
+        return "eks.amazonaws.com/role-arn"
 
     def get_k8s_auth_command(self) -> str:
         args = [

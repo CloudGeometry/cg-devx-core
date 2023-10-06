@@ -1,11 +1,19 @@
+import json
 import os
+import re
+import time
+from urllib.error import HTTPError
 
 import click
+import portforward
+import requests
 import yaml
 
 from cli.common.command_utils import init_cloud_provider
 from cli.common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER
-from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
+from cli.common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
+from cli.common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
+    ATLANTIS_NAMESPACE, VAULT_NAMESPACE
 from cli.common.const.parameter_names import *
 from cli.common.enums.cloud_providers import CloudProviders
 from cli.common.enums.dns_registrars import DnsRegistrars
@@ -17,8 +25,9 @@ from cli.services.cloud.azure.azure_manager import AzureManager
 from cli.services.dependency_manager import DependencyManager
 from cli.services.dns.dns_provider_manager import DNSManager
 from cli.services.k8s.config_builder import create_k8s_config
+from cli.services.k8s.delivery_service_manager import DeliveryServiceManager
 from cli.services.k8s.k8s import KubeClient, write_ca_cert
-from cli.services.kctl_wrapper import KctlWrapper
+from cli.services.k8s.kctl_wrapper import KctlWrapper
 from cli.services.keys.key_manager import KeyManager
 from cli.services.template_manager import GitOpsTemplateManager
 from cli.services.tf_wrapper import TfWrapper
@@ -106,9 +115,10 @@ def setup(
 
     # save checkpoint
     p.save_checkpoint()
-    cm, dm = init_cloud_provider(p)
 
-    p.parameters["<CLOUD_REGION>"] = cm.region
+    cloud_man, dns_man = init_cloud_provider(p)
+
+    p.parameters["<CLOUD_REGION>"] = cloud_man.region
 
     # init proper git provider
     if p.git_provider == GitProviders.GitHub:
@@ -129,7 +139,8 @@ def setup(
 
     if not p.has_checkpoint("preflight"):
         click.echo("Executing pre-flight checks...")
-        cloud_provider_check(cm, p)
+
+        cloud_provider_check(cloud_man, p)
         click.echo("Cloud provider pre-flight check. Done!")
 
         git_provider_check(gm, p)
@@ -141,20 +152,23 @@ def setup(
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.parameters["# <GIT_PROVIDER_MODULE>"] = gm.create_tf_module_snippet()
 
-        dns_provider_check(dm, p)
+        dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")
 
         # create ssh keys
         click.echo("Generating ssh keys...")
-        default_public_key, public_key_path, private_key_path = KeyManager.create_ed_keys()
-        p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
+        default_public_key, public_key_path, default_private_key, private_key_path = KeyManager.create_ed_keys()
+        p.internals["DEFAULT_SSH_PUBLIC_KEY"] = p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
         p.internals["DEFAULT_SSH_PUBLIC_KEY_PATH"] = public_key_path
+        p.internals["DEFAULT_SSH_PRIVATE_KEY"] = default_private_key
         p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
 
         # Optional K8s cluster keys
-        k8s_public_key, k8s_public_key_path, k8s_private_key_path = KeyManager.create_ed_keys("cgdevx_k8s_ed")
+        k8s_public_key, k8s_public_key_path, k8s_private_key, k8s_private_key_path = KeyManager.create_ed_keys(
+            "cgdevx_k8s_ed")
         p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
         p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
+        p.internals["CLUSTER_SSH_PRIVATE_KEY"] = k8s_private_key
         p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
 
         click.echo("Generating ssh keys. Done!")
@@ -164,22 +178,23 @@ def setup(
 
         tf_backend_storage_name = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
 
-        tf_backend_location, tf_backend_location_region = cm.create_iac_state_storage(tf_backend_storage_name)
+        tf_backend_location, tf_backend_location_region = cloud_man.create_iac_state_storage(tf_backend_storage_name)
         p.internals["TF_BACKEND_LOCATION"] = tf_backend_location
         p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_storage_name
 
-        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cm.create_iac_backend_snippet(tf_backend_storage_name, cm.region,
-                                                                                  "vcs")
-        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cm.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                      cm.region,
-                                                                                      "hosting_provider")
-        p.parameters["# <TF_HOSTING_PROVIDER>"] = cm.create_hosting_provider_snippet()
+        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
+                                                                                         cloud_man.region,
+                                                                                         "vcs")
+        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
+                                                                                             cloud_man.region,
+                                                                                             "hosting_provider")
+        p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
-        p.parameters["<K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>"] = cm.create_k8s_role_binding_snippet()
+        p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
         click.echo("Creating tf backend storage. Done!")
 
-        p.parameters["<CLOUD_ACCOUNT>"] = cm.account_id
+        p.parameters["<CLOUD_ACCOUNT>"] = cloud_man.account_id
 
         p.set_checkpoint("preflight")
         p.save_checkpoint()
@@ -189,25 +204,25 @@ def setup(
     else:
         click.echo("Skipped pre-flight checks.")
 
-    dm: DependencyManager = DependencyManager()
+    dep_man: DependencyManager = DependencyManager()
 
     if not p.has_checkpoint("dependencies"):
         click.echo("Dependencies check...")
 
         # terraform
-        if dm.check_tf():
+        if dep_man.check_tf():
             click.echo("tf is installed. Continuing...")
         else:
             click.echo("Downloading and installing tf...")
-            dm.install_tf()
+            dep_man.install_tf()
             click.echo("tf is installed.")
 
         # kubectl
-        if dm.check_kubectl():
+        if dep_man.check_kubectl():
             click.echo("kubectl is installed. Continuing...")
         else:
             click.echo("Downloading and installing kubectl...")
-            dm.install_kubectl()
+            dep_man.install_kubectl()
             click.echo("kubectl is installed.")
 
         click.echo("Dependencies check. Done!")
@@ -264,7 +279,7 @@ def setup(
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_VCS)
         tf_wrapper.init()
-        tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["<ATLANTIS_WEBHOOK_SECRET>"],
+        tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
                           "vcs_bot_ssh_public_key": p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"]})
         vcs_out = tf_wrapper.output()
 
@@ -304,18 +319,22 @@ def setup(
         # network
         p.parameters["<NETWORK_ID>"] = hp_out["network_id"]
         # roles
-        p.parameters["<ARGO_WORKFLOW_IAM_ROLE_RN>"] = hp_out["iam_argoworkflow_role"]
-        p.parameters["<ARGO_CD_IAM_ROLE_RN>"] = hp_out["iam_argoworkflow_role"]  # TODO: use own role
-        p.parameters["<ATLANTIS_IAM_ROLE_RN>"] = hp_out["atlantis_role"]
+        p.parameters["<CD_IAM_ROLE_RN>"] = hp_out["iam_cd_role"]
+        p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["iam_ci_role"]
+        p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"] = hp_out["iac_pr_automation_role"]
         p.parameters["<CERT_MANAGER_IAM_ROLE_RN>"] = hp_out["cert_manager_role"]
-        p.parameters["<HARBOR_IAM_ROLE_RN>"] = hp_out["harbor_role"]
+        p.parameters["<REGISTRY_IAM_ROLE_RN>"] = hp_out["registry_role"]
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
-        p.parameters["<VAULT_IAM_ROLE_RN>"] = hp_out["vault_role"]
+        p.parameters["<SECRET_MANAGER_IAM_ROLE_RN>"] = hp_out["secret_manager_role"]
         # cluster
         p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
         p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
         p.internals["CC_CLUSTER_OIDC_PROVIDER"] = hp_out["cluster_oidc_provider"]  # do we need it?
+        # kms keys
+        sec_man_key = hp_out["secret_manager_seal_key"]
+        p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
+        p.parameters["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_secret_manager_seal_snippet(sec_man_key)
 
         # unset envs as no longer needed
         for k in hp_tf_env_vars.keys():
@@ -325,7 +344,7 @@ def setup(
         # AWS: `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
         # CLI could not follow this approach as aws client could be not configured properly when keys are used
         # CLI is creating this file programmatically
-        command, command_args = cm.get_k8s_auth_command()
+        command, command_args = cloud_man.get_k8s_auth_command()
         kubeconfig_params = {
             "<ENDPOINT>": p.internals["CC_CLUSTER_ENDPOINT"],
             "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
@@ -363,18 +382,152 @@ def setup(
     # k8s
     # default token life-time is 14m
     # to be safe should refresh token each time
-    k8s_token = cm.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
-    kc = KubeClient(p.internals["CC_CLUSTER_CA_CERT_PATH"], k8s_token, p.internals["CC_CLUSTER_ENDPOINT"])
-    # kc.list_pods()
-
+    k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
+    kube_client = KubeClient(p.internals["CC_CLUSTER_CA_CERT_PATH"], k8s_token, p.internals["CC_CLUSTER_ENDPOINT"])
     kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
-    # kctl.get("pods", namespace="kube-system")
+    cd_man = DeliveryServiceManager(kube_client)
 
     # install ArgoCD
+    # argocd 2.8.4
+    # https://argo-cd.readthedocs.io/en/stable/operator-manual/installation/
     if not p.has_checkpoint("k8s-delivery"):
         click.echo("Installing ArgoCD...")
 
-        # TODO: install ArgoCD
+        # get CoreDNS deployments to validate cluster
+        coredns_deployment = kube_client.get_deployment("kube-system", "coredns")
+
+        # wait for deployment readiness
+        kube_client.wait_for_deployment(coredns_deployment)
+
+        argocd_bootstrap_name = "argocd-bootstrap"
+        argocd_core_project_name = "core"
+
+        kube_client.create_namespace(ARGOCD_NAMESPACE)
+        kube_client.create_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
+        kube_client.create_cluster_role(ARGOCD_NAMESPACE, argocd_bootstrap_name)
+        # extract role name from arn
+        # TODO: move to tf
+        argo_cd_role_name = p.parameters["<CD_IAM_ROLE_RN>"].split("/")[-1]
+        kube_client.create_cluster_role_binding(ARGOCD_NAMESPACE, argocd_bootstrap_name, argocd_bootstrap_name)
+
+        job = cd_man.create_argocd_bootstrap_job(argocd_bootstrap_name)
+        kube_client.wait_for_job(job)
+        # cleanup temp resources
+        try:
+            kube_client.remove_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
+            kube_client.remove_cluster_role(argocd_bootstrap_name)
+            kube_client.remove_cluster_role_binding(argocd_bootstrap_name)
+        except Exception as e:
+            click.echo("Could not clean up ArgoCD bootstrap temporary resources, manual clean-up is required")
+
+        # wait for ArgoCD to be ready
+
+        argocd_ss = kube_client.get_stateful_set_objects(ARGOCD_NAMESPACE, "argocd-application-controller")
+        kube_client.wait_for_stateful_set(argocd_ss)
+
+        # 	argocd-server
+        argocd_server = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-server")
+        kube_client.wait_for_deployment(argocd_server)
+
+        # wait for additional ArgoCD Pods to transition to Running
+        # this is related to a condition where apps attempt to deploy before
+        # repo, redis, or other health checks are passing
+        # this can cause future steps to break since the registry app
+        # may never apply
+
+        # 	argocd-repo-server
+        argocd_repo_server = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-repo-server")
+        kube_client.wait_for_deployment(argocd_repo_server)
+
+        # HA components
+
+        # argocd-redis-ha-haproxy Deployment
+        argocd_redis_ha_haproxy = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-redis-ha-haproxy")
+        kube_client.wait_for_deployment(argocd_redis_ha_haproxy)
+
+        # argocd-redis-ha StatefulSet
+        argocd_redis_ha = kube_client.get_stateful_set_objects(ARGOCD_NAMESPACE, "argocd-redis-ha-server")
+        kube_client.wait_for_stateful_set(argocd_redis_ha)
+
+        # create additional namespaces
+        kube_client.create_namespace(ARGO_WORKFLOW_NAMESPACE)
+        kube_client.create_namespace(ATLANTIS_NAMESPACE)
+        kube_client.create_namespace(EXTERNAL_SECRETS_OPERATOR_NAMESPACE)
+
+        # create additional service accounts
+        kube_client.create_service_account(ATLANTIS_NAMESPACE, "atlantis")
+        kube_client.create_service_account(EXTERNAL_SECRETS_OPERATOR_NAMESPACE, "external-secrets")
+
+        # create argocd kubernetes project and secret for connectivity to private gitops repos
+        annotations = {"managed-by": "argocd.argoproj.io"}
+
+        # credentials template
+        git_wildcard_url = "".join(p.parameters["<GIT_REPOSITORY_GIT_URL>"].partition("/")[:-1])
+
+        argocd_sec_secret_name = f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-repo-creds'.lower()
+        argocd_secret = {
+            "type": "git",
+            "name": argocd_sec_secret_name,
+            "url": git_wildcard_url,
+            "sshPrivateKey": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
+        }
+        creds_labels = {"argocd.argoproj.io/secret-type": "repo-creds"}
+
+        kube_client.create_plain_secret(ARGOCD_NAMESPACE,
+                                        argocd_sec_secret_name,
+                                        argocd_secret,
+                                        annotations,
+                                        creds_labels)
+
+        # repo
+        argocd_sec_project_name = f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-gitops'.lower()
+        argocd_project = {
+            "type": "git",
+            "name": argocd_sec_project_name,
+            "url": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+        }
+        repo_labels = {"argocd.argoproj.io/secret-type": "repository"}
+
+        kube_client.create_plain_secret(ARGOCD_NAMESPACE,
+                                        argocd_sec_project_name,
+                                        argocd_project,
+                                        annotations,
+                                        repo_labels)
+
+        # TODO: properly init harbor auth
+        harbor_reg_url = p.parameters["<REGISTRY_REGISTRY_URL>"]
+        registry_secret = {
+            "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": "TODO: set token"}}})
+        }
+
+        kube_client.create_plain_secret(ARGO_WORKFLOW_NAMESPACE, "docker-config", registry_secret)
+
+        # argocd pods are ready, get and set credentials
+        argo_pas = kube_client.get_secret(ARGOCD_NAMESPACE, "argocd-initial-admin-secret")
+        p.internals["ARGOCD_USER"] = "admin"
+        p.internals["ARGOCD_PASSWORD"] = argo_pas
+
+        # TODO: need wait here as api is not available just after service ready
+        time.sleep(120)
+        # get argocd auth token
+        with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
+                                 config_path=p.internals["KCTL_CONFIG_PATH"]):
+            argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
+            p.internals["ARGOCD_TOKEN"] = argocd_token
+
+        click.echo("applying the registry application to argocd")
+
+        # create argocd "core" project
+        # TODO: explicitly whitelist project repositories
+        cd_man.create_project(argocd_core_project_name, [
+            p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+            "https://charts.jetstack.io",
+            "https://kubernetes-sigs.github.io/external-dns",
+            "*"
+        ])
+
+        # deploy registry app
+        cd_man.create_core_application(argocd_core_project_name, p.parameters["<GIT_REPOSITORY_GIT_URL>"])
 
         p.set_checkpoint("k8s-delivery")
         p.save_checkpoint()
@@ -383,7 +536,84 @@ def setup(
     else:
         click.echo("Skipped ArgoCD installation.")
 
+    # initialize and unseal vault
+    if not p.has_checkpoint("secrets-management"):
+        click.echo("Initializing Vault...")
+
+        # TODO: need wait here as vault is not available just after argp app deployment
+        time.sleep(120)
+        vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
+        kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
+
+        # Vault init from the UI/API is broken from Vault version 1.12.0 till now 1.14.4
+        # https://discuss.hashicorp.com/t/cant-init-1-13-2-with-awskms/54000
+        # Workaround init using kubectl
+        # with portforward.forward(VAULT_NAMESPACE, "vault-0", 8200, 8200,
+        #                          config_path=p.internals["KCTL_CONFIG_PATH"]):
+        #
+        #     vault_client = hvac.Client(url='http://127.0.0.1:8200')
+        #     if not vault_client.sys.is_initialized():
+        #         vault_init_result = vault_client.sys.initialize()
+        #         vault_root_token = vault_init_result['root_token']
+        #         vault_keys = vault_init_result['keys']
+        #
+        #     if vault_client.sys.is_sealed():
+        #         vault_secret = {
+        #             "root-token": vault_root_token
+        #         }
+        #         for i, x in enumerate(vault_keys):
+        #             vault_secret[f"root-unseal-key-{i}"] = x
+        #         kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
+        try:
+            out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
+        except Exception as e:
+            raise click.ClickException("Could not unseal vault")
+
+        vault_keys = re.findall("^Recovery\\sKey\\s(?P<index>\\d):\\s(?P<key>.+)$", out, re.MULTILINE)
+        vault_root_token = re.findall("^Initial\\sRoot\\sToken:\\s(?P<token>.+)$", out, re.MULTILINE)
+
+        if not vault_root_token:
+            raise click.ClickException("Could not unseal vault")
+
+        vault_secret = {
+            "root-token": vault_root_token[0]
+        }
+        for i, v in vault_keys:
+            vault_secret[f"root-unseal-key-{i}"] = v
+
+        kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
+
+        # TODO: parametrise and apply vault terraform
+        # TODO: add k8s cm "vault-init"
+
+        p.set_checkpoint("secrets-management")
+        p.save_checkpoint()
+
+        click.echo("Vault initialization. Done!")
+    else:
+        click.echo("Skipped Vault initialization.")
+
+    # TODO: parametrise and apply users terraform
+
+    # TODO: commit changes
+
     return True
+
+
+def get_argocd_token(user, password):
+    try:
+        response = requests.post("https://localhost:8080/api/v1/session",
+                                 verify=False,
+                                 headers={"Content-Type": "application/json"},
+                                 data=json.dumps({"username": user, "password": password})
+                                 )
+        if response.status_code == requests.codes["not_found"]:
+            return None
+        elif response.ok:
+            res = json.loads(response.text)
+            return res["token"]
+    except HTTPError as e:
+        raise e
 
 
 def prepare_parameters(p):
@@ -396,46 +626,49 @@ def prepare_parameters(p):
     p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
     p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
-    p.parameters["<ATLANTIS_WEBHOOK_SECRET>"] = random_string_generator(20)
+    p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"] = random_string_generator(20)
+    p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
     # Ingress URLs for core components. Note!: URL does not contain protocol
-    cluster_fqdn = f'{p.get_input_param(PRIMARY_CLUSTER_NAME)}.{p.get_input_param(DOMAIN_NAME)}'
+    cluster_fqdn = f'{p.get_input_param(DOMAIN_NAME)}'
     p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
-    p.parameters["<VAULT_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
-    p.parameters["<ARGO_CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
-    p.parameters["<ARGO_WORKFLOW_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
-    p.parameters["<ATLANTIS_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
-    p.parameters["<HARBOR_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
+    p.parameters["<SECRET_MANAGER_INGRESS_URL>"] = f'vault.{cluster_fqdn}'
+    p.parameters["<CD_INGRESS_URL>"] = f'argocd.{cluster_fqdn}'
+    p.parameters["<CI_INGRESS_URL>"] = f'argo.{cluster_fqdn}'
+    p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
+    p.parameters["<REGISTRY_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
     p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
     p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
     # OIDC config
-    vault_i = p.parameters["<VAULT_INGRESS_URL>"]
-    p.parameters["<OIDC_PROVIDER_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx'
-    p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{vault_i}/ui/vault/identity/oidc/provider/cgdevx/authorize'
-    p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/token'
-    p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{vault_i}/v1/identity/oidc/provider/cgdevx/userinfo'
-    p.parameters["<ARGO_CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ARGO_CD_INGRESS_URL>"]}/oauth2/callback'
-    p.parameters["<HARBOR_REGISTRY_URL>"] = f'{p.parameters["<HARBOR_INGRESS_URL>"]}'
+    sec_man_ing = p.parameters["<SECRET_MANAGER_INGRESS_URL>"]
+    p.parameters["<OIDC_PROVIDER_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx'
+    p.parameters["<OIDC_PROVIDER_AUTHORIZE_URL>"] = f'{sec_man_ing}/ui/vault/identity/oidc/provider/cgdevx/authorize'
+    p.parameters["<OIDC_PROVIDER_TOKEN_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx/token'
+    p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx/userinfo'
+    p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/oauth2/callback'
+    p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
+
+    return p
 
 
 def cloud_provider_check(manager: AzureManager | AWSManager, p: StateStore) -> None:
     if not manager.detect_cli_presence():
-        click.ClickException("Cloud CLI is missing")
+        raise click.ClickException("Cloud CLI is missing")
     if not manager.evaluate_permissions():
-        click.ClickException("Insufficient IAM permission")
+        raise click.ClickException("Insufficient IAM permission")
 
 
 def git_provider_check(manager: GitProviderManager, p: StateStore) -> None:
     if not manager.evaluate_permissions():
-        click.ClickException("Insufficient Git token permissions")
+        raise click.ClickException("Insufficient Git token permissions")
     if manager.check_repository_existence(p.get_input_param(GITOPS_REPOSITORY_NAME)):
-        click.ClickException("GitOps repo already exists")
+        raise click.ClickException("GitOps repo already exists")
 
 
 def dns_provider_check(manager: DNSManager, p: StateStore) -> None:
     if not manager.evaluate_permissions():
-        click.ClickException("Insufficient DNS permissions")
+        raise click.ClickException("Insufficient DNS permissions")
     if not manager.evaluate_domain_ownership(p.get_input_param(DOMAIN_NAME)):
-        click.ClickException("Could not verify domain ownership")
+        raise click.ClickException("Could not verify domain ownership")
 
 
 def setup_param_validator(params: StateStore) -> bool:

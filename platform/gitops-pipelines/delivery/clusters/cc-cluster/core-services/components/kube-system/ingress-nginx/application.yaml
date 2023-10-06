@@ -8,19 +8,19 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '10'
 spec:
-  project: default
+  project: core
   source:
     repoURL: https://kubernetes.github.io/ingress-nginx
     targetRevision: 4.5.2
     helm:
       values: |-
         controller:
-          metrics:
-            enabled: true
-            serviceMonitor:
-              enabled: true
-              additionalLabels:
-                release: kube-prometheus-stack
+          # metrics:
+          #   enabled: true
+          #   serviceMonitor:
+          #     enabled: true
+          #     additionalLabels:
+          #       release: kube-prometheus-stack
           publishService:
             enabled: true
           service:

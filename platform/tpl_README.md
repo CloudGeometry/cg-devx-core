@@ -12,11 +12,11 @@ The CG DevX services:
 
 | Application    | Namespace  | Description                        | URL (where applicable)              |
 |----------------|------------|------------------------------------|-------------------------------------|
-| Vault          | vault      | Secrets Management                 | https://<VAULT_INGRESS_URL>         |
-| Argo CD        | argocd     | GitOps Continuous Delivery         | https://<ARGO_CD_INGRESS_URL>       |
-| Argo Workflows | argo       | Application Continuous Integration | https://<ARGO_WORKFLOW_INGRESS_URL> |
-| Atlantis       | atlantis   | Terraform Workflow Automation      | https://<ATLANTIS_INGRESS_URL>      |
-| Harbor         | harbor     | Image & Helm Chart Registry        | https://<HARBOR_INGRESS_URL>        |
+| Vault          | vault      | Secrets Management                 | https://<SECRET_MANAGER_INGRESS_URL>         |
+| Argo CD        | argocd     | GitOps Continuous Delivery         | https://<CD_INGRESS_URL>       |
+| Argo Workflows | argo       | Application Continuous Integration | https://<CI_INGRESS_URL> |
+| Atlantis       | atlantis   | Terraform Workflow Automation      | https://<IAC_PR_AUTOMATION_INGRESS_URL>      |
+| Harbor         | harbor     | Image & Helm Chart Registry        | https://<REGISTRY_INGRESS_URL>        |
 | Grafana        | monitoring | Observability                      | https://<GRAFANA_INGRESS_URL>       |
 | SonarQube      | sonarqube  | Code Quality                       | https://<SONARQUBE_INGRESS_URL>     |
 

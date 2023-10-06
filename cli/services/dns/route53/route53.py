@@ -21,7 +21,7 @@ class Route53Manager(DNSManager):
             if not set(existing_ns).issubset(set(name_servers)):
                 return False
 
-        self.__aws_sdk.set_hosted_zone_liveness(domain_name, zone_id, name_servers)
+        return self.__aws_sdk.set_hosted_zone_liveness(domain_name, zone_id, name_servers)
 
     def evaluate_permissions(self):
         """

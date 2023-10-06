@@ -11,7 +11,7 @@ spec:
   destination:
     namespace: kubecost
     server: https://kubernetes.default.svc
-  project: default
+  project: core
   source:
     chart: cost-analyzer
     repoURL: https://kubecost.github.io/cost-analyzer/

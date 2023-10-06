@@ -8,7 +8,7 @@ terraform {
 
 locals {
   gitops_repo_name = "<GITOPS_REPOSITORY_NAME>"
-  atlantis_url     = "https://<ATLANTIS_INGRESS_URL>/events"
+  atlantis_url     = "https://<IAC_PR_AUTOMATION_INGRESS_URL>/events"
   workload_enabled = false
   workload_repos   = local.workload_enabled == false ? {} : {
     "workload-demo-iac" = {

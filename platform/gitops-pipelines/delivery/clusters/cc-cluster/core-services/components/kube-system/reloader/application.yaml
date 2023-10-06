@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '10'
 spec:
-  project: default
+  project: core
   source:
     repoURL: 'https://stakater.github.io/stakater-charts'
     targetRevision: v1.0.10

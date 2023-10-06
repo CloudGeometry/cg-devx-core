@@ -11,7 +11,7 @@ spec:
   destination:
     namespace: tracee
     server: https://kubernetes.default.svc
-  project: default
+  project: core
   source:
     chart: tracee
     repoURL: https://aquasecurity.github.io/helm-charts/
