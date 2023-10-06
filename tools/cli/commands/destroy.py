@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 
 import click
 
@@ -32,18 +33,21 @@ def destroy():
     for k, vault_i in tf_env_vars.items():
         os.environ[k] = vault_i
 
+    if p.has_checkpoint("vcs-tf"):
+        click.echo("Destroying VCS...")
+
+        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_VCS)
+        tf_wrapper.init()
+        tf_wrapper.destroy()
+
+    # wait till resources are de-provisioned by ArgoCD before destroying K8s cluster
+    time.sleep(30)
+
     # K8s Cluster section
     if p.has_checkpoint("k8s-tf"):
         click.echo("Destroying K8s cluster...")
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_HOSTING_PROVIDER)
-        tf_wrapper.init()
-        tf_wrapper.destroy()
-
-    if p.has_checkpoint("vcs-tf"):
-        click.echo("Destroying VCS...")
-
-        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_VCS)
         tf_wrapper.init()
         tf_wrapper.destroy()
 

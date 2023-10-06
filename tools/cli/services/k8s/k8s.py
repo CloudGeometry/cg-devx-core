@@ -26,6 +26,8 @@ class KubeClient:
         """
         Creates a namespace.
         """
+        name = name.lower()
+
         api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
         body = client.V1Namespace(metadata=client.V1ObjectMeta(name=name))
         try:
@@ -42,6 +44,9 @@ class KubeClient:
         """
         Creates a service account.
         """
+
+        sa_name = sa_name.lower()
+
         api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
         body = client.V1ServiceAccount(metadata=client.V1ObjectMeta(name=sa_name, namespace=namespace))
         try:
@@ -57,6 +62,8 @@ class KubeClient:
         """
         Creates a cluster role.
         """
+        name = name.lower()
+
         rbac_v1_instance = client.RbacAuthorizationV1Api(client.ApiClient(self._configuration))
 
         body = client.V1ClusterRole(metadata=client.V1ObjectMeta(name=name, namespace=namespace),
@@ -75,6 +82,8 @@ class KubeClient:
         """
         Creates a ClusterRoleBinding
         """
+        name = name.lower()
+
         rbac_v1_instance = client.RbacAuthorizationV1Api(client.ApiClient(self._configuration))
         body = client.V1ClusterRoleBinding(
             metadata=client.V1ObjectMeta(name=name, namespace=namespace),
@@ -347,6 +356,29 @@ class KubeClient:
             pass
 
         res = api_v1_instance.create_namespaced_secret(namespace=namespace, body=body)
+        return res
+
+    def create_configmap(self, namespace: str, name: str, data: dict, annotations: dict = None, labels: dict = None):
+        """
+        Creates plain text secret.
+        """
+        name = name.lower()
+
+        api_v1_instance = client.CoreV1Api(client.ApiClient(self._configuration))
+
+        body = client.V1ConfigMap(metadata=client.V1ObjectMeta(name=name, namespace=namespace,
+                                                               annotations=annotations,
+                                                               labels=labels),
+                                  data=data
+                                  )
+        try:
+            res = api_v1_instance.read_namespaced_config_map(name=name, namespace=namespace)
+            return res
+        except ApiException as e:
+            # config map doesn't exist
+            pass
+
+        res = api_v1_instance.create_namespaced_config_map(namespace=namespace, body=body)
         return res
 
     def get_secret(self, namespace: str, name: str):

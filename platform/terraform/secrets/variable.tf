@@ -11,7 +11,7 @@ variable "vcs_bot_ssh_private_key" {
   sensitive   = true
 }
 
-variable "<GIT_PROVIDER>_token" {
+variable "vcs_token" {
   description = "token for git operations"
   default = ""
   type = string

@@ -4,18 +4,18 @@ terraform {
 }
 
 locals {
-  name          = "<PRIMARY_CLUSTER_NAME>"
-  ProvisionedBy = "cgdevx"
+  cluster_name  = "<PRIMARY_CLUSTER_NAME>"
+  provisioned_by = "cgdevx"
   region        = "<CLOUD_REGION>"
   email         = ["<OWNER_EMAIL>"]
 }
 
-# Provider configuration
+# Cloud Provider configuration
 # <TF_HOSTING_PROVIDER>
 
 module "hosting-provider" {
   source       = "../modules/cloud_<CLOUD_PROVIDER>"
-  cluster_name = local.name
+  cluster_name = local.cluster_name
   region       = local.region
   alert_emails = local.email
 }
