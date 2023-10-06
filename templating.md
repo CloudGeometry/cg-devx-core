@@ -30,6 +30,11 @@ Templating variables reference to input parameters
 
 Templating variables generated during setup process
 
+### Cloud
+
+- `CLOUD_ACCOUNT` - cloud account id
+- `CLOUD_REGION`
+
 ### Internal values
 
 - `<GIT_REPOSITORY_GIT_URL>` - Target git repository Git URL
@@ -66,11 +71,12 @@ Secret for Atlantis webhook
 
 - `<IAC_PR_AUTOMATION_WEBHOOK_SECRET>`
 
-### Github
+### Git
 bot user's keypair
 
 - `<VCS_BOT_SSH_PUBLIC_KEY>`
 - `<VCS_BOT_SSH_PRIVATE_KEY>`
+- `<GIT_USER_NAME>`
 
 ### OIDC
 
@@ -94,3 +100,5 @@ OIDC provider configuration Note!: URL does not contain protocol prefix
 - `<PUBLIC_SUBNET_ID>`
 - `<PRIVATE_SUBNET_ID>`
 - `<AZ_IDS>`
+
+## Internal params

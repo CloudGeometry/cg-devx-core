@@ -52,7 +52,7 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def create_hosting_provider_snippet(self, location: str, region: str = None):
+    def create_hosting_provider_snippet(self):
         """
         Creates terraform hosting provider snippet
         :return: Code snippet

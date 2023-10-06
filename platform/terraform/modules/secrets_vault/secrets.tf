@@ -44,18 +44,24 @@ resource "vault_generic_secret" "atlantis_secrets" {
   data_json = jsonencode(
     {
       ARGO_SERVER_URL                     = "argo.argo.svc.cluster.local:2746",
+      # github specific section
+      # ----
       ATLANTIS_GH_HOSTNAME                = "github.com",
       ATLANTIS_GH_TOKEN                   = var.<GIT_PROVIDER>_token,
-      ATLANTIS_GH_USER                    = "<GITHUB_USER>", #add to templating.md
+      ATLANTIS_GH_USER                    = "<GIT_USER_NAME>",
       ATLANTIS_GH_WEBHOOK_SECRET          = var.atlantis_repo_webhook_secret,
       GITHUB_OWNER                        = "<GIT_ORGANIZATION_NAME>",
       GITHUB_TOKEN                        = var.<GIT_PROVIDER>_token,
+      # ----
       TF_VAR_atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url,
       TF_VAR_b64_docker_auth              = var.b64_docker_auth,
       TF_VAR_<GIT_PROVIDER>_token         = var.<GIT_PROVIDER>_token,
-      TF_VAR_aws_account_id               = "<AWS_ACCOUNT_ID>", #add to templating.md
+      # aws specific section
+      # ----
+      TF_VAR_aws_account_id               = "<CLOUD_ACCOUNT>",
       TF_VAR_aws_region                   = "<CLOUD_REGION>",
+      # ----
       TF_VAR_hosted_zone_name             = "<DOMAIN_NAME>",
       TF_VAR_cgdevxbot_ssh_public_key     = var.cgdevxbot_ssh_public_key,
       TF_VAR_cgdevxbot_ssh_private_key    = var.cgdevxbot_ssh_private_key,

@@ -10,7 +10,8 @@ import requests
 import yaml
 
 from common.command_utils import init_cloud_provider
-from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER
+from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
+    LOCAL_TF_FOLDER_SECRETS_MANAGER
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE
@@ -152,6 +153,7 @@ def setup(
         git_user_login, git_user_name, git_user_email = gm.get_current_user_info()
         p.internals["GIT_USER_LOGIN"] = git_user_login
         p.internals["GIT_USER_NAME"] = git_user_name
+        p.parameters["<GIT_USER_NAME>"] = git_user_name
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.parameters["# <GIT_PROVIDER_MODULE>"] = gm.create_tf_module_snippet()
 
@@ -191,6 +193,10 @@ def setup(
         p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
                                                                                              cloud_man.region,
                                                                                              "hosting_provider")
+        p.parameters["# <TF_SECRETS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
+                                                                                             cloud_man.region,
+                                                                                             "secrets")
+
         p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
@@ -266,6 +272,7 @@ def setup(
         "AWS_PROFILE": p.get_input_param(CLOUD_PROFILE),
         "AWS_ACCESS_KEY_ID": p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
         "AWS_SECRET_ACCESS_KEY": p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET),
+        "AWS_REGION": p.parameters["<CLOUD_REGION>"],
         "AWS_DEFAULT_REGION": p.parameters["<CLOUD_REGION>"],
     }.items() if v}
 
@@ -499,11 +506,18 @@ def setup(
 
         # TODO: properly init harbor auth
         harbor_reg_url = p.parameters["<REGISTRY_REGISTRY_URL>"]
+
+        # TODO: set token
+        registry_auth_method = "TODO: set token"
+        p.internals["REGISTRY_AUTH_METHOD"] = registry_auth_method
+
         registry_secret = {
-            "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": "TODO: set token"}}})
+            "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": registry_auth_method}}})
         }
 
         kube_client.create_plain_secret(ARGO_WORKFLOW_NAMESPACE, "docker-config", registry_secret)
+        # TODO: figure out if we need it
+        # kube_client.create_plain_secret(ARGO_WORKFLOW_NAMESPACE, "registry-auth", registry_secret)
 
         # argocd pods are ready, get and set credentials
         argo_pas = kube_client.get_secret(ARGOCD_NAMESPACE, "argocd-initial-admin-secret")
@@ -511,7 +525,7 @@ def setup(
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
         # TODO: need wait here as api is not available just after service ready
-        time.sleep(120)
+        time.sleep(30)
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
                                  config_path=p.internals["KCTL_CONFIG_PATH"]):
@@ -541,10 +555,10 @@ def setup(
 
     # initialize and unseal vault
     if not p.has_checkpoint("secrets-management"):
-        click.echo("Initializing Vault...")
+        click.echo("Initializing Secrets Manager...")
 
         # TODO: need wait here as vault is not available just after argp app deployment
-        time.sleep(120)
+        time.sleep(60)
         vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
         kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
 
@@ -585,16 +599,56 @@ def setup(
             vault_secret[f"root-unseal-key-{i}"] = v
 
         kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
-
-        # TODO: parametrise and apply vault terraform
-        # TODO: add k8s cm "vault-init"
+        p.internals["VAULT_ROOT_TOKEN"] = vault_root_token[0]
 
         p.set_checkpoint("secrets-management")
         p.save_checkpoint()
 
         click.echo("Vault initialization. Done!")
     else:
-        click.echo("Skipped Vault initialization.")
+        click.echo("Skipped Secrets Manager initialization.")
+
+    if not p.has_checkpoint("secrets-management-tf"):
+        click.echo("Setting Secrets...")
+
+        # run security manager tf to create secrets and roles
+        sec_man_tf_env_vars = {
+            **{
+                "TF_VAR_vcs_bot_ssh_public_key": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
+                "TF_VAR_vcs_bot_ssh_private_key": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
+                "TF_VAR_b64_docker_auth": p.internals["REGISTRY_AUTH_METHOD"],
+                "TF_VAR_vcs_token": p.internals["GIT_ACCESS_TOKEN"],
+                "TF_VAR_atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
+                "TF_VAR_atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"],
+                "TF_VAR_vault_token": p.internals["VAULT_ROOT_TOKEN"],
+                "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
+                "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
+            },
+            **cloud_provider_auth_env_vars}
+        # set envs as required by tf
+        for k, vault_i in sec_man_tf_env_vars.items():
+            os.environ[k] = vault_i
+
+        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_SECRETS_MANAGER)
+        tf_wrapper.init()
+        tf_wrapper.apply()
+        sm_out = tf_wrapper.output()
+
+        # set params
+        # p.parameters["<CD_IAM_ROLE_RN>"] = hp_out["iam_cd_role"]
+
+        # unset envs as no longer needed
+        for k in sec_man_tf_env_vars.keys():
+            os.environ.pop(k)
+
+        kube_client.create_configmap(VAULT_NAMESPACE, "vault-init", {})
+
+        p.set_checkpoint("secrets-management-tf")
+        p.save_checkpoint()
+        click.echo("Secrets set. Done!")
+
+    else:
+        click.echo("Skipped setting Secrets.")
 
     # TODO: parametrise and apply users terraform
 
@@ -605,7 +659,8 @@ def setup(
 
 def get_argocd_token(user, password):
     try:
-        response = requests.post("https://localhost:8080/api/v1/session",
+        requests.get("http://localhost:8080/", verify=False)
+        response = requests.post("http://localhost:8080/api/v1/session",
                                  verify=False,
                                  headers={"Content-Type": "application/json"},
                                  data=json.dumps({"username": user, "password": password})
@@ -625,6 +680,7 @@ def prepare_parameters(p):
     p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
     p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
     p.parameters["<GIT_PROVIDER>"] = p.git_provider
+    p.internals["GIT_ACCESS_TOKEN"] = p.get_input_param(GIT_ACCESS_TOKEN)
     p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
     p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
