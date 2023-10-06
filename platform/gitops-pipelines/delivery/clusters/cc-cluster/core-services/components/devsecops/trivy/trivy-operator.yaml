@@ -11,7 +11,7 @@ spec:
   destination:
     namespace: trivy
     server: https://kubernetes.default.svc
-  project: default
+  project: core
   source:
     chart: trivy-operator
     repoURL: https://aquasecurity.github.io/helm-charts/

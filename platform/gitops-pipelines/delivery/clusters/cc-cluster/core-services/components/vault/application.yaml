@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://helm.releases.hashicorp.com
-    targetRevision: 0.22.0
+    targetRevision: 0.25.0
     helm:
       parameters:
         - name: server.route.host
@@ -17,7 +17,61 @@ spec:
         - name: 'server.ingress.hosts[0].host'
           value: vault.<DOMAIN_NAME>
       values: |-
-        # server:
+        server:
+          image:
+            tag: '1.14'
+          serviceAccount:
+            create: true
+            name: vault
+            annotations:
+              <K8S_ROLE_MAPPING>: '<SECRET_MANAGER_IAM_ROLE_RN>'
+          affinity: ""
+          ha:
+            enabled: true
+            replicas: 3
+            raft:
+              enabled: true
+              config: |
+                ui = true
+                listener "tcp" {
+                  tls_disable     = 1
+                  address         = "[::]:8200"
+                  cluster_address = "[::]:8201"
+                }
+                storage "raft" {
+                  path = "/vault/data"
+                  retry_join {
+                    leader_api_addr = "http://vault-0.vault-internal:8200"
+                  }
+                  retry_join {
+                    leader_api_addr = "http://vault-1.vault-internal:8200"
+                  }
+                  retry_join {
+                    leader_api_addr = "http://vault-2.vault-internal:8200"
+                  }
+                }
+                # <SECRET_MANAGER_SEAL>
+                service_registration "kubernetes" {}
+          ingress:
+            enabled: true
+            annotations: 
+              cert-manager.io/cluster-issuer: "letsencrypt-prod"
+            ingressClassName: "nginx"
+            pathType: Prefix
+            # When HA mode is enabled and K8s service registration is being used,
+            # configure the ingress to point to the Vault active service.
+            # activeService: true
+            hosts:
+              - host: <SECRET_MANAGER_INGRESS_URL>
+            tls:
+              - secretName: vault-tls
+                hosts:
+                  - <SECRET_MANAGER_INGRESS_URL>
+          ui:
+            enabled: true
+            serviceType: "ClusterIP"
+            serviceNodePort: null
+            externalPort: 8200
     chart: vault
   destination:
     server: https://kubernetes.default.svc
@@ -28,3 +82,8 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks

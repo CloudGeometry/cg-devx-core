@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '10'
 spec:
-  project: default
+  project: core
   source:
     repoURL: https://charts.jetstack.io
     targetRevision: v1.11.0
@@ -16,7 +16,7 @@ spec:
           create: true
           name: cert-manager
           annotations:
-           <K8S_AWS_SERVICE_ACCOUNT_ROLE_MAPPING>: '<CERT_MANAGER_IAM_ROLE_RN>'
+           <K8S_ROLE_MAPPING>: '<CERT_MANAGER_IAM_ROLE_RN>'
         installCRDs: true
     chart: cert-manager
   destination:

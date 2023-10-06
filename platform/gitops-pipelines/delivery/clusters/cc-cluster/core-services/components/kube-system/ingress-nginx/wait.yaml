@@ -46,13 +46,16 @@ spec:
     spec:
       containers:
         - args:
-            - wait-for
+            - rollout
+            - status
             - deployment
             - --namespace
             - ingress-nginx
-            - --label
+            - -l
             - app.kubernetes.io/name=ingress-nginx
-          image: registry.hub.docker.com/bitnami/kubectl:1.23.15
+            - --timeout=90s
+            - --watch=true
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure

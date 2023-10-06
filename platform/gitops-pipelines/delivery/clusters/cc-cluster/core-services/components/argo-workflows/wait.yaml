@@ -46,13 +46,16 @@ spec:
     spec:
       containers:
         - args:
-            - wait-for
+            - rollout
+            - status
             - deployment
             - --namespace
             - argo
-            - --label
+            - -l
             - app.kubernetes.io/name=argo-workflow-controller
-          image: registry.hub.docker.com/bitnami/kubectl:1.23.15
+            - --timeout=90s
+            - --watch=true
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure
@@ -71,13 +74,13 @@ spec:
     spec:
       containers:
         - args:
-            - wait-for
+            - wait
             - deployment
             - --namespace
             - argo
             - --label
             - app.kubernetes.io/name=argo-server
-          image: registry.hub.docker.com/bitnami/kubectl:1.23.15
+          image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
       restartPolicy: OnFailure

@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: atlantis-components
+  name: ingress-nginx-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '50'
+    argocd.argoproj.io/sync-wave: '10'
 spec:
-  project: core
+  project: default
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/atlantis
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/kube-system/ingress-nginx
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: atlantis
+    namespace: ingress-nginx
   syncPolicy:
     automated:
       prune: true

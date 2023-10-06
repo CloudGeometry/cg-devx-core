@@ -65,7 +65,7 @@ spec:
       command: ['bash', '-c']
       workingDir: '/src/{{inputs.parameters.appName}}'
       args:
-        - helm repo add cg-devx-platform https://<HARBOR_REGISTRY_URL> || bash -c "sleep 10 && echo 'waiting before trying again' && exit 1";
+        - helm repo add cg-devx-platform https://<REGISTRY_REGISTRY_URL> || bash -c "sleep 10 && echo 'waiting before trying again' && exit 1";
           helm push {{inputs.parameters.chartDir}} cg-devx-platform || bash -c "sleep 10 && echo 'waiting before trying again' && exit 1";
       env:
       - name: BASIC_AUTH_PASS

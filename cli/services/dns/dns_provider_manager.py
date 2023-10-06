@@ -27,15 +27,18 @@ class DNSManager:
         pass
 
 
-def get_domain_ns_records(domain_name: str, name_servers: [str] = ["8.8.8.8"]):
-    # dns.name.from_text('www.dnspython.org')
+def get_domain_ns_records(domain_name: str, name_servers=None):
+    if name_servers is None:
+        name_servers = ["8.8.8.8"]
     rv = dns.resolver.Resolver()
     rv.nameservers = name_servers
     answers = rv.resolve(domain_name, dns.rdatatype.NS)
     return [ns.to_text() for ns in answers]
 
 
-def get_domain_txt_records_dot(domain_name: str, name_servers: [str] = ["8.8.8.8"]):
+def get_domain_txt_records_dot(domain_name: str, name_servers=None):
+    if name_servers is None:
+        name_servers = ["8.8.8.8"]
     rv = dns.resolver.Resolver()
     rv.nameservers = name_servers
     answers = rv.resolve(domain_name, dns.rdatatype.TXT)
