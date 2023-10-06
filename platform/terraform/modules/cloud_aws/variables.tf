@@ -44,8 +44,8 @@ variable "node_groups" {
     instance_types = optional(list(string), ["t3.large", "t3.medium"])
     capacity_type  = optional(string, "on_demand")
     min_size       = optional(number, 3)
-    max_size       = optional(number, 5)
-    desired_size   = optional(number, 3)
+    max_size       = optional(number, 7)
+    desired_size   = optional(number, 5)
   }
   )
   )
@@ -55,8 +55,8 @@ variable "node_groups" {
       instance_types = ["t3.large", "t3.medium"]
       capacity_type  = "on_demand"
       min_size       = 3
-      max_size       = 5
-      desired_size   = 3
+      max_size       = 7
+      desired_size   = 5
     }
   ]
 }
