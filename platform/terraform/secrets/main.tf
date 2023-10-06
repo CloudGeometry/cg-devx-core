@@ -1,12 +1,7 @@
 terraform {
- 
-  # backend "s3" {
-  #   bucket = "<STATE_STORE_BUCKET>"
-  #   key    = "terraform/vault/terraform.tfstate"
+  # Remote backend configuration
+  # <TF_SECRETS_REMOTE_BACKEND>
 
-  #   region  = "<CLOUD_REGION>"
-  #   encrypt = true
-  # }
   required_providers {
     vault = {
       source = "hashicorp/vault"
@@ -18,19 +13,20 @@ terraform {
   }
 }
 
-# Configure Vault & Cloud Providers
+# Vault configuration
 provider "vault" {
+  address         = "https://vault.cg-devx-demo-cli.cgdevx.io"
   skip_tls_verify = "true"
 }
 
-provider "aws" {
-  region = "<CLOUD_REGION>"
-}
+# Cloud Provider configuration
+# <TF_HOSTING_PROVIDER>
 
 locals {
-  cluster_name = "<PRIMARY_CLUSTER_NAME>"
+  cluster_name     = "<PRIMARY_CLUSTER_NAME>"
+  provisioned_by   = "cgdevx"
   workload_enabled = false
-  workloads   = local.workload_enabled == false ? {} : {
+  workloads        = local.workload_enabled == false ? {} : {
     "workload-demo" = {
     },
   }
@@ -44,7 +40,7 @@ module "secrets" {
   cgdevxbot_ssh_public_key     = var.vcs_bot_ssh_public_key
   cgdevxbot_ssh_private_key    = var.vcs_bot_ssh_private_key
   b64_docker_auth              = var.b64_docker_auth
-  <GIT_PROVIDER>_token         = var.<GIT_PROVIDER>_token
+  <GIT_PROVIDER>_token         = var.vcs_token
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
   vault_token                  = var.vault_token

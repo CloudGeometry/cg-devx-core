@@ -58,8 +58,8 @@ class AWSManager(CloudProviderManager):
         provider "aws" {
           default_tags {
             tags = {
-              ClusterName   = local.name
-              ProvisionedBy = local.ProvisionedBy
+              ClusterName   = local.cluster_name
+              ProvisionedBy = local.provisioned_by
             }
           }
         }''')
