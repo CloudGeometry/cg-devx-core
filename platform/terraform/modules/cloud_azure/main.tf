@@ -201,12 +201,12 @@ module "aks_rbac" {
   source   = "./modules/aks_rbac"
   for_each = var.service_accounts
 
-  oidc_issuer_url       = module.aks_cluster.oidc_issuer_url
-  resource_group_name   = azurerm_resource_group.rg.name
-  name                  = each.value.name
-  service_account_name  = each.value.service_account_name
-  role_definition_names = each.value.role_definition_names
-  namespace             = each.value.namespace
+  oidc_issuer_url      = module.aks_cluster.oidc_issuer_url
+  resource_group_name  = azurerm_resource_group.rg.name
+  name                 = each.value.name
+  service_account_name = each.value.service_account_name
+  role_definitions     = each.value.role_definitions
+  namespace            = each.value.namespace
 
   depends_on = [module.aks_cluster]
 }

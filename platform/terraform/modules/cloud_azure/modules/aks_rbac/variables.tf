@@ -18,9 +18,9 @@ variable "service_account_name" {
   type        = string
 }
 
-variable "role_definition_names" {
+variable "role_definitions" {
   description = "(Required) Specifies the name of the node pool."
-  type        = list(string)
+  type        = list(any)
 }
 
 variable "oidc_issuer_url" {

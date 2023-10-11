@@ -36,10 +36,9 @@ resource "azuread_application_federated_identity_credential" "aks-app-id" {
 
 ## Role assignment to the application
 resource "azurerm_role_assignment" "aks_rbac" {
-  for_each = toset(var.role_definition_names)
+  count = length(var.role_definitions)
 
-  scope                = "/subscriptions/${data.azurerm_client_config.current_subscription.subscription_id}/"
-  role_definition_name = each.value
+  scope                = "/subscriptions/${data.azurerm_client_config.current_subscription.subscription_id}/${var.role_definitions[count.index].scope}"
+  role_definition_name = var.role_definitions[count.index].name
   principal_id         = azuread_service_principal.sp_name.id
 }
-

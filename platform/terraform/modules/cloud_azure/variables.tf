@@ -326,16 +326,25 @@ variable "service_accounts" {
   type        = map(any)
   default = {
     sa_1 = {
-      name                  = "atlantis"
-      role_definition_names = ["Contributor","Reader"]
-      service_account_name  = "sa_atlantis"
-      namespace             = "atlantis-ns"
+      name = "atlantis"
+      role_definitions = [{
+        "name"  = "Contributor",
+        "scope" = ""
+      }]
+      service_account_name = "sa_atlantis"
+      namespace            = "atlantis-ns"
     }
     sa_2 = {
-      name                  = "dns"
-      role_definition_names = ["DNS Zone Contributor"]
-      service_account_name  = "sa_dns"
-      namespace             = "dns-ns"
+      name = "dns"
+      role_definitions = [{
+        "name"  = "DNS Zone Contributor",
+        "scope" = ""
+      },  {
+        "name"  = "Reader",
+        "scope" = ""
+      }]
+      service_account_name = "sa_dns"
+      namespace            = "dns-ns"
     }
   }
 }
