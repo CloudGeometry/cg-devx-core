@@ -8,7 +8,8 @@ output "fqdn" {
   value       = module.aks_cluster.fqdn
   description = "The FQDN of the Azure Kubernetes Managed Cluster"
 }
+
 output "apps" {
-  value = { for k, v in var.service_accounts : v.name => module.aks_rbac[k].app_client_id }
-    description = "Name and ID for all AKS Rbac apps"
+  value       = { for k, v in var.service_accounts : v.name => module.aks_rbac[k].app_client_id }
+  description = "Name and ID for all AKS Rbac apps"
 }

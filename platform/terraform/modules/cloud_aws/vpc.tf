@@ -6,7 +6,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "4.0.2"
 
-# configuration
+  # configuration
   tags = local.tags
 }
 

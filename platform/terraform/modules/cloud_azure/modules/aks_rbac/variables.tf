@@ -18,12 +18,14 @@ variable "service_account_name" {
   type        = string
 }
 
-variable "role_definition_name" {
+variable "role_definition_names" {
   description = "(Required) Specifies the name of the node pool."
-  type        = string
+  type        = list(string)
 }
 
 variable "oidc_issuer_url" {
   description = "OIDC url for Azure Kubernetes Managed Cluster"
   type        = string
 }
+
+

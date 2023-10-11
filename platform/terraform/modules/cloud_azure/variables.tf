@@ -41,21 +41,21 @@ variable "log_analytics_retention_days" {
  */
 
 variable "cluster_network_cidr" {
-  type = string
+  type    = string
   default = "10.0.0.0/16"
 }
 
 variable "vnet_name" {
-  type = string
+  type    = string
   default = "DevXAksVNet"
 }
 
 variable "subnets" {
-  type = list(string)
+  type        = list(string)
   description = "maximum 16"
   default = [
     "pub", "priv", "int"
-  ]  
+  ]
 }
 
 # variable "networks" {
@@ -326,16 +326,42 @@ variable "service_accounts" {
   type        = map(any)
   default = {
     sa_1 = {
-      name = "atlantis"
-      role_definition_name = "Contributor"
-      service_account_name = "sa_atlantis"
-      namespace = "atlantis-ns"
+      name                  = "atlantis"
+      role_definition_names = ["Contributor","Reader"]
+      service_account_name  = "sa_atlantis"
+      namespace             = "atlantis-ns"
     }
     sa_2 = {
-      name = "dns"
-      role_definition_name = "DNS Zone Contributor"
-      service_account_name = "sa_dns"
-      namespace = "dns-ns"
+      name                  = "dns"
+      role_definition_names = ["DNS Zone Contributor"]
+      service_account_name  = "sa_dns"
+      namespace             = "dns-ns"
     }
   }
+}
+
+
+variable "az_count" {
+  type    = number
+  default = 1
+  validation {
+    condition     = var.az_count > 0
+    error_message = "az_count must be > 0"
+  }
+}
+
+variable "node_groups" {
+  type = list(any)
+  default = [{
+    name          = "default",
+    instance_type = "Standard_B2s",
+    min_size      = 1,
+    max_size      = 5,
+    desired_size  = 3
+  }]
+}
+
+variable "cluster_node_labels" {
+  type    = map(any)
+  default = {}
 }

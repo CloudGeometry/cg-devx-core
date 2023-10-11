@@ -15,6 +15,9 @@ locals {
   subnet_names = {
     for subnet in var.subnets : subnet => "${var.vnet_name}-${subnet}"
   }
+  azs                   = [for i in range(1, var.az_count + 1) : tostring(i)]
+  default_node_group    = var.node_groups[0]
+  additional_node_pools = try(slice(var.node_groups, 1, length(var.node_groups)), [])
 }
 
 
@@ -39,8 +42,8 @@ module "log_analytics_workspace" {
 
 
 module "network" {
-//  for_each = var.networks
-  source   = "./modules/virtual_network"
+  //  for_each = var.networks
+  source = "./modules/virtual_network"
 
   resource_group_name = azurerm_resource_group.rg.name
   region              = var.region
@@ -66,11 +69,12 @@ module "aks_cluster" {
   vnet_subnet_id          = module.network.subnet_ids[local.subnet_names["priv"]]
   cluster_version         = var.cluster_version
 
-  default_node_pool_vm_size            = var.default_node_pool_vm_size
-  default_node_pool_availability_zones = var.default_node_pool_availability_zones
-  default_node_pool_max_count          = var.default_node_pool_max_count
-  default_node_pool_min_count          = var.default_node_pool_min_count
-  default_node_pool_node_count         = var.default_node_pool_node_count
+  default_node_pool_vm_size            = local.default_node_group.instance_type
+  default_node_pool_availability_zones = local.azs
+  default_node_pool_max_count          = local.default_node_group.max_size
+  default_node_pool_min_count          = local.default_node_group.min_size
+  default_node_pool_node_count         = local.default_node_group.desired_size
+  default_node_pool_node_labels        = var.cluster_node_labels
 
   tags = var.tags
 
@@ -106,21 +110,22 @@ module "storage_account" {
 
 module "node_pool" {
   source   = "./modules/node_pool"
-  for_each = { for pool in var.additional_node_pools : pool["node_pool_name"] => pool }
+  for_each = { for pool in local.additional_node_pools : pool["name"] => pool }
 
   resource_group_name   = azurerm_resource_group.rg.name
   kubernetes_cluster_id = module.aks_cluster.id
 
   name                 = each.key
-  vm_size              = try(each.value.node_pool_vm_size, var.additional_node_pool_vm_size)
-  availability_zones   = try(each.value.node_pool_availability_zones, var.additional_node_pool_availability_zones)
+  vm_size              = try(each.value.instance_type, var.additional_node_pool_vm_size)
+  availability_zones   = local.azs
   vnet_subnet_id       = module.network.subnet_ids[local.subnet_names["priv"]]
   orchestrator_version = var.cluster_version
   enable_auto_scaling  = try(each.value.enable_auto_scaling, var.additional_node_pool_enable_auto_scaling)
+  node_labels          = var.cluster_node_labels
 
-  max_count  = try(each.value.node_pool_max_count, var.additional_node_pool_max_count)
-  min_count  = try(each.value.node_pool_min_count, var.additional_node_pool_min_count)
-  node_count = try(each.value.node_pool_node_count, var.additional_node_pool_node_count)
+  max_count  = try(each.value.max_size, var.additional_node_pool_max_count)
+  min_count  = try(each.value.min_size, var.additional_node_pool_min_count)
+  node_count = try(each.value.desired_size, var.additional_node_pool_node_count)
 
 
   tags = var.tags
@@ -193,15 +198,15 @@ module "blob_private_endpoint" {
 
 
 module "aks_rbac" {
-  source = "./modules/aks_rbac"
+  source   = "./modules/aks_rbac"
+  for_each = var.service_accounts
 
-  for_each                        = var.service_accounts
-  oidc_issuer_url                 = module.aks_cluster.oidc_issuer_url
-  resource_group_name             = azurerm_resource_group.rg.name
-  name                            = each.value.name
-  service_account_name            = each.value.service_account_name
-  role_definition_name            = each.value.role_definition_name
-  namespace                       = each.value.namespace
+  oidc_issuer_url       = module.aks_cluster.oidc_issuer_url
+  resource_group_name   = azurerm_resource_group.rg.name
+  name                  = each.value.name
+  service_account_name  = each.value.service_account_name
+  role_definition_names = each.value.role_definition_names
+  namespace             = each.value.namespace
 
   depends_on = [module.aks_cluster]
 }

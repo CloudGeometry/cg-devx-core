@@ -3,7 +3,7 @@
 ################################################################################
 
 module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
+  source = "terraform-aws-modules/eks/aws"
   #pin module version
   version = "19.10.0"
 

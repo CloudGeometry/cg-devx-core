@@ -1,6 +1,6 @@
 locals {
-  region          = ""
-  tags            = ""
+  region = ""
+  tags   = ""
 }
 
 provider "aws" {
