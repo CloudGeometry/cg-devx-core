@@ -11,7 +11,7 @@ module "hosting-provider-azure" {
   cluster_version      = "1.26"
   cluster_network_cidr = "10.1.0.0/16"
 
-  az_count = 3
+  az_count = 1
   node_groups = [
     {
       name          = "default",
