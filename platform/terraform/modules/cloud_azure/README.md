@@ -55,14 +55,36 @@ This code creates a workload identity for a service account that is located in t
 During creation, you dont need to have a Service Account or create it immediately. To create RBAC, you need to add a new value to the main variables.tf to variable **service_accounts**
 
 ```
-    sa_3 = {
-      name = "name"
-      role_definition_name = "RBAC role name"
+variable "service_accounts" {
+  description = "Specifies the AKS SA names and roles."
+  type        = map(any)
+  default = {
+    sa_1 = {
+      name = "account_name"
+      role_definitions = [{
+        "name"  = "First Role",
+        "scope" = ""
+      }]
       service_account_name = "sa_name"
-      namespace = "namespace_name"
-   }
+      namespace            = "namespace-ns"
+    }
+  }
+}
 ```
-Here you will need to indicate the account name, service account name, namespace name, role name.
+Here you will need to indicate the account name, service account name, namespace name, role name, scope.
+If scope is blank, this means that the role will be issued immediately to the **entire subscription** to which the deployment is made. This has meaning at the level of the contractor or reader.
+If you need to specify a specific resource that requires a certain type of access, the scope must begin with a slash /
+
+Here is an example for a scope for one virtual machine:
+/resourceGroups/**RG_NAME**/providers/Microsoft.Compute/virtualMachines/**VM_NAME**
+
+If you need to add more then one role, you need to add another block:
+```
+      role_definitions = [{
+        "name"  = "One more role",
+        "scope" = "/resourceGroups/RG_NAME/providers/Microsoft.Compute/virtualMachines/VM_NAME"
+      }]
+```
 
 All existing roles you can find **[here](https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles)**.
 You can use a custom role, but it must be created first.
