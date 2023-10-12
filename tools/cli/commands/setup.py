@@ -524,12 +524,9 @@ def setup(
         p.internals["ARGOCD_USER"] = "admin"
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
-        # TODO: need wait here as api is not available just after service ready
-
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
                                  config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
-
             argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
             p.internals["ARGOCD_TOKEN"] = argocd_token
 
@@ -615,13 +612,6 @@ def setup(
         # run security manager tf to create secrets and roles
         sec_man_tf_env_vars = {
             **{
-                "TF_VAR_vcs_bot_ssh_public_key": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
-                "TF_VAR_vcs_bot_ssh_private_key": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
-                "TF_VAR_b64_docker_auth": p.internals["REGISTRY_AUTH_METHOD"],
-                "TF_VAR_vcs_token": p.internals["GIT_ACCESS_TOKEN"],
-                "TF_VAR_atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
-                "TF_VAR_atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
-                "TF_VAR_vault_token": p.internals["VAULT_ROOT_TOKEN"],
                 "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
                 "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
             },
@@ -632,11 +622,18 @@ def setup(
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_SECRETS_MANAGER)
         tf_wrapper.init()
-        tf_wrapper.apply()
+        tf_wrapper.apply({
+            "vcs_bot_ssh_public_key": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
+            "vcs_bot_ssh_private_key": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
+            "b64_docker_auth": p.internals["REGISTRY_AUTH_METHOD"],
+            "vcs_token": p.internals["GIT_ACCESS_TOKEN"],
+            "atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
+            "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
+            "vault_token": p.internals["VAULT_ROOT_TOKEN"]
+        })
         sm_out = tf_wrapper.output()
 
         # set params
-        # p.parameters["<CD_IAM_ROLE_RN>"] = hp_out["iam_cd_role"]
 
         # unset envs as no longer needed
         for k in sec_man_tf_env_vars.keys():
@@ -684,9 +681,12 @@ def prepare_parameters(p):
     p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
     p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
-    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}/*'
-    p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"] = random_string_generator(20)
+    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}'
     p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
+
+    if "<IAC_PR_AUTOMATION_WEBHOOK_SECRET>" not in p.parameters:
+        p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"] = random_string_generator(20)
+
     # Ingress URLs for core components. Note!: URL does not contain protocol
     cluster_fqdn = f'{p.get_input_param(DOMAIN_NAME)}'
     p.parameters["<CC_CLUSTER_FQDN>"] = cluster_fqdn
@@ -697,6 +697,7 @@ def prepare_parameters(p):
     p.parameters["<REGISTRY_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
     p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
     p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
+
     # OIDC config
     sec_man_ing = p.parameters["<SECRET_MANAGER_INGRESS_URL>"]
     p.parameters["<OIDC_PROVIDER_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx'
@@ -706,7 +707,6 @@ def prepare_parameters(p):
     p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/oauth2/callback'
     p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
     p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'
-
 
     return p
 
