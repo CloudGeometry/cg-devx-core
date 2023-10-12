@@ -74,3 +74,22 @@ resource "vault_generic_secret" "atlantis_secrets" {
 
   depends_on = [vault_mount.secret]
 }
+
+resource "random_password" "grafana_password" {
+  length           = 22
+  special          = true
+  override_special = "!#$"
+}
+
+resource "vault_generic_secret" "grafana_secrets" {
+  path = "secret/grafana-secrets"
+
+  data_json = jsonencode(
+    {
+      GRAFANA_USER       = "admin",
+      GRAFANA_PASS       = random_password.grafana_password.result,
+    }
+  )
+
+  depends_on = [vault_mount.secret]
+}
