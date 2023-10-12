@@ -74,12 +74,15 @@ spec:
     spec:
       containers:
         - args:
-            - wait
+            - rollout
+            - status
             - deployment
             - --namespace
             - argo
-            - --label
+            - -l
             - app.kubernetes.io/name=argo-server
+            - --timeout=90s
+            - --watch=true
           image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait

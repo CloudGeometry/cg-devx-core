@@ -525,10 +525,11 @@ def setup(
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
         # TODO: need wait here as api is not available just after service ready
-        time.sleep(30)
+
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                 config_path=p.internals["KCTL_CONFIG_PATH"]):
+                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
+
             argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
             p.internals["ARGOCD_TOKEN"] = argocd_token
 
@@ -558,7 +559,7 @@ def setup(
         click.echo("Initializing Secrets Manager...")
 
         # TODO: need wait here as vault is not available just after argp app deployment
-        time.sleep(60)
+        time.sleep(120)
         vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
         kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
 
@@ -619,7 +620,7 @@ def setup(
                 "TF_VAR_b64_docker_auth": p.internals["REGISTRY_AUTH_METHOD"],
                 "TF_VAR_vcs_token": p.internals["GIT_ACCESS_TOKEN"],
                 "TF_VAR_atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
-                "TF_VAR_atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"],
+                "TF_VAR_atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
                 "TF_VAR_vault_token": p.internals["VAULT_ROOT_TOKEN"],
                 "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
                 "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
@@ -659,7 +660,6 @@ def setup(
 
 def get_argocd_token(user, password):
     try:
-        requests.get("http://localhost:8080/", verify=False)
         response = requests.post("http://localhost:8080/api/v1/session",
                                  verify=False,
                                  headers={"Content-Type": "application/json"},
@@ -705,6 +705,8 @@ def prepare_parameters(p):
     p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx/userinfo'
     p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/oauth2/callback'
     p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
+    p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'
+
 
     return p
 
