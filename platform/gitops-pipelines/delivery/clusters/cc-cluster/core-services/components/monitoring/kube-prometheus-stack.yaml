@@ -15,6 +15,7 @@ spec:
   source:
     chart: kube-prometheus-stack
     helm:
+      skipCrds: true
       values: |-
         prometheus:
           prometheusSpec:
