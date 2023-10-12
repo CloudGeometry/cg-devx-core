@@ -37,31 +37,31 @@ variable "tags" {
 }
 
 variable "enabled_for_deployment" {
-  description = "(Optional) Boolean flag to specify whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault. Defaults to false."
+  description = "(Optional) Boolean flag to specify whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault."
   type        = bool
   default     = false
 }
 
 variable "enabled_for_disk_encryption" {
-  description = " (Optional) Boolean flag to specify whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys. Defaults to false."
+  description = " (Optional) Boolean flag to specify whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys."
   type        = bool
   default     = false
 }
 
 variable "enabled_for_template_deployment" {
-  description = "(Optional) Boolean flag to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault. Defaults to false."
+  description = "(Optional) Boolean flag to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault."
   type        = bool
   default     = false
 }
 
 variable "enable_rbac_authorization" {
-  description = "(Optional) Boolean flag to specify whether Azure Key Vault uses Role Based Access Control (RBAC) for authorization of data actions. Defaults to false."
+  description = "(Optional) Boolean flag to specify whether Azure Key Vault uses Role Based Access Control (RBAC) for authorization of data actions."
   type        = bool
   default     = false
 }
 
 variable "purge_protection_enabled" {
-  description = "(Optional) Is Purge Protection enabled for this Key Vault? Defaults to false."
+  description = "(Optional) Is Purge Protection enabled for this Key Vault?"
   type        = bool
   default     = false
 }

@@ -24,7 +24,7 @@ variable "dns_prefix" {
 }
 
 variable "private_cluster_enabled" {
-  description = "Should this Kubernetes Cluster have its API server only exposed on internal IP addresses? This provides a Private IP Address for the Kubernetes API on the Virtual Network where the Kubernetes Cluster is located. Defaults to false. Changing this forces a new resource to be created."
+  description = "Should this Kubernetes Cluster have its API server only exposed on internal IP addresses? This provides a Private IP Address for the Kubernetes API on the Virtual Network where the Kubernetes Cluster is located. Changing this forces a new resource to be created."
   type        = bool
   default     = false
 }
@@ -135,19 +135,19 @@ variable "default_node_pool_subnet_address_prefix" {
 }
 
 variable "default_node_pool_enable_auto_scaling" {
-  description = "(Optional) Whether to enable auto-scaler. Defaults to false."
+  description = "(Optional) Whether to enable auto-scaler."
   type        = bool
   default     = true
 }
 
 variable "default_node_pool_enable_host_encryption" {
-  description = "(Optional) Should the nodes in this Node Pool have host encryption enabled? Defaults to false."
+  description = "(Optional) Should the nodes in this Node Pool have host encryption enabled?"
   type        = bool
   default     = false
 }
 
 variable "default_node_pool_enable_node_public_ip" {
-  description = "(Optional) Should each node have a Public IP Address? Defaults to false. Changing this forces a new resource to be created."
+  description = "(Optional) Should each node have a Public IP Address? Changing this forces a new resource to be created."
   type        = bool
   default     = false
 }
@@ -281,7 +281,7 @@ variable "vertical_pod_autoscaler_enabled" {
 }
 
 variable "workload_identity_enabled" {
-  description = "(Optional) Specifies whether Azure AD Workload Identity should be enabled for the Cluster. Defaults to false."
+  description = "(Optional) Specifies whether Azure AD Workload Identity should be enabled for the Cluster."
   type        = bool
   default     = true
 }

@@ -20,19 +20,19 @@ variable "availability_zones" {
 }
 
 variable "enable_auto_scaling" {
-  description = "(Optional) Whether to enable auto-scaler. Defaults to false."
+  description = "(Optional) Whether to enable auto-scaler."
   type        = bool
   default     = false
 }
 
 variable "enable_host_encryption" {
-  description = "(Optional) Should the nodes in this Node Pool have host encryption enabled? Defaults to false."
+  description = "(Optional) Should the nodes in this Node Pool have host encryption enabled?"
   type        = bool
   default     = false
 }
 
 variable "enable_node_public_ip" {
-  description = "(Optional) Should each node have a Public IP Address? Defaults to false. Changing this forces a new resource to be created."
+  description = "(Optional) Should each node have a Public IP Address? Changing this forces a new resource to be created."
   type        = bool
   default     = false
 }

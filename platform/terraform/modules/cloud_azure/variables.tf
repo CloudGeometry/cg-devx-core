@@ -199,7 +199,7 @@ variable "ssh_public_key" {
 }
 
 variable "workload_identity_enabled" {
-  description = "(Optional) Specifies whether Azure AD Workload Identity should be enabled for the Cluster. Defaults to false."
+  description = "(Optional) Specifies whether Azure AD Workload Identity should be enabled for the Cluster."
   type        = bool
   default     = true
 }
@@ -217,31 +217,31 @@ variable "workload_identity_enabled" {
  */
 
 variable "key_vault_enabled_for_deployment" {
-  description = "(Optional) Boolean flag to specify whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault. Defaults to false."
+  description = "(Optional) Boolean flag to specify whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault."
   type        = bool
   default     = true
 }
 
 variable "key_vault_enabled_for_disk_encryption" {
-  description = " (Optional) Boolean flag to specify whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys. Defaults to false."
+  description = " (Optional) Boolean flag to specify whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys."
   type        = bool
   default     = true
 }
 
 variable "key_vault_enabled_for_template_deployment" {
-  description = "(Optional) Boolean flag to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault. Defaults to false."
+  description = "(Optional) Boolean flag to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault."
   type        = bool
   default     = true
 }
 
 variable "key_vault_enable_rbac_authorization" {
-  description = "(Optional) Boolean flag to specify whether Azure Key Vault uses Role Based Access Control (RBAC) for authorization of data actions. Defaults to false."
+  description = "(Optional) Boolean flag to specify whether Azure Key Vault uses Role Based Access Control (RBAC) for authorization of data actions."
   type        = bool
   default     = true
 }
 
 variable "key_vault_purge_protection_enabled" {
-  description = "(Optional) Is Purge Protection enabled for this Key Vault? Defaults to false."
+  description = "(Optional) Is Purge Protection enabled for this Key Vault?"
   type        = bool
   default     = true
 }
