@@ -4,6 +4,7 @@ from kubernetes import client, watch
 from kubernetes.client import ApiException
 
 from common.const.common_path import LOCAL_FOLDER
+from common.retry_decorator import exponential_backoff_decorator
 
 
 def write_ca_cert(ca_cert_data):
@@ -100,7 +101,7 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role_binding(body=body)
         return res
 
-    def create_custom_object(self, argocd_namespace: str, custom_obj: dict, group: str, version: str, plurals: str):
+    def create_custom_object(self, amespace: str, custom_obj: dict, group: str, version: str, plurals: str):
         """
         Creates a custom object.
         """
@@ -108,10 +109,43 @@ class KubeClient:
             custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
 
             res = custom_v1_instance.create_namespaced_custom_object(group=group, version=version,
-                                                                     namespace=argocd_namespace,
+                                                                     namespace=amespace,
                                                                      plural=plurals,
                                                                      body=custom_obj)
 
+            return res
+        except ApiException as e:
+            raise e
+
+    def patch_custom_object(self, namespace: str, name: str, patch, group: str, version: str, plurals: str):
+        """
+        Patch custom object.
+        """
+        try:
+            api_client = client.ApiClient(self._configuration)
+            # need to explicitly set headers
+            api_client.set_default_header('Content-Type',
+                                          api_client.select_header_content_type(['application/json-patch+json']))
+            custom_v1_instance = client.CustomObjectsApi(api_client)
+            res = custom_v1_instance.patch_namespaced_custom_object(group=group, version=version,
+                                                                    namespace=namespace,
+                                                                    name=name,
+                                                                    plural=plurals,
+                                                                    body=patch)
+            return res
+        except ApiException as e:
+            raise e
+
+    def remove_custom_object(self, namespace: str, name: str, group: str, version: str, plurals: str):
+        """
+        Remove custom object.
+        """
+        try:
+            custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
+            res = custom_v1_instance.delete_namespaced_custom_object(group=group, version=version,
+                                                                     namespace=namespace,
+                                                                     name=name,
+                                                                     plural=plurals)
             return res
         except ApiException as e:
             raise e
@@ -146,6 +180,7 @@ class KubeClient:
         res = batch_v1_instance.create_namespaced_job(namespace=namespace, body=body)
         return res
 
+    @exponential_backoff_decorator()
     def get_deployment(self, namespace: str, deployment_name: str):
         """
         Reads a Deployment.
@@ -158,6 +193,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @exponential_backoff_decorator()
     def get_pod(self, namespace: str, pod_name: str):
         """
         Reads a Deployment.
@@ -170,6 +206,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @exponential_backoff_decorator()
     def get_stateful_set_objects(self, namespace: str, name: str):
         """
         Reads a StatefulSet.
@@ -178,6 +215,19 @@ class KubeClient:
 
         try:
             res = apps_v1_instance.read_namespaced_stateful_set(name=name, namespace=namespace)
+            return res
+        except ApiException as e:
+            raise e
+
+    @exponential_backoff_decorator()
+    def get_ingress(self, namespace: str, name: str):
+        """
+        Reads an Ingress.
+        """
+        network_v1_instance = client.NetworkingV1Api(client.ApiClient(self._configuration))
+
+        try:
+            res = network_v1_instance.read_namespaced_ingress(name=name, namespace=namespace)
             return res
         except ApiException as e:
             raise e
@@ -299,7 +349,6 @@ class KubeClient:
 
         apps_v1_instance = client.AppsV1Api(client.ApiClient(self._configuration))
         w = watch.Watch()
-
         try:
             for event in w.stream(func=apps_v1_instance.list_namespaced_stateful_set,
                                   namespace=namespace,
@@ -311,6 +360,29 @@ class KubeClient:
                 # event.type: ADDED, MODIFIED, DELETED
                 if event["type"] == "DELETED":
                     # Set was deleted while waiting for it to start
+                    raise Exception("%s deleted before it started", name)
+
+        except ApiException as e:
+            raise e
+
+    def wait_for_ingress(self, ingress, timeout: int = 300):
+        name = ingress.metadata.name
+        namespace = ingress.metadata.namespace
+
+        network_v1_instance = client.NetworkingV1Api(client.ApiClient(self._configuration))
+
+        w = watch.Watch()
+        try:
+            for event in w.stream(func=network_v1_instance.list_namespaced_ingress,
+                                  namespace=namespace,
+                                  field_selector=f'metadata.name={name}',
+                                  timeout_seconds=timeout):
+                if event["object"].status.load_balancer.ingress:
+                    w.stop()
+                    return True
+                # event.type: ADDED, MODIFIED, DELETED
+                if event["type"] == "DELETED":
+                    # Ingress was deleted while waiting for it to start
                     raise Exception("%s deleted before it started", name)
 
         except ApiException as e:
@@ -381,6 +453,7 @@ class KubeClient:
         res = api_v1_instance.create_namespaced_config_map(namespace=namespace, body=body)
         return res
 
+    @exponential_backoff_decorator()
     def get_secret(self, namespace: str, name: str):
         """
         Get secret.

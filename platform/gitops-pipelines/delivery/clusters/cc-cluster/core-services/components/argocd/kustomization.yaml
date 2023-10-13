@@ -3,13 +3,15 @@ kind: Kustomization
 namespace: argocd
 
 resources:
-  - git@github.com:CGDevX-Demo/cg-devx-gitops-test.git/installation-manifests/argocd
-  - argocd-ui-ingress.yaml
-  - externalsecrets.yaml
-  - argocd-oidc-restart-job.yaml
+- github.com:argoproj/argo-cd.git/manifests/ha/cluster-install?ref=v2.8.4
+- argocd-ui-ingress.yaml
+- externalsecrets.yaml
+- argocd-oidc-restart-job.yaml
 
-patchesStrategicMerge:
-  - argocd-cm.yaml
+patches:
+- path: argocd-cm.yaml
+- path: argocd-cmd-params-cm.yaml
+- path: argocd-rbac-cm.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

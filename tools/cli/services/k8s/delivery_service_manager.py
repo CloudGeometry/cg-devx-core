@@ -1,7 +1,45 @@
-from common.const.const import ARGOCD_REGISTRY_APP_PATH
-from common.const.namespaces import ARGOCD_NAMESPACE
-from services.k8s.k8s import KubeClient
+import json
+
+import requests
 from kubernetes import client
+from requests import HTTPError
+
+from common.const.const import ARGOCD_REGISTRY_APP_PATH, GITOPS_REPOSITORY_URL
+from common.const.namespaces import ARGOCD_NAMESPACE
+from common.retry_decorator import exponential_backoff_decorator
+from services.k8s.k8s import KubeClient
+
+
+@exponential_backoff_decorator(base_delay=5)
+def get_argocd_token(user, password):
+    try:
+        response = requests.post("https://localhost:8080/api/v1/session",
+                                 verify=False,
+                                 headers={"Content-Type": "application/json"},
+                                 data=json.dumps({"username": user, "password": password})
+                                 )
+        if response.status_code == requests.codes["not_found"]:
+            return None
+        elif response.ok:
+            res = json.loads(response.text)
+            return res["token"]
+    except HTTPError as e:
+        raise e
+
+
+def delete_application(app_name, token):
+    try:
+        response = requests.delete(f"https://localhost:8080/api/v1/applications/{app_name}?cascade=true",
+                                   verify=False,
+                                   headers={
+                                       "Content-Type": "application/json",
+                                       "Authorization": f"Bearer {token}"
+                                   }
+                                   )
+        if response.ok:
+            return
+    except HTTPError as e:
+        raise e
 
 
 class DeliveryServiceManager:
@@ -11,8 +49,8 @@ class DeliveryServiceManager:
         self._version = "v1alpha1"
         self._namespace = argocd_namespace
 
-    def _create_argocd_object(self, argocd_namespace, argo_obj, plurals):
-        return self._k8s_client.create_custom_object(argocd_namespace, argo_obj, self._group, self._version, plurals)
+    def _create_argocd_object(self, argo_obj, plurals):
+        return self._k8s_client.create_custom_object(self._namespace, argo_obj, self._group, self._version, plurals)
 
     def create_project(self, project_name: str, repos=None):
         if repos is None:
@@ -53,7 +91,7 @@ class DeliveryServiceManager:
             }
         }
 
-        return self._create_argocd_object(self._namespace, argo_proj_cr, "appprojects")
+        return self._create_argocd_object(argo_proj_cr, "appprojects")
 
     def create_core_application(self, project_name: str, repo_url: str):
         argo_app_cr = {
@@ -93,14 +131,14 @@ class DeliveryServiceManager:
             },
         }
 
-        return self._create_argocd_object(self._namespace, argo_app_cr, "applications")
+        return self._create_argocd_object(argo_app_cr, "applications")
 
     def create_argocd_bootstrap_job(self, sa_name: str):
         """
         Creates ArgoCD bootstrap job
         """
         image = "bitnami/kubectl"
-        manifest_path = "github.com:cloudgeometry/cgdevx-core.git/platform/installation-manifests/argocd?ref=main"
+        manifest_path = f"{GITOPS_REPOSITORY_URL}/platform/installation-manifests/argocd?ref=main"
 
         bootstrap_entry_point = ["/bin/sh", "-c", f"kubectl apply -k '{manifest_path}'"]
 
@@ -117,3 +155,15 @@ class DeliveryServiceManager:
                                 backoff_limit=1))
 
         return self._k8s_client.create_job(self._namespace, job_name, body)
+
+    def turn_off_app_sync(self, name: str):
+        sync_policy_patch = [{
+            "op": "remove",
+            "path": "/spec/syncPolicy",
+            "value": ""
+        }]
+        return self._k8s_client.patch_custom_object(self._namespace, name, sync_policy_patch, self._group,
+                                                    self._version, "applications")
+
+    def delete_app(self, name: str):
+        return self._k8s_client.remove_custom_object(self._namespace, name, self._group, self._version, "applications")

@@ -8,7 +8,16 @@ module "eks" {
   cluster_endpoint_public_access = true
   cluster_enabled_log_types      = []
   create_cloudwatch_log_group    = false
-  cluster_addons                 = {
+
+  # KMS configuration
+  kms_key_enable_default_policy   = true
+  kms_key_deletion_window_in_days = 7
+  # TODO: temp shortcut to avoid 2 step initialisation as circular dependency is created when referencing role
+  kms_key_administrators          = ["*"]
+  # kms_key_administrators         = ["arn:aws:iam::${local.aws_account}:role/${local.name}-iac_pr_automation-role"]
+  # kms_key_owners                 = ["arn:aws:iam::${local.aws_account}:role/${local.name}-iac_pr_automation-role"]
+
+  cluster_addons = {
     coredns = {
       most_recent = true
     }
@@ -44,13 +53,8 @@ module "eks" {
     # ami_type                              = "AL2_x86_64"
     # instance_types                        = module.instance_types
     attach_cluster_primary_security_group = true
-    #    vpc_security_group_ids                = [aws_security_group.additional.id]
-    #   iam_role_additional_policies = {
-    # additional = aws_iam_policy.additional.arn
-    #}
     node_group_name                       = "${local.name}-node-group"
-    launch_template_name                  = "${local.name}-eks-lt-def"
-    #    enable_bootstrap_user_data = true
+    use_custom_launch_template            = false
 
   }
 

@@ -280,5 +280,10 @@ output "igw_id" {
 }
 output "secret_manager_unseal_kms_key" {
   description = "The globally unique identifier for the secret manager key"
-  value       = aws_kms_key.secret_manager_unseal.key_id
+  value       = module.secret_manager_unseal_kms_key.key_id
+}
+
+output "artifacts_storage" {
+  description = "The artifact storage S3 bucket name"
+  value       = module.artifacts_repository.s3_bucket_id
 }

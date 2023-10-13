@@ -41,3 +41,8 @@ output "cluster_certificate_authority_data" {
 output "secret_manager_seal_key" {
   value = module.hosting-provider.secret_manager_unseal_kms_key
 }
+
+# artifact storage
+output "artifact_storage" {
+  value = module.hosting-provider.artifacts_storage
+}
