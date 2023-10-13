@@ -1,16 +1,14 @@
-import json
+import os
 import os
 import shutil
 import time
 
 import click
 import portforward
-import requests
-from requests import HTTPError
+import urllib3
 
 from common.command_utils import init_cloud_provider
-from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, LOCAL_FOLDER, \
-    LOCAL_TF_FOLDER_USERS
+from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, LOCAL_FOLDER
 from common.const.namespaces import ARGOCD_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, CLOUD_ACCOUNT_ACCESS_KEY, CLOUD_ACCOUNT_ACCESS_SECRET, \
     GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
@@ -18,6 +16,8 @@ from common.state_store import StateStore
 from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token, delete_application
 from services.k8s.k8s import KubeClient
 from services.tf_wrapper import TfWrapper
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 @click.command()
@@ -38,10 +38,10 @@ def destroy():
     tf_env_vars = {
         **cloud_provider_auth_env_vars,
         **{
-                "GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-                "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME),
-                "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
-                "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
+            "GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
+            "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME),
+            "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
+            "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
         }
     }
     # set envs as required by tf
@@ -55,12 +55,12 @@ def destroy():
         tf_wrapper.init()
         tf_wrapper.destroy()
 
-    if p.has_checkpoint("users-tf"):
-        click.echo("Destroying VCS...")
-
-        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_USERS)
-        tf_wrapper.init()
-        tf_wrapper.destroy()
+    # if p.has_checkpoint("users-tf"):
+    #     click.echo("Destroying VCS...")
+    #
+    #     tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_USERS)
+    #     tf_wrapper.init()
+    #     tf_wrapper.destroy()
 
     # ArgoCD section
     # wait till resources are de-provisioned by ArgoCD before destroying K8s cluster
@@ -85,10 +85,10 @@ def destroy():
         pass
 
     # need to wait here
-    time.sleep(60)
+    time.sleep(120)
 
     with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                             config_path=p.internals["KCTL_CONFIG_PATH"], waiting=5):
+                             config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
 
         argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
         delete_application(registry_app_name, argocd_token)
