@@ -5,19 +5,19 @@ projects:
     terraform_version: 1.3.8
     autoplan:
       enabled: true
-      when_modified: ['**/*.tf', '*.tf*']
+      when_modified: ["**/*.tf", "../modules/vcs_*/**/*.tf", "*.tf*"]
   - dir: terraform/vcs
     terraform_version: 1.3.8
     autoplan:
       enabled: true
-      when_modified: ['**/*.tf', '*.tf*']
+      when_modified: ["**/*.tf", "../modules/cloud_*/**/*.tf", "*.tf*"]
   - dir: terraform/users
     terraform_version: 1.3.8
     autoplan:
       enabled: true
-      when_modified: ['**/*.tf', '*.tf*']
+      when_modified: ["**/*.tf", "../modules/users_*/**/*.tf", "*.tf*"]
   - dir: terraform/secrets
     terraform_version: 1.3.8
     autoplan:
       enabled: true
-      when_modified: ['**/*.tf', '*.tf*']
+      when_modified: ["**/*.tf", "../modules/secrets_*/**/*.tf", "*.tf*"]

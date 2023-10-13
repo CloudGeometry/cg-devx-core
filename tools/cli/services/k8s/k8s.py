@@ -100,7 +100,7 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role_binding(body=body)
         return res
 
-    def create_custom_object(self, argocd_namespace: str, custom_obj: dict, group: str, version: str, plurals: str):
+    def create_custom_object(self, amespace: str, custom_obj: dict, group: str, version: str, plurals: str):
         """
         Creates a custom object.
         """
@@ -108,10 +108,42 @@ class KubeClient:
             custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
 
             res = custom_v1_instance.create_namespaced_custom_object(group=group, version=version,
-                                                                     namespace=argocd_namespace,
+                                                                     namespace=amespace,
                                                                      plural=plurals,
                                                                      body=custom_obj)
 
+            return res
+        except ApiException as e:
+            raise e
+
+    def patch_custom_object(self, namespace: str, name: str, patch, group: str, version: str, plurals: str):
+        """
+        Patch custom object.
+        """
+        try:
+            api_client = client.ApiClient(self._configuration)
+            # need to explicitly set headers
+            api_client.set_default_header('Content-Type', api_client.select_header_content_type(['application/json-patch+json']))
+            custom_v1_instance = client.CustomObjectsApi(api_client)
+            res = custom_v1_instance.patch_namespaced_custom_object(group=group, version=version,
+                                                                    namespace=namespace,
+                                                                    name=name,
+                                                                    plural=plurals,
+                                                                    body=patch)
+            return res
+        except ApiException as e:
+            raise e
+
+    def remove_custom_object(self, namespace: str, name: str, group: str, version: str, plurals: str):
+        """
+        Remove custom object.
+        """
+        try:
+            custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
+            res = custom_v1_instance.delete_namespaced_custom_object(group=group, version=version,
+                                                                     namespace=namespace,
+                                                                     name=name,
+                                                                     plural=plurals)
             return res
         except ApiException as e:
             raise e

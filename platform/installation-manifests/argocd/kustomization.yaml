@@ -8,10 +8,10 @@ resources:
   - github.com:argoproj/argo-cd.git/manifests/ha/cluster-install?ref=v2.8.4
   - argocd-namespace.yaml
 
-patchesStrategicMerge:
-  - argocd-cm.yaml
-  - argocd-cmd-params-cm.yaml
-  - argocd-rbac-cm.yaml
+patches:
+  - path: argocd-cm.yaml
+  - path: argocd-cmd-params-cm.yaml
+  - path: argocd-rbac-cm.yaml
 
 generatorOptions:
   disableNameSuffixHash: true
