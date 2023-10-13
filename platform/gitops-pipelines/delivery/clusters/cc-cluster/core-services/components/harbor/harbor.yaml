@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: harbor
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: harbor
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: harbor
+    repoURL: https://helm.goharbor.io
+    targetRevision: v1.13.0
+    helm:
+      releaseName: harbor
+      values: |
+        externalURL: https://<REGISTRY_INGRESS_URL>
+        expose:
+          type: ingress
+          tls:
+            enabled: true
+            certSource: secret
+            secret:
+              secretName: "tls-harbor"
+          ingress:
+            hosts:
+              core: <REGISTRY_INGRESS_URL>
+            annotations:
+              ingress.kubernetes.io/proxy-body-size: "0"
+              nginx.ingress.kubernetes.io/proxy-body-size: "0"
+              cert-manager.io/cluster-issuer: "letsencrypt-prod"
+              # To be used for the nginx ingress on AKS:
+              kubernetes.io/ingress.class: nginx
+        database:
+          type: internal
+        registry:
+          # set the service account to be used, default if left empty
+          serviceAccountName: ""
+          automountServiceAccountToken: false
+        persistence:
+          enabled: true
+          imageChartStorage:
+            type: filesystem
+            filesystem:
+              rootdirectory: /storage
+          persistentVolumeClaim:
+            registry:
+              size: 20Gi
+        redis:
+          type: internal
+        notary:
+          enabled: false
+        trivy:
+          # enabled the flag to enable Trivy scanner
+          enabled: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Replace=true

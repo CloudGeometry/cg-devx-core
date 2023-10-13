@@ -9,7 +9,7 @@ module "argo" {
   identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris = [
-    "https://<ARGO_WORKFLOWS_INGRESS_URL>/oauth2/callback",
+    "https://<CI_INGRESS_URL>/oauth2/callback",
   ]
   secret_mount_path = "secret"
 }
@@ -25,7 +25,7 @@ module "argocd" {
   identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris = [
-    "https://<ARGOCD_INGRESS_URL>/auth/callback",
+    "https://<CD_INGRESS_URL>/auth/callback",
   ]
   secret_mount_path = "secret"
 }
@@ -57,7 +57,7 @@ module "harbor" {
   identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris = [
-    "https://<HARBOR_INGRESS_URL>/c/oidc/callback",
+    "https://<REGISTRY_INGRESS_URL>/c/oidc/callback",
   ]
   secret_mount_path = "secret"
 }
