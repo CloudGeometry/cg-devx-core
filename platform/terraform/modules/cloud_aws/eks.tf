@@ -44,13 +44,8 @@ module "eks" {
     # ami_type                              = "AL2_x86_64"
     # instance_types                        = module.instance_types
     attach_cluster_primary_security_group = true
-    #    vpc_security_group_ids                = [aws_security_group.additional.id]
-    #   iam_role_additional_policies = {
-    # additional = aws_iam_policy.additional.arn
-    #}
     node_group_name                       = "${local.name}-node-group"
-    launch_template_name                  = "${local.name}-eks-lt-def"
-    #    enable_bootstrap_user_data = true
+    use_custom_launch_template            = false
 
   }
 
