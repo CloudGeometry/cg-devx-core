@@ -41,3 +41,22 @@ output "cluster_certificate_authority_data" {
 output "secret_manager_seal_key" {
   value = module.hosting-provider.secret_manager_unseal_kms_key
 }
+
+
+###########
+# Output part for Azure module only:
+# output "kube_config_raw" {
+#   value       = module.hosting-provider.kube_config_raw
+#   sensitive   = true
+#   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
+# }
+
+# output "fqdn" {
+#   value       = module.hosting-provider.fqdn
+#   description = "FQDN of the Azure Kubernetes Managed Cluster"
+# }
+
+# output "apps" {
+#   value       = module.hosting-provider.apps
+#   description = "Name and ID for all AKS Rbac apps"
+# }

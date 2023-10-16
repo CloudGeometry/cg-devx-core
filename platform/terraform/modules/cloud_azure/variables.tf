@@ -10,13 +10,14 @@ variable "region" {
 variable "tags" {
   description = "(Optional) Specifies tags for all the resources"
   default = {
-    createdWith = "Terraform"
+    createdWith   = "Terraform"
+    Provisioned-By = "cgdevx"
   }
 }
 
 variable "resource_group_name" {
   description = "Specifies the resource group name"
-  default     = "DevX-rg"
+  default     = "cgdevx-rg"
   type        = string
 }
 
@@ -42,12 +43,12 @@ variable "log_analytics_retention_days" {
 
 variable "cluster_network_cidr" {
   type    = string
-  default = "10.0.0.0/16"
+  default = "10.1.0.0/16"
 }
 
 variable "vnet_name" {
   type    = string
-  default = "DevXAksVNet"
+  default = "cgdevxAksVNet"
 }
 
 variable "subnets" {
@@ -367,10 +368,26 @@ variable "node_groups" {
     min_size      = 1,
     max_size      = 5,
     desired_size  = 3
-  }]
+  }, 
+### Example of extra node group
+  # {
+  #     name          = "extra",
+  #     instance_type = "Standard_B2s",
+  #     min_size      = 1,
+  #     max_size      = 1,
+  #     desired_size  = 1
+  #   }
+  ]
 }
 
 variable "cluster_node_labels" {
   type    = map(any)
-  default = {}
+  default = {
+    "Provisioned-By" = "cgdevx"
+  }
+}
+
+variable "alert_emails" {
+  type = list(string)
+  default = []
 }
