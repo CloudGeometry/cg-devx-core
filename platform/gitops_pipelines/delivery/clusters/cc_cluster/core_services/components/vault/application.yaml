@@ -1,16 +1,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vault-components
+  name: vault
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: '20'
 spec:
   project: core
   source:
-    repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/vault
-    targetRevision: HEAD
+    repoURL: https://helm.releases.hashicorp.com
+    targetRevision: 0.22.0
+    helm:
+      parameters:
+        - name: server.route.host
+          value: vault.<DOMAIN_NAME>
+        - name: 'server.ingress.hosts[0].host'
+          value: vault.<DOMAIN_NAME>
+      values: |-
+        # server:
+    chart: vault
   destination:
     server: https://kubernetes.default.svc
     namespace: vault
