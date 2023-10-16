@@ -1,15 +1,8 @@
 terraform {
   # Remote backend configuration
   # <TF_HOSTING_REMOTE_BACKEND>
-  # Remote backend configuration
-  # <TF_HOSTING_REMOTE_BACKEND>
 }
 
-locals {
-  cluster_name  = "<PRIMARY_CLUSTER_NAME>"
-  provisioned_by = "cgdevx"
-  region        = "<CLOUD_REGION>"
-  email         = ["<OWNER_EMAIL>"]
 locals {
   cluster_name  = "<PRIMARY_CLUSTER_NAME>"
   provisioned_by = "cgdevx"
@@ -26,10 +19,6 @@ locals {
 # }
 
 module "hosting-provider" {
-  source       = "../modules/cloud_<CLOUD_PROVIDER>"
-  cluster_name = local.cluster_name
-  region       = local.region
-  alert_emails = local.email
   source       = "../modules/cloud_<CLOUD_PROVIDER>"
   cluster_name = local.cluster_name
   region       = local.region
