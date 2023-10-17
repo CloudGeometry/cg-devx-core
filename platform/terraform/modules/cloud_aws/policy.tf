@@ -27,7 +27,7 @@ resource "aws_iam_policy" "ci" {
       {
         "Action" : "s3:*",
         "Effect" : "Allow",
-        "Resource" : "arn:aws:s3:::*"
+        "Resource" : module.artifacts_repository.s3_bucket_arn
       }
     ]
   })
@@ -88,7 +88,7 @@ resource "aws_iam_policy" "secret_manager_policy" {
           "kms:Decrypt"
         ],
         "Effect" : "Allow",
-        "Resource" : "arn:aws:kms:${var.region}:${local.aws_account}:key/${aws_kms_key.secret_manager_unseal.key_id}"
+        "Resource" : "arn:aws:kms:${var.region}:${local.aws_account}:key/*"
       }
     ]
   })

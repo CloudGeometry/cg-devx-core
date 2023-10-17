@@ -15,7 +15,6 @@ terraform {
 
 # Vault configuration
 provider "vault" {
-  address         = "https://vault.cg-devx-demo-cli.cgdevx.io"
   skip_tls_verify = "true"
 }
 

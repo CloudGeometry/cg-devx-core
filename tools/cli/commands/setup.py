@@ -342,6 +342,8 @@ def setup(
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
         p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
         p.internals["CC_CLUSTER_OIDC_PROVIDER"] = hp_out["cluster_oidc_provider"]  # do we need it?
+        # artifact storage
+        p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
         # kms keys
         sec_man_key = hp_out["secret_manager_seal_key"]
         p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
@@ -522,11 +524,11 @@ def setup(
         p.internals["ARGOCD_USER"] = "admin"
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
-        time.sleep(15)
+        time.sleep(30)
 
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=5):
+                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
             argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
             p.internals["ARGOCD_TOKEN"] = argocd_token
 
@@ -555,16 +557,21 @@ def setup(
     if not p.has_checkpoint("secrets-management"):
         click.echo("Initializing Secrets Manager...")
 
-        # TODO: need wait here as vault is not available just after argp app deployment
+        # need to wait here as vault is not available just after argo app deployment
         time.sleep(30)
 
-        # we could wait for cert manager as it's created just before vault
+        # wait for cert manager as it's created just before vault
         cert_manager = kube_client.get_deployment("cert-manager", "cert-manager")
         kube_client.wait_for_deployment(cert_manager)
 
-        time.sleep(30)
+        time.sleep(60)
 
-        vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
+        # wait for vault readiness
+        try:
+            vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
+        except Exception as e:
+            raise click.ClickException("Vault service creation taking longer than expected. Please verify manually "
+                                       "and restart")
         kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
 
         # Vault init from the UI/API is broken from Vault version 1.12.0 till now 1.14.4
@@ -586,6 +593,8 @@ def setup(
         #         for i, x in enumerate(vault_keys):
         #             vault_secret[f"root-unseal-key-{i}"] = x
         #         kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
+
+        time.sleep(15)
         try:
             out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
         except Exception as e:
@@ -610,13 +619,16 @@ def setup(
         p.save_checkpoint()
 
         click.echo("Vault initialization. Done!")
+
+        time.sleep(15)
     else:
         click.echo("Skipped Secrets Manager initialization.")
 
-    time.sleep(15)
-
     if not p.has_checkpoint("secrets-management-tf"):
         click.echo("Setting Secrets...")
+
+        ingress = kube_client.get_ingress("vault", "vault")
+        kube_client.wait_for_ingress(ingress)
 
         # run security manager tf to create secrets and roles
         sec_man_tf_env_vars = {

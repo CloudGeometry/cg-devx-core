@@ -120,7 +120,7 @@ spec:
             - --for=condition=Ready
             - --namespace
             - vault
-            - --timeout=90s
+            - --timeout=900s
           image: registry.hub.docker.com/bitnami/kubectl:<KUBECTL_VERSION>
           imagePullPolicy: IfNotPresent
           name: wait
