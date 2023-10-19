@@ -8,12 +8,25 @@ CG DevX is designed to manage (generate, parametrise, and execute) IaC programma
 #### Input
 
 ```terraform
-# Platform GitOps repository name
-gitops_repo_name = local.gitops_repo_name
-# Git machine user username
-bot_vcs_username = local.bot_vcs_username
-# Git machine user email
-bot_email        = local.bot_email
+users = {
+  # User definition
+  "john_doe" = {
+    # User's Git username
+    vcs_username         = "john_doe_git"
+    # User's email
+    email                = "john.doe@acme.inc"
+    # User's first name
+    first_name           = "John"
+    # User's Git last name
+    last_name            = "Doe"
+    # Git teams slugs to add users to
+    vcs_team_slugs       = ["${local.gitops_repo_name}-admins"]
+    # Access Control List policies
+    acl_policies         = ["admin", "default"]
+    # OIDC groups
+    oidc_groups_for_user = ["admins"]
+  }
+}
 ```
 
 | Name                                                                                                                         | Description                    | Type     | Default | Required |
