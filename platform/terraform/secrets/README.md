@@ -1,15 +1,40 @@
-# Vault entities, groups, policies, secrets, OIDC configuration module
+# Secrets Management
 
-This configurating module is designed to hide the complexity associated with provisioning and management of Hashicorp Vault server.
+This is a platform Secrets Management Infrastructure as Code (IaC) main folder.
+CG DevX is designed to manage (generate, parametrise, and execute) IaC programmatically.
 
-CGDevX is designed to use this module internally, but you can use it directly to a Hashicorp Vault server.
+### Secrets Management
 
+#### Input
 
-Set the `VAULT_ADDR`, `VAULT_TOKEN`, and `AWS_PROFILE`(if you are using a named AWS profile) environment variables as shown in an example below:
+```terraform
+# K8s cluster name
+cluster_name                 = local.cluster_name
+# workloads
+workloads                    = local.workloads
+# Git machine user SSH public key
+vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
+# Git machine user SSH private key
+vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key
+# Registry auth string
+b64_docker_auth              = var.b64_docker_auth
+# Git access token
+vcs_token                    = var.vcs_token
+# IaC PR automation webhook secret
+atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
+# IaC PR automation webhook URL
+atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
+#Secrets Manager root access token
+vault_token                  = var.vault_token
 ```
-export VAULT_ADDR="https://vault.vault.svc.cluster.local:8200"
-export VAULT_TOKEN="REPLACE_ME_WITH_VAULT_TOKEN"
-export AWS_PROFILE="REPLACE_ME_WITH_PROFILE_NAME"
-```
 
-For more details please see module's variables [here](TERRAFORM-README.md)
+| Name                                                                                                                         | Description                    | Type     | Default | Required |
+|------------------------------------------------------------------------------------------------------------------------------|--------------------------------|----------|---------|:--------:|
+| <a name="input_atlantis_repo_webhook_secret"></a> [atlantis\_repo\_webhook\_secret](#input\_atlantis\_repo\_webhook\_secret) | atlantis webhook secret        | `string` | `""`    |    no    |
+| <a name="input_atlantis_repo_webhook_url"></a> [atlantis\_repo\_webhook\_url](#input\_atlantis\_repo\_webhook\_url)          | atlantis webhook url           | `string` | `""`    |    no    |
+| <a name="input_b64_docker_auth"></a> [b64\_docker\_auth](#input\_b64\_docker\_auth)                                          | container registry auth        | `string` | `""`    |    no    |
+| <a name="input_vault_token"></a> [vault\_token](#input\_vault\_token)                                                        | vault token                    | `string` | `""`    |    no    |
+| <a name="input_vcs_bot_ssh_private_key"></a> [vcs\_bot\_ssh\_private\_key](#input\_vcs\_bot\_ssh\_private\_key)              | private key for git operations | `string` | `""`    |    no    |
+| <a name="input_vcs_bot_ssh_public_key"></a> [vcs\_bot\_ssh\_public\_key](#input\_vcs\_bot\_ssh\_public\_key)                 | public key for git operations  | `string` | `""`    |    no    |
+| <a name="input_vcs_token"></a> [vcs\_token](#input\_vcs\_token)                                                              | token for git operations       | `string` | `""`    |    no    |
+

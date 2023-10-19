@@ -1,17 +1,20 @@
-# VCS & OIDC user entities configuration module
+# Users Management
 
-This configurating module is designed to hide the complexity associated with user management.
+This is a platform Users Management Infrastructure as Code (IaC) main folder.
+CG DevX is designed to manage (generate, parametrise, and execute) IaC programmatically.
 
-CGDevX is designed to use this module internally, but you can use it directly to a Hashicorp Vault server.
+### Users Management
 
+#### Input
 
-Set the `VAULT_ADDR`, `VAULT_TOKEN`, `GITHUB_OWNER`, and `GITHUB_TOKEN` environment variables as shown in an example below:
+```terraform
+# Platform GitOps repository name
+gitops_repo_name = local.gitops_repo_name
+# Git machine user username
+bot_vcs_username = local.bot_vcs_username
+# Git machine user email
+bot_email        = local.bot_email
 ```
-export VAULT_ADDR="https://vault.vault.svc.cluster.local:8200"
-export VAULT_TOKEN="REPLACE_ME_WITH_VAULT_TOKEN"
-export GITHUB_OWNER="YourGithubOrgHere"
-export GITHUB_TOKEN="YourVCSToken"
 
-```
-
-For more details please see submodule's variables [here](../modules/users_github/TERRAFORM-README.md)
+| Name                                                                                                                         | Description                    | Type     | Default | Required |
+|------------------------------------------------------------------------------------------------------------------------------|--------------------------------|----------|---------|:--------:|

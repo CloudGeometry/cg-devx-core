@@ -182,8 +182,7 @@ def setup(
         tf_backend_storage_name = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
 
         tf_backend_location, tf_backend_location_region = cloud_man.create_iac_state_storage(tf_backend_storage_name)
-        p.internals["TF_BACKEND_LOCATION"] = tf_backend_location
-        p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_storage_name
+        p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_location
 
         p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
                                                                                          cloud_man.region,

@@ -12,21 +12,21 @@ variable "b64_docker_auth" {
   sensitive   = true
 }
 
-variable "<GIT_PROVIDER>_token" {
+variable "vcs_token" {
   description = "token for git operations"
   default = ""
   type = string
   sensitive   = true
 }
 
-variable "cgdevxbot_ssh_private_key" {
+variable "vcs_bot_ssh_private_key" {
   description = "private key for git operations"
   default = ""
   type    = string
   sensitive   = true
 }
 
-variable "cgdevxbot_ssh_public_key" {
+variable "vcs_bot_ssh_public_key" {
   description = "public key for git operations"
   default = ""
   type    = string
