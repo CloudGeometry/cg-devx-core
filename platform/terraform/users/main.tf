@@ -14,32 +14,44 @@ locals {
   gitops_repo_name = "<GITOPS_REPOSITORY_NAME>"
   bot_vcs_username = "<GIT_USER_NAME>"
   bot_email        = "<OWNER_EMAIL>"
-  workload_enabled = false
-  workloads        = local.workload_enabled == false ? {} : {
-    "workload-demo" = {
+  oidc_groups      = {
+### system groups
+    "admins"                = {
     },
-    "workload-demo2" = {
+    "developers"            = {
     },
-    "workload-demo3" = {
-    },
+### Workload groups definition bellow
+    # "workload-demo-admins"  = {
+    # },
+    # "workload-demo-developers"  = {
+    # },
   }
-  additional_users_enabled = false
-  additional_users         = local.additional_users_enabled == false ? {} : {
-    "cgdevx-demobot-2" = {
+  users = {
+### Primary bot user
+    "cgdevx-bot" = {
+      vcs_username   = local.bot_vcs_username
+      email             = local.bot_email
+      first_name        = "CG DevX"
+      last_name         = "Bot"
+      vcs_team_slugs = ["${local.gitops_repo_name}-admins"]
+      acl_policies      = ["admin", "default"]
+      oidc_groups_for_user = ["admins"]
     },
-    "cgdevx-demobot-3" = {
-    },
+### Additional users defined bellow. Use this as an example
+    # "cgdevx-demobot-2" = {
+    #   vcs_username   = "cgdevx-demobot-2"
+    #   email             = "demobot2@cloudgeometry.io"
+    #   first_name        = "Second"
+    #   last_name         = "Bot"
+    #   vcs_team_slugs = ["${local.gitops_repo_name}-maintainers", "workload-demo-admins"]
+    #   acl_policies      = ["developers", "default", "workload-demo-admins"]
+    #   oidc_groups_for_user = ["developers", "workload-demo-admins"]
+    # },
   }
 }
-
 
 module "users" {
   source           = "../modules/users_<GIT_PROVIDER>"
-  gitops_repo_name = local.gitops_repo_name
-  bot_vcs_username = local.bot_vcs_username
-  bot_email        = local.bot_email
-  additional_users = local.additional_users
-  workloads        = local.workloads
+  users            = local.users
+  oidc_groups      = local.oidc_groups
 }
-
-
