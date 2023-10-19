@@ -1,38 +1,14 @@
-variable "cluster_name" {
-  description = "primary cluster name"
-  default = ""
-  type = string
-
-}
-
-variable "gitops_repo_name" {
-  description = "main gitops repositoy name"
-  type = string
-}
-
-
-variable "vcs_bot_username" {
-  description = "cgdevx-bot github username"
-  type = string
-}
-
-variable "bot_email" {
-  description = "cgdevx-bot email"
-  type = string
-}
-
-variable "additional_users" {
-  description = "workloads users"
+variable "users" {
+  description = "vault users"
   type = map(object({
-    description = optional(string, "")
-    }))
-  default = {}
-}
-
-variable "workloads" {
-  description = "workloads configuration"
-  type = map(object({
-    description                  = optional(string, "")
-    }))
+    user_disabled                = optional(bool, false)
+    vcs_username              = optional(string, "")
+    email                        = optional(string, "")
+    first_name                   = optional(string, "")
+    last_name                    = optional(string, "")
+    vcs_team_slugs            = optional(list(string), [])
+    acl_policies                 = optional(list(string), ["admin", "default"])
+    oidc_groups_for_user         = optional(list(string), ["developers"])
+  }))
   default = {}
 }
