@@ -13,11 +13,14 @@ locals {
 # Cloud Provider configuration
 # <TF_HOSTING_PROVIDER>
 
+## Azure provider configuration: 
+# provider "azurerm" {
+#   features {}
+# }
+
 module "hosting-provider" {
   source       = "../modules/cloud_<CLOUD_PROVIDER>"
   cluster_name = local.cluster_name
   region       = local.region
   alert_emails = local.email
 }
-
-
