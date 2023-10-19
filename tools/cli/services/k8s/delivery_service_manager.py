@@ -65,7 +65,7 @@ class DeliveryServiceManager:
                 "finalizers": ["resources-finalizer.argocd.argoproj.io"]
             },
             "spec": {
-                "description": "CGDevX platform core services",
+                "description": "CG DevX platform core services",
                 # allow manifests only from gitops repo
                 "sourceRepos": repos,
                 # Only permit applications to deploy in the same cluster

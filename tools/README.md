@@ -2,7 +2,7 @@
 
 CG DevX CLI simplifies initial setup of CG DevX reference architecture.
 The setup process is intended to be executed from an operator's machine and will create a local folder containing tools,
-temporary, and configuration files.y
+temporary, and configuration files.
 All subsequent commands should be executed from the same machine, as they will rely on a data created by setup process.
 
 ## Getting Started

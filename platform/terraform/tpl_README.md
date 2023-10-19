@@ -1,11 +1,11 @@
 # Platform IaC
 
 This is your platform Infrastructure as Code (IaC) main folder.
-CGDevX is designed to manage (generate, parametrise, and execute) IaC programmatically.
+CG DevX is designed to manage (generate, parametrise, and execute) IaC programmatically.
 
 ## Blocks
 
-Platform code is organised using four independent parts
+Platform code is organized using the following independent blocks:
 
 ### Cloud Infrastructure
 
@@ -17,11 +17,16 @@ Global (platform wide) secrets management organised under `secrets` folder.
 
 ### Users
 
-User, groups, permissions, and access management organised under `users` folder.
+User, groups, permissions, and access management organized under `users` folder.
 
 ### Version Control System (VCS)
 
-Repository and access management organised under `vcs` folder.
+Repository and access management organized under `vcs` folder.
 
+### Modules
+
+All the resources are isolated within "provisioning modules" designed to hide the complexity associated with
+provisioning and management of a specific resource(s).
+They serve as abstraction layer and hide cloud-specific implementation details from the consumer.
 
 

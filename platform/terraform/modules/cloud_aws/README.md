@@ -7,11 +7,11 @@ Our intention is to follow all the best practices described in, so you should no
 - [Well-Architected Framework](https://wa.aws.amazon.com/index.en.html)
 - [EKS best practices](https://github.com/aws/aws-eks-best-practices)
 
-CGDevX is designed to use this module internally, but you can use it directly to deploy a K8s cluster.
+CG DevX is designed to use this module internally, but you can use it directly to deploy a K8s cluster.
 
 ## Adding and testing your changes
 
-To be able to contribute and rung this module you should follow simple steps described below.
+To be able to contribute and rung this module, you should follow the simple steps described below.
 
 ### Prerequisites
 
@@ -20,18 +20,18 @@ You should have:
 - terraform installed and configured;
 - AWS CLI tool installed and configured to access your target AWS account;
 - (optionally) K8s CLI - kubectl;
-- CGDevX repo.
+- CG DevX repo.
 
-Please note that CGDevX uses specific versions of terraform and kubectl.
+Please note that CG DevX uses specific versions of terraform and kubectl.
 
 ### Development
 
 _Please note that cloud module must follow input and output parameter schema
-described [here](../../hosting_provider/README.md). Cloud module serves as abstraction layer and hides cloud specific
+described [here](../../hosting_provider/README.md). Cloud module serves as abstraction layer and hides cloud-specific
 implementation details from the consumer. All the AWS specific configuration and services dependencies should be kept
 within `cloud_aws`._
 
-When done changes please make sure that you've updated terraform docs and module architecture diagrams.
+When done changes, please make sure that you've updated terraform docs and module architecture diagrams.
 
 ### How to run locally
 
@@ -65,10 +65,10 @@ provider "aws" {
 }
 
 module "hosting-provider" {
-# path to the module here
-  source          = "../modules/cloud_aws"
-  cluster_name    = local.name
-  node_groups = [
+  # path to the module here
+  source       = "../modules/cloud_aws"
+  cluster_name = local.name
+  node_groups  = [
     {
       name           = "gr1"
       instance_types = ["t3.medium"]
@@ -108,4 +108,4 @@ your [Amazon EKS console](https://console.aws.amazon.com/eks/home?#/clusters).
 Remember, those resources are not free. Please clean up when you're done with your changes by
 running `terraform destroy` command.
 
-For more details please see module's variables [here](TERRAFORM-README.md)
+For more details, please see module's variables [here](TERRAFORM-README.md)

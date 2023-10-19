@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://runatlantis.github.io/helm-charts
     chart: atlantis
-    targetRevision: 4.11.2
+    targetRevision: 4.15.3
     helm:
       values: |-
         statefulSet:
@@ -42,8 +42,10 @@ spec:
             - secretName: atlantis-tls
               hosts:
                 - <IAC_PR_AUTOMATION_INGRESS_URL>
+        basicAuthSecretName: atlantis-basic-auth-secrets 
+        defaultTFVersion: 1.3.9
         loadEnvFromSecrets:
-          - atlantis-secrets
+          - atlantis-envs-secrets
         repoConfig: |
           ---
           repos:

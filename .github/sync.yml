@@ -1,6 +1,5 @@
 CloudGeometry/cgdevx-core:
   - LICENSE
   - README.md
-  - templating.md
   - source: platform/
     deleteOrphaned: true

@@ -157,8 +157,8 @@ class AwsSdk:
                                       ],
                                       "TTL": 10,
                                       "Weight": 100,
-                                      "SetIdentifier": "CREATE liveness check for CGDevX cluster installation", }}],
-                     "Comment": "CREATE liveness check for CGDevX cluster installation"}
+                                      "SetIdentifier": "CREATE liveness check for CG DevX cluster installation", }}],
+                     "Comment": "CREATE liveness check for CG DevX cluster installation"}
 
             r = r53_client.change_resource_record_sets(HostedZoneId=hosted_zone_id, ChangeBatch=batch)
 

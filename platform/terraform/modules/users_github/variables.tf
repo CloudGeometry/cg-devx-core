@@ -11,7 +11,7 @@ variable "gitops_repo_name" {
 }
 
 
-variable "bot_vcs_username" {
+variable "vcs_bot_username" {
   description = "cgdevx-bot github username"
   type = string
 }
