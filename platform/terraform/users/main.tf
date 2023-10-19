@@ -14,18 +14,6 @@ locals {
   gitops_repo_name = "<GITOPS_REPOSITORY_NAME>"
   vcs_bot_username = "<GIT_USER_NAME>"
   bot_email        = "<OWNER_EMAIL>"
-  oidc_groups      = {
-    ### system groups
-    "admins" = {
-    },
-    "developers" = {
-    },
-    ### Workload groups definition bellow
-    # "workload-demo-admins"  = {
-    # },
-    # "workload-demo-developers"  = {
-    # },
-  }
   users = {
     ### Primary bot user
     "cgdevx-bot" = {

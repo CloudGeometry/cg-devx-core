@@ -12,16 +12,3 @@ variable "users" {
   }))
   default = {}
 }
-
-variable "oidc_groups" {
-  description = "vault groups configuration"
-  type = map(object({
-    description = optional(string, "")
-  }))
-  default = {
-    "admins"                = {
-    },
-    "developers"            = {
-    },
-  }
-}
