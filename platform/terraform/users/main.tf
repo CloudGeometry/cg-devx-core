@@ -12,7 +12,7 @@ provider "vault" {
 
 locals {
   gitops_repo_name = "<GITOPS_REPOSITORY_NAME>"
-  bot_vcs_username = "<GIT_USER_NAME>"
+  vcs_bot_username = "<GIT_USER_NAME>"
   bot_email        = "<OWNER_EMAIL>"
   workload_enabled = false
   workloads        = local.workload_enabled == false ? {} : {
@@ -36,7 +36,7 @@ locals {
 module "users" {
   source           = "../modules/users_<GIT_PROVIDER>"
   gitops_repo_name = local.gitops_repo_name
-  bot_vcs_username = local.bot_vcs_username
+  vcs_bot_username = local.vcs_bot_username
   bot_email        = local.bot_email
   additional_users = local.additional_users
   workloads        = local.workloads

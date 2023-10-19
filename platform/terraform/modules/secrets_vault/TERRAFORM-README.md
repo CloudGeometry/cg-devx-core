@@ -10,6 +10,7 @@
 | Name | Version |
 |------|---------|
 | <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.47 |
+| <a name="provider_random"></a> [random](#provider\_random) | n/a |
 | <a name="provider_vault"></a> [vault](#provider\_vault) | n/a |
 
 ## Modules
@@ -21,17 +22,21 @@
 | <a name="module_grafana"></a> [grafana](#module\_grafana) | ./oidc-client | n/a |
 | <a name="module_harbor"></a> [harbor](#module\_harbor) | ./oidc-client | n/a |
 | <a name="module_sonarqube"></a> [sonarqube](#module\_sonarqube) | ./oidc-client | n/a |
-| <a name="module_workload1"></a> [workload1](#module\_workload1) | ./vault-workload | n/a |
+| <a name="module_workloads"></a> [workloads](#module\_workloads) | ./vault-workload | n/a |
 
 ## Resources
 
 | Name | Type |
 |------|------|
+| [random_password.atlantis_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [random_password.grafana_password](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [vault_auth_backend.k8s](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/auth_backend) | resource |
 | [vault_auth_backend.userpass](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/auth_backend) | resource |
+| [vault_generic_secret.atlantis_auth_secrets](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/generic_secret) | resource |
 | [vault_generic_secret.atlantis_secrets](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/generic_secret) | resource |
 | [vault_generic_secret.ci_secrets](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/generic_secret) | resource |
 | [vault_generic_secret.docker_config](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/generic_secret) | resource |
+| [vault_generic_secret.grafana_secrets](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/generic_secret) | resource |
 | [vault_generic_secret.registry_auth](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/generic_secret) | resource |
 | [vault_identity_group.admins](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/identity_group) | resource |
 | [vault_identity_group.developers](https://registry.terraform.io/providers/hashicorp/vault/latest/docs/resources/identity_group) | resource |
@@ -59,11 +64,12 @@
 | <a name="input_atlantis_repo_webhook_secret"></a> [atlantis\_repo\_webhook\_secret](#input\_atlantis\_repo\_webhook\_secret) | atlantis webhook secret | `string` | `""` | no |
 | <a name="input_atlantis_repo_webhook_url"></a> [atlantis\_repo\_webhook\_url](#input\_atlantis\_repo\_webhook\_url) | atlantis webhook url | `string` | `""` | no |
 | <a name="input_b64_docker_auth"></a> [b64\_docker\_auth](#input\_b64\_docker\_auth) | container registry auth | `string` | `""` | no |
-| <a name="input_cgdevxbot_ssh_private_key"></a> [cgdevxbot\_ssh\_private\_key](#input\_cgdevxbot\_ssh\_private\_key) | private key for git operations | `string` | `""` | no |
-| <a name="input_cgdevxbot_ssh_public_key"></a> [cgdevxbot\_ssh\_public\_key](#input\_cgdevxbot\_ssh\_public\_key) | public key for git operations | `string` | `""` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | primary cluster name | `string` | `""` | no |
-| <a name="input_github_token"></a> [github\_token](#input\_github\_token) | token for git operations | `string` | `""` | no |
 | <a name="input_vault_token"></a> [vault\_token](#input\_vault\_token) | vault token | `string` | `""` | no |
+| <a name="input_vcs_bot_ssh_private_key"></a> [vcs\_bot\_ssh\_private\_key](#input\_vcs\_bot\_ssh\_private\_key) | private key for git operations | `string` | `""` | no |
+| <a name="input_vcs_bot_ssh_public_key"></a> [vcs\_bot\_ssh\_public\_key](#input\_vcs\_bot\_ssh\_public\_key) | public key for git operations | `string` | `""` | no |
+| <a name="input_vcs_token"></a> [vcs\_token](#input\_vcs\_token) | token for git operations | `string` | `""` | no |
+| <a name="input_workloads"></a> [workloads](#input\_workloads) | workloads vault configuration | <pre>map(object({<br>    description                  = optional(string, "")<br>    }))</pre> | `{}` | no |
 
 ## Outputs
 

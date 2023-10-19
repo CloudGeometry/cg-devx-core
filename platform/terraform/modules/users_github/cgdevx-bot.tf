@@ -6,7 +6,7 @@ module "cgdevx-bot" {
   acl_policies      = ["admin","default"]
   email             = var.bot_email
   first_name        = "CG DevX"
-  github_username   = var.bot_vcs_username
+  github_username   = var.vcs_bot_username
   last_name         = "Bot"
   github_team_slugs = ["${var.gitops_repo_name}-admins"]
   username          = "cgdevx-bot"
