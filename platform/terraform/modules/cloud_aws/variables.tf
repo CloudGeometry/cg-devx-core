@@ -41,7 +41,7 @@ variable "node_group_type" {
 variable "node_groups" {
   type = list(object({
     name           = optional(string, "")
-    instance_types = optional(list(string), ["t3.large", "t3.medium"])
+    instance_types = optional(list(string), ["t3.large"])
     capacity_type  = optional(string, "on_demand")
     min_size       = optional(number, 3)
     max_size       = optional(number, 5)
@@ -52,7 +52,7 @@ variable "node_groups" {
   default = [
     {
       name           = "default"
-      instance_types = ["t3.large", "t3.medium"]
+      instance_types = ["t3.large"]
       capacity_type  = "on_demand"
       min_size       = 3
       max_size       = 5

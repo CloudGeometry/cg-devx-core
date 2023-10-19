@@ -78,7 +78,7 @@ spec:
               /{{workflow.name}}\
               /{{pod.name}}"
             endpoint: s3.amazonaws.com
-            region: eu-central-1
+            region: <CLOUD_REGION>
             useSDKCreds: true
             encryptionOptions:
               enableEncryption: false

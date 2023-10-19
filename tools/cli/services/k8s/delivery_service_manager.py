@@ -6,9 +6,11 @@ from requests import HTTPError
 
 from common.const.const import ARGOCD_REGISTRY_APP_PATH, GITOPS_REPOSITORY_URL
 from common.const.namespaces import ARGOCD_NAMESPACE
+from common.retry_decorator import exponential_backoff_decorator
 from services.k8s.k8s import KubeClient
 
 
+@exponential_backoff_decorator(base_delay=5)
 def get_argocd_token(user, password):
     try:
         response = requests.post("https://localhost:8080/api/v1/session",
@@ -63,7 +65,7 @@ class DeliveryServiceManager:
                 "finalizers": ["resources-finalizer.argocd.argoproj.io"]
             },
             "spec": {
-                "description": "CGDevX platform core services",
+                "description": "CG DevX platform core services",
                 # allow manifests only from gitops repo
                 "sourceRepos": repos,
                 # Only permit applications to deploy in the same cluster

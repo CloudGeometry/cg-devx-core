@@ -15,7 +15,6 @@ terraform {
 
 # Vault configuration
 provider "vault" {
-  address         = "https://vault.cg-devx-demo-cli.cgdevx.io"
   skip_tls_verify = "true"
 }
 
@@ -37,10 +36,10 @@ module "secrets" {
 
   cluster_name                 = local.cluster_name
   workloads                    = local.workloads
-  cgdevxbot_ssh_public_key     = var.vcs_bot_ssh_public_key
-  cgdevxbot_ssh_private_key    = var.vcs_bot_ssh_private_key
+  vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
+  vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key
   b64_docker_auth              = var.b64_docker_auth
-  <GIT_PROVIDER>_token         = var.vcs_token
+  vcs_token                    = var.vcs_token
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
   vault_token                  = var.vault_token

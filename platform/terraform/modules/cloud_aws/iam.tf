@@ -1,4 +1,3 @@
-
 ################################################################################
 # Supporting IAM role and policy Resources
 ################################################################################
@@ -67,7 +66,7 @@ module "iam_ci_role" {
 
   }
 }
-# argocd
+# Cloud Native CD
 module "iam_cd_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   role_name = "${local.name}-cd-role"
@@ -84,18 +83,19 @@ module "iam_cd_role" {
 
   }
 }
-# iac pr automation
+# IaC PR automation
 module "iac_pr_automation_irsa_role" {
-  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-iac_pr_automation-role"
+  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name      = "${local.name}-iac_pr_automation-role"
   oidc_providers = {
     main = {
-      provider_arn = module.eks.oidc_provider_arn
+      provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["atlantis:atlantis"]
     }
   }
   role_policy_arns = {
-    policy = aws_iam_policy.iac_pr_automation_policy.arn
+    policy              = aws_iam_policy.iac_pr_automation_policy.arn
+    administrator_access = "arn:aws:iam::aws:policy/AdministratorAccess"
   }
 
 }
@@ -106,7 +106,7 @@ module "cert_manager_irsa_role" {
   role_name                  = "${local.name}-cert-manager-role"
   attach_cert_manager_policy = true
   #  cert_manager_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
-  oidc_providers = {
+  oidc_providers             = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["cert-manager:cert-manager"]
@@ -117,11 +117,11 @@ module "cert_manager_irsa_role" {
 
 # container registry
 module "registry_irsa_role" {
-  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-image-registry-role"
+  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name      = "${local.name}-image-registry-role"
   oidc_providers = {
     main = {
-      provider_arn = module.eks.oidc_provider_arn
+      provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["harbor:harbor"]
     }
   }
@@ -147,11 +147,11 @@ module "external_dns_irsa_role" {
 }
 # secret_manager
 module "secret_manager_irsa_role" {
-  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-secret_manager-role"
+  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name      = "${local.name}-secret_manager-role"
   oidc_providers = {
     main = {
-      provider_arn = module.eks.oidc_provider_arn
+      provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["vault:vault"]
     }
   }

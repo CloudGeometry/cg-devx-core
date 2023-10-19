@@ -88,6 +88,15 @@ Using parameter file
 cgdevxcli setup -f path/to/your/parameters.yaml
 ```
 
+### Troubleshooting
+
+Installation of a reference architecture is a complex process depending on multiple factors, eg cloud resource
+availability, connection speed, image registry rate limits, etc. While we do our best to handle most common problems,
+the setup process could still fail.
+If you have connectivity or resource availability errors, please try restarting the
+setup.
+It should resume from the step when it failed previously.
+
 ## Destroy
 
 Destroys all the resources created by setup process AKA reverse setup. It uses local state data created by setup
@@ -107,3 +116,12 @@ process.
 ```bash
 cgdevxcli destroy
 ```
+
+### Troubleshooting
+
+Some of the resources used by reference architecture are created dynamically in a run time.
+When doing cleanup, we are trying to destroy those temporary resources,
+and then all other resources created by our automation.
+The cleanup process could still fail.
+If you have any issues, please try restarting the process.
+If it fails to delete your K8s cluster, please try deleting Load Balancer(s) manually and restart the process.
