@@ -24,10 +24,10 @@ provider "vault" {
 locals {
   cluster_name     = "<PRIMARY_CLUSTER_NAME>"
   provisioned_by   = "cgdevx"
-  workload_enabled = false
-  workloads        = local.workload_enabled == false ? {} : {
-    "workload-demo" = {
-    },
+### Workload groups definition bellow
+  workloads        = {
+    # "workload-demo" = {
+    # },
   }
 }
 

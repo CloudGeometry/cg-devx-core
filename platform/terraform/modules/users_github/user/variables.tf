@@ -28,11 +28,6 @@ variable "last_name" {
   type = string
 }
 
-variable "initial_password" {
-  type    = string
-  default = ""
-}
-
 variable "github_team_slugs" {
   type = list(string)
   description = "the github team slugs to place the user"
@@ -40,5 +35,9 @@ variable "github_team_slugs" {
 }
 
 variable "acl_policies" {
+  type = list(string)
+}
+
+variable "oidc_groups_for_user" {
   type = list(string)
 }
