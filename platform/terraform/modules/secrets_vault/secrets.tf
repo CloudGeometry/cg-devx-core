@@ -69,6 +69,9 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_vault_token                  = var.vault_token,
       VAULT_ADDR                          = "http://vault.vault.svc.cluster.local:8200",
       VAULT_TOKEN                         = var.vault_token,
+      HARBOR_URL = 
+      HARBOR_USERNAME = "admin"
+      HARBOR_PASSWORD = random_password.harbor_password.result
     }
   )
 
@@ -108,6 +111,26 @@ resource "vault_generic_secret" "atlantis_auth_secrets" {
     {
       username = "admin",
       password = random_password.atlantis_password.result,
+    }
+  )
+
+  depends_on = [vault_mount.secret]
+}
+
+# harbor web ui admin auth credentials
+resource "random_password" "harbor_password" {
+  length           = 22
+  special          = true
+  override_special = "!#$"
+}
+
+resource "vault_generic_secret" "harbor_admin_secret" {
+  path = "secret/harbor/admin-auth"
+
+  data_json = jsonencode(
+    {
+      HARBOR_ADMIN_NAME     = "admin",
+      HARBOR_ADMIN_PASSWORD = random_password.harbor_password.result,
     }
   )
 
