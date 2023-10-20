@@ -41,5 +41,4 @@ locals {
 module "users" {
   source      = "../modules/users_<GIT_PROVIDER>"
   users       = local.users
-  oidc_groups = local.oidc_groups
 }
