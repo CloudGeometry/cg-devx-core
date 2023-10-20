@@ -65,13 +65,21 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_hosted_zone_name             = "<DOMAIN_NAME>",
       TF_VAR_vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key,
       TF_VAR_vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key,
+      # harbor specific section
+      # ----
+      TF_VAR_artifact_registry_oidc_client_id      = #???
+      TF_VAR_artifact_registry_oidc_client_secret  = #???
+      HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>"
+      HARBOR_USERNAME                     = "admin"
+      HARBOR_PASSWORD                     = random_password.harbor_password.result
+
+      # vault specific section
+      # ----
       TF_VAR_vault_addr                   = "http://vault.vault.svc.cluster.local:8200",
       TF_VAR_vault_token                  = var.vault_token,
       VAULT_ADDR                          = "http://vault.vault.svc.cluster.local:8200",
       VAULT_TOKEN                         = var.vault_token,
-      HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>"
-      HARBOR_USERNAME                     = "admin"
-      HARBOR_PASSWORD                     = random_password.harbor_password.result
+
     }
   )
 
