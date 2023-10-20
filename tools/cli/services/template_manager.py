@@ -34,7 +34,7 @@ class GitOpsTemplateManager:
 
     def check_repository_existence(self):
         """
-        Check if repository exists
+        Check if the repository exists
         :return: True or False
         """
         repo = GHRepo.parse(self.__url)
@@ -53,17 +53,19 @@ class GitOpsTemplateManager:
             raise e
 
     def clone(self):
+        temp_folder = LOCAL_GITOPS_FOLDER / ".tmp"
+
         if os.path.exists(LOCAL_GITOPS_FOLDER):
             shutil.rmtree(LOCAL_GITOPS_FOLDER)
 
         if os.environ.get("CGDEVX_CLI_CLONE_LOCAL", False):
             source_dir = pathlib.Path().resolve().parent
-            shutil.copytree(source_dir, LOCAL_GITOPS_FOLDER)
+            shutil.copytree(source_dir, temp_folder)
             return
 
-        os.makedirs(LOCAL_GITOPS_FOLDER)
+        os.makedirs(temp_folder)
         try:
-            repo = Repo.clone_from(self.__url, LOCAL_GITOPS_FOLDER, progress=ProgressPrinter(), branch=self.__branch)
+            repo = Repo.clone_from(self.__url, temp_folder, progress=ProgressPrinter(), branch=self.__branch)
         except GitError as e:
             raise e
 
@@ -90,9 +92,12 @@ class GitOpsTemplateManager:
         except GitError as e:
             raise e
 
-    def restructure_template(self):
+    def build_repo_from_template(self):
+        temp_folder = LOCAL_GITOPS_FOLDER / ".tmp"
+
+        os.makedirs(LOCAL_GITOPS_FOLDER, exist_ok=True)
         # workaround for local development mode, this should not happen in prod
-        for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
+        for root, dirs, files in os.walk(temp_folder):
             for name in files:
                 if name.endswith(".DS_Store") or name.endswith(".terraform") \
                         or name.endswith(".github") or name.endswith(".idea"):
@@ -102,19 +107,11 @@ class GitOpsTemplateManager:
                     if os.path.isdir(path):
                         os.rmdir(path)
 
-        # remove git reference
-        shutil.rmtree(LOCAL_GITOPS_FOLDER / ".git", ignore_errors=True)
-        # remove gh actions
-        shutil.rmtree(LOCAL_GITOPS_FOLDER / ".github", ignore_errors=True)
-        # remove cli
-        shutil.rmtree(LOCAL_GITOPS_FOLDER / "tools", ignore_errors=True)
-
         # restructure gitops
-        shutil.move(LOCAL_GITOPS_FOLDER / "platform" / "terraform", LOCAL_GITOPS_FOLDER / "terraform")
-        shutil.move(LOCAL_GITOPS_FOLDER / "platform" / "gitops-pipelines", LOCAL_GITOPS_FOLDER / "gitops-pipelines")
-        for src_file in Path(LOCAL_GITOPS_FOLDER / "platform").glob('*.*'):
-            shutil.move(src_file, LOCAL_GITOPS_FOLDER)
-        shutil.rmtree(LOCAL_GITOPS_FOLDER / "platform")
+        shutil.copytree(temp_folder / "platform" / "terraform", LOCAL_GITOPS_FOLDER / "terraform")
+        shutil.copytree(temp_folder / "platform" / "gitops-pipelines", LOCAL_GITOPS_FOLDER / "gitops-pipelines")
+        for src_file in Path(temp_folder / "platform").glob('*.*'):
+            shutil.copy(src_file, LOCAL_GITOPS_FOLDER)
 
         # drop all non template readme files
         for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
@@ -129,6 +126,9 @@ class GitOpsTemplateManager:
                     s = os.path.join(root, name)
                     os.rename(s, s.replace("tpl_", ""))
 
+        shutil.rmtree(temp_folder)
+        return
+
     def parametrise_tf(self, params: dict):
 
         self.__file_replace(params, LOCAL_TF_FOLDER)
@@ -138,7 +138,7 @@ class GitOpsTemplateManager:
 
         self.__file_replace(params, pipelines_folder)
 
-    def parametrise_root(self, params: dict):
+    def parametrise_gitops_readme(self, params: dict):
         for src_file in LOCAL_GITOPS_FOLDER.glob('*.md'):
             with open(src_file, "r") as file:
                 data = file.read()
@@ -152,15 +152,16 @@ class GitOpsTemplateManager:
         try:
             for root, dirs, files in os.walk(folder):
                 for name in files:
-                    file_path = os.path.join(root, name)
-                    with open(file_path, "r") as file:
-                        data = file.read()
-                        for k, v in params.items():
-                            data = data.replace(k, v)
-                    with open(file_path, "w") as file:
-                        file.write(data)
+                    if name.endswith(".tf") or name.endswith(".yaml") or name.endswith(".md"):
+                        file_path = os.path.join(root, name)
+                        with open(file_path, "r") as file:
+                            data = file.read()
+                            for k, v in params.items():
+                                data = data.replace(k, v)
+                        with open(file_path, "w") as file:
+                            file.write(data)
         except Exception as e:
-            raise e
+            raise Exception(f"Error while parametrizing file: {file_path}", e)
 
 
 class ProgressPrinter(RemoteProgress):
