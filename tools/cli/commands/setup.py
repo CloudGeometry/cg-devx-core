@@ -253,7 +253,7 @@ def setup(
 
         tm.check_repository_existence()
         tm.clone()
-        tm.restructure_template()
+        tm.build_repo_from_template()
         tm.parametrise_tf(p.parameters)
 
         p.set_checkpoint("repo-prep")
@@ -374,7 +374,7 @@ def setup(
 
     if not p.has_checkpoint("gitops-vcs"):
         tm.parametrise_registry(p.parameters)
-        tm.parametrise_root(p.parameters)
+        tm.parametrise_gitops_readme(p.parameters)
 
         click.echo("Pushing GitOps code...")
 
