@@ -69,9 +69,9 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_vault_token                  = var.vault_token,
       VAULT_ADDR                          = "http://vault.vault.svc.cluster.local:8200",
       VAULT_TOKEN                         = var.vault_token,
-      HARBOR_URL = 
-      HARBOR_USERNAME = "admin"
-      HARBOR_PASSWORD = random_password.harbor_password.result
+      HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>"
+      HARBOR_USERNAME                     = "admin"
+      HARBOR_PASSWORD                     = random_password.harbor_password.result
     }
   )
 
