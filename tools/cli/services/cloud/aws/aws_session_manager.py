@@ -29,4 +29,4 @@ class AwsSessionManager():
         return self.__session
 
     def close_session(self):
-        self.__session.authorization_client().close()
+        self.__session.client().close()

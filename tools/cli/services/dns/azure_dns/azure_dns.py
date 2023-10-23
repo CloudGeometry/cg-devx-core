@@ -21,9 +21,7 @@ class AzureDNSManager(DNSManager):
             if not set(existing_ns).issubset(set(name_servers)):
                 return False
 
-        # ToDo: Implement set_dns_zone_liveness
-        # return self.__azure_sdk.set_dns_zone_liveness(domain_name, zone_id, name_servers)
-        return True
+        return self.__azure_sdk.set_hosted_zone_liveness(domain_name, zone_id, name_servers)
 
     def evaluate_permissions(self):
         """

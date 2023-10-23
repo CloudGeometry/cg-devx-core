@@ -23,7 +23,7 @@ class AwsSdk:
     @property
     def account_id(self):
         if self._account_id is None:
-            client = self._session_manager.session.authorization_client('sts')
+            client = self._session_manager.session.client('sts')
             self._account_id = client.get_caller_identity()["Account"]
         return self._account_id
 
@@ -32,7 +32,7 @@ class AwsSdk:
         Method doesn't work with STS/assumed roles
         """
         try:
-            client = self._session_manager.session.authorization_client('iam')
+            client = self._session_manager.session.client('iam')
             user = client.get_user()
             return user["User"]["Arn"]
 
@@ -73,7 +73,7 @@ class AwsSdk:
                 'ContextKeyType': "string"
             } for context_key, context_values in context.items()]
 
-        iam_client = self._session_manager.session.authorization_client('iam')
+        iam_client = self._session_manager.session.client('iam')
         results = iam_client.simulate_principal_policy(
             PolicySourceArn=self.current_user_arn(),
             ActionNames=actions,
@@ -99,7 +99,7 @@ class AwsSdk:
             if region is None:
                 region = self.region
 
-            s3_client = self._session_manager.session.authorization_client('s3', region_name=region)
+            s3_client = self._session_manager.session.client('s3', region_name=region)
             location = {'LocationConstraint': region}
             bucket = s3_client.create_bucket(Bucket=bucket_name,
                                              CreateBucketConfiguration=location)
@@ -109,7 +109,7 @@ class AwsSdk:
         return bucket_name, region
 
     def get_name_servers(self, domain_name: str) -> Tuple[List[str], str, bool]:
-        r53_client = self._session_manager.session.authorization_client('route53')
+        r53_client = self._session_manager.session.client('route53')
         hosted_zones = r53_client.list_hosted_zones()
 
         hosted_zone = next(filter(lambda x: x["Name"] == f'{domain_name}.', hosted_zones["HostedZones"]), None)
@@ -136,7 +136,7 @@ class AwsSdk:
         route53_record_name = f'cgdevx-liveness.{hosted_zone_name}'
         route53_record_value = "domain record propagated"
 
-        r53_client = self._session_manager.session.authorization_client('route53')
+        r53_client = self._session_manager.session.client('route53')
         response = r53_client.list_resource_record_sets(HostedZoneId=hosted_zone_id)
         # check if route53RecordName exists in ResourceRecordSets
 
@@ -211,7 +211,7 @@ class AwsSdk:
             if region is None:
                 region = self.region
 
-            s3_client = self._session_manager.session.authorization_client('s3', region_name=region)
+            s3_client = self._session_manager.session.client('s3', region_name=region)
 
             objects = s3_client.get_paginator("list_objects_v2")
 
