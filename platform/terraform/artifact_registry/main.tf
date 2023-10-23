@@ -1,10 +1,17 @@
 terraform {
   # Remote backend configuration
   # <TF_ARTIFACT_REGISTRY_REMOTE_BACKEND>
+
+  required_providers {
+    harbor = {
+      source = "goharbor/harbor"
+    }
+  }
 }
 
 # Credential to harbor provider passed through env variables HARBOR_URL, HARBOR_USERNAME, and HARBOR_PASSWORD
 provider "harbor" {
+  source = "goharbor/harbor"
 }
 
 locals {

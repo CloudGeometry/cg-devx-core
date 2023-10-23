@@ -4,8 +4,8 @@ resource "random_password" "robot_password" {
 }
 
 resource "harbor_robot_account" "workload_robot" {
-  name        = "${var.project}-robot"
-  description = "${var.project} workload project level robot account"
+  name        = "${var.project_name}-robot"
+  description = "${var.project_name} workload project level robot account"
   level       = "project"
   secret      = resource.random_password.robot_password.result
 #need to define project robot permissions
