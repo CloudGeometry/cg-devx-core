@@ -10,8 +10,8 @@ provider "harbor" {
 locals {
   artifact_registry_oidc_endpoint = "https://<OIDC_PROVIDER_URL>"
   workloads        = {
-    "workload-demo" = {
-    },
+    # "workload-demo" = {
+    # },
   }
 ### some harbor variables here
 }
