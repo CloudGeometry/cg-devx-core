@@ -13,25 +13,21 @@ projects:
       enabled: true
       when_modified: [ "**/*.tf", "../modules/vcs_*/**/*.tf", "*.tf*" ]
     execution_order_group: 1
-#    extra_args: ["-var-file", "../workloads.tfvars"]
   - dir: terraform/users
     terraform_version: 1.3.9
     autoplan:
       enabled: true
       when_modified: [ "**/*.tf", "../modules/users_*/**/*.tf", "*.tf*" ]
     execution_order_group: 4
-#    extra_args: ["-var-file", "../workloads.tfvars"]
   - dir: terraform/secrets
     terraform_version: 1.3.9
     autoplan:
       enabled: true
-      when_modified: [ "**/*.tf", "../modules/secrets_*/**/*.tf", "*.tf*", "../workloads.tfvars" ]
+      when_modified: [ "**/*.tf", "../modules/secrets_*/**/*.tf", "*.tf*" ]
     execution_order_group: 3
-    extra_args: ["-var-file", "../workloads.tfvars"]
   - dir: terraform/artifact_registry
     terraform_version: 1.3.9
     autoplan:
       enabled: true
-      when_modified: [ "**/*.tf", "../modules/artifact_*/**/*.tf", "*.tf*", "../workloads.tfvars" ]
+      when_modified: [ "**/*.tf", "../modules/artifact_*/**/*.tf", "*.tf*" ]
     execution_order_group: 5
-    extra_args: ["-var-file", "../workloads.tfvars"]

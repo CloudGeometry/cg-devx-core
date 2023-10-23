@@ -44,11 +44,3 @@ variable "vault_token" {
   type    = string
   sensitive   = true
 }
-
-variable "workloads" {
-  description = "workloads vault configuration"
-  type = map(object({
-    description                  = optional(string, "")
-    }))
-  default = {}
-}
