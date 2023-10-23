@@ -6,6 +6,7 @@ from common.state_store import StateStore
 from services.cloud.aws.aws_manager import AWSManager
 from services.cloud.azure.azure_manager import AzureManager
 from services.cloud.cloud_provider_manager import CloudProviderManager
+from services.dns.azure_dns.azure_dns import AzureDNSManager
 from services.dns.dns_provider_manager import DNSManager
 from services.dns.route53.route53 import Route53Manager
 
@@ -34,7 +35,10 @@ def init_cloud_provider(state: StateStore):
                     key=state.get_input_param(DNS_REGISTRAR_ACCESS_KEY),
                     secret=state.get_input_param(DNS_REGISTRAR_ACCESS_SECRET))
     elif state.cloud_provider == CloudProviders.Azure:
-        cloud_manager: AzureManager = AzureManager(state.get_input_param(CLOUD_PROFILE))
+        cloud_manager: AzureManager = AzureManager(
+            state.get_input_param(CLOUD_PROFILE), state.get_input_param(CLOUD_REGION)
+        )
+        domain_manager: DNSManager = AzureDNSManager(state.get_input_param(CLOUD_PROFILE))
     return cloud_manager, domain_manager
 
 

@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 import dns.message
 import dns.query
 import dns.rdatatype
@@ -5,13 +7,14 @@ import dns.resolver
 import httpx
 
 
-class DNSManager:
+class DNSManager(ABC):
     """DNS Registrar wrapper to standardise DNS management."""
 
     __civo_ns = ["ns0.civo.com", "ns1.civo.com"]
     __digital_ocean_ns = ["ns1.digitalocean.com", "ns2.digitalocean.com", "ns3.digitalocean.com"]
     __vultr_ns = ["ns1.vultr.com", "ns2.vultr.com"]
 
+    @abstractmethod
     def evaluate_domain_ownership(self, domain_name):
         """
         Check if domain is owned by user
@@ -19,6 +22,7 @@ class DNSManager:
         """
         pass
 
+    @abstractmethod
     def evaluate_permissions(self):
         """
         Check if provided credentials have required permissions
