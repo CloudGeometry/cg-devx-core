@@ -35,6 +35,7 @@ resource "vault_generic_secret" "ci_secrets" {
   depends_on = [vault_mount.secret]
 }
 
+
 resource "vault_generic_secret" "atlantis_secrets" {
   path = "secret/atlantis/envs-secrets"
 
@@ -56,23 +57,20 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url,
       TF_VAR_b64_docker_auth              = var.b64_docker_auth,
-      TF_VAR_<GIT_PROVIDER>_token         = var.vcs_token,
+      TF_VAR_vcs_token         = var.vcs_token,
       # aws specific section
       # ----
-      TF_VAR_aws_account_id               = "<CLOUD_ACCOUNT>",
-      TF_VAR_aws_region                   = "<CLOUD_REGION>",
-      # ----
+
       TF_VAR_hosted_zone_name             = "<DOMAIN_NAME>",
       TF_VAR_vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key,
       TF_VAR_vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key,
       # harbor specific section
       # ----
-      TF_VAR_artifact_registry_oidc_client_id      = #???
-      TF_VAR_artifact_registry_oidc_client_secret  = #???
+      TF_VAR_artifact_registry_oidc_client_id      = module.harbor.vault_oidc_client_id
+      TF_VAR_artifact_registry_oidc_client_secret  = module.harbor.vault_oidc_client_secret
       HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>"
       HARBOR_USERNAME                     = "admin"
       HARBOR_PASSWORD                     = random_password.harbor_password.result
-
       # vault specific section
       # ----
       TF_VAR_vault_addr                   = "http://vault.vault.svc.cluster.local:8200",
