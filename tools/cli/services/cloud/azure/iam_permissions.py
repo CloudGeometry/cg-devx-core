@@ -86,27 +86,6 @@ vnet_permissions: [str] = [
     "Microsoft.Network/expressRouteCircuits/delete"
 ]
 
-ad_permissions: [str] = [
-    "Microsoft.Graph.Group.Read.All",
-    "Microsoft.Graph.Group.ReadWrite.All",
-    "Microsoft.Graph.User.Read.All",
-    "Microsoft.Graph.User.ReadWrite.All",
-    "Microsoft.Graph.Directory.Read.All",
-    "Microsoft.Graph.Directory.ReadWrite.All",
-    "Microsoft.Graph.RoleManagement.Read.Directory",
-    "Microsoft.Graph.RoleManagement.ReadWrite.Directory",
-    "Microsoft.Graph.Application.Read.All",
-    "Microsoft.Graph.Application.ReadWrite.All",
-    "Microsoft.Graph.ServicePrincipal.Read.All",
-    "Microsoft.Graph.ServicePrincipal.ReadWrite.All",
-    "Microsoft.Graph.PasswordResetPolicy.ReadWrite.All",
-    "Microsoft.Graph.Organization.ReadWrite.All",
-    "Microsoft.Graph.DeviceManagementServiceConfig.ReadWrite.All",
-    "Microsoft.Graph.DeviceManagementConfiguration.ReadWrite.All",
-    "Microsoft.Graph.DeviceManagementApps.ReadWrite.All",
-    "Microsoft.Graph.DeviceManagementRBAC.ReadWrite.All"
-]
-
 rbac_permissions: [str] = [
     "Microsoft.Authorization/roleAssignments/read",
     "Microsoft.Authorization/roleAssignments/write",
@@ -124,10 +103,4 @@ rbac_permissions: [str] = [
     "Microsoft.Authorization/policySetDefinitions/read",
     "Microsoft.Authorization/policySetDefinitions/write",
     "Microsoft.Authorization/policySetDefinitions/delete"
-]
-
-own_ad_permissions: [str] = [
-    "User.Read",
-    "User.ChangePassword",
-    "User.ReadWrite",
 ]

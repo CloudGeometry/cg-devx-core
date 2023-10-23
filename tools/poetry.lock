@@ -145,6 +145,22 @@ azure-mgmt-core = ">=1.3.2,<2.0.0"
 isodate = ">=0.6.1,<1.0.0"
 
 [[package]]
+name = "azure-mgmt-privatedns"
+version = "1.1.0"
+description = "Microsoft Azure DNS Private Zones Client Library for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "azure-mgmt-privatedns-1.1.0.zip", hash = "sha256:32db9c605a4a8ff00d34e37551d5eb06b4ec267ab9de2a61dd2275ca95a3fb98"},
+    {file = "azure_mgmt_privatedns-1.1.0-py3-none-any.whl", hash = "sha256:e74f897627d23dbf14921585c033f445d65dcb84a4d5b10cbf54f5fcf6d7dcfb"},
+]
+
+[package.dependencies]
+azure-common = ">=1.1,<2.0"
+azure-mgmt-core = ">=1.3.2,<2.0.0"
+isodate = ">=0.6.1,<1.0.0"
+
+[[package]]
 name = "azure-mgmt-resource"
 version = "23.0.1"
 description = "Microsoft Azure Resource Management Client Library for Python"
@@ -159,6 +175,38 @@ files = [
 azure-common = ">=1.1,<2.0"
 azure-mgmt-core = ">=1.3.2,<2.0.0"
 isodate = ">=0.6.1,<1.0.0"
+
+[[package]]
+name = "azure-mgmt-storage"
+version = "21.1.0"
+description = "Microsoft Azure Storage Management Client Library for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "azure-mgmt-storage-21.1.0.tar.gz", hash = "sha256:d6d3c0e917c988bc9ed0472477d3ef3f90886009eb1d97a711944f8375630162"},
+    {file = "azure_mgmt_storage-21.1.0-py3-none-any.whl", hash = "sha256:593f2544fc4f05750c4fe7ca4d83c32ea1e9d266e57899bbf79ce5940124e8cc"},
+]
+
+[package.dependencies]
+azure-common = ">=1.1,<2.0"
+azure-mgmt-core = ">=1.3.2,<2.0.0"
+isodate = ">=0.6.1,<1.0.0"
+
+[[package]]
+name = "azure-mgmt-subscription"
+version = "3.1.1"
+description = "Microsoft Azure Subscription Management Client Library for Python"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "azure-mgmt-subscription-3.1.1.zip", hash = "sha256:4e255b4ce9b924357bb8c5009b3c88a2014d3203b2495e2256fa027bf84e800e"},
+    {file = "azure_mgmt_subscription-3.1.1-py3-none-any.whl", hash = "sha256:38d4574a8d47fa17e3587d756e296cb63b82ad8fb21cd8543bcee443a502bf48"},
+]
+
+[package.dependencies]
+azure-common = ">=1.1,<2.0"
+azure-mgmt-core = ">=1.3.2,<2.0.0"
+msrest = ">=0.7.1"
 
 [[package]]
 name = "azure-storage-blob"
@@ -1061,6 +1109,27 @@ portalocker = [
 ]
 
 [[package]]
+name = "msrest"
+version = "0.7.1"
+description = "AutoRest swagger generator Python client runtime."
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "msrest-0.7.1-py3-none-any.whl", hash = "sha256:21120a810e1233e5e6cc7fe40b474eeb4ec6f757a15d7cf86702c369f9567c32"},
+    {file = "msrest-0.7.1.zip", hash = "sha256:6e7661f46f3afd88b75667b7187a92829924446c7ea1d169be8c4bb7eeb788b9"},
+]
+
+[package.dependencies]
+azure-core = ">=1.24.0"
+certifi = ">=2017.4.17"
+isodate = ">=0.6.0"
+requests = ">=2.16,<3.0"
+requests-oauthlib = ">=0.5.0"
+
+[package.extras]
+async = ["aiodns", "aiohttp (>=3.0)"]
+
+[[package]]
 name = "oauth2client"
 version = "4.1.3"
 description = "OAuth 2.0 client library"
@@ -1136,39 +1205,32 @@ tests = ["pytest (>=5.4.1)", "pytest-cov (>=2.8.1)", "pytest-mypy (>=0.8.0)", "p
 
 [[package]]
 name = "portforward"
-version = "0.5.0"
-description = "Kubernetes Port-Forward Go-Edition For Python"
+version = "0.6.0"
+description = "Easy Kubernetes Port-Forward For Python"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "portforward-0.5.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:3a4d8596bcc453458b60e790f2e22624c06a285ed8f467fd203806904e4203db"},
-    {file = "portforward-0.5.0-cp310-cp310-macosx_13_0_arm64.whl", hash = "sha256:ca0f078abc0a12303823d1a8f7a9919925205dcd58d804872377023126e792ea"},
-    {file = "portforward-0.5.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb949f89a1ec9e6182dcd4a37a6111154a06fae731aa5186f8ec6c71e80c2194"},
-    {file = "portforward-0.5.0-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bd22d1f0aee93f53f786ff0b6ca0267fea1e2940b345070fa6c4dcb38bcc771c"},
-    {file = "portforward-0.5.0-cp310-cp310-win_amd64.whl", hash = "sha256:049743369cd86f60df5a01a128895aab00a55d9f8d5c4d8970462f451b9bbb33"},
-    {file = "portforward-0.5.0-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:fcadcda4c96daba99e39be5b8390b1f694e667268d56e5919c98641d2b49a00b"},
-    {file = "portforward-0.5.0-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:38c515b0cca3fcf6cae06e0e72f550cdffc581b38369fc834cfb9f6ab6c3257e"},
-    {file = "portforward-0.5.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:016c1e6c625ee6fec42b49633b91310129eee7cf1a7c1d7ca70576bc3b9bc6c3"},
-    {file = "portforward-0.5.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b244b4aa92021055d52c827634e8cd1f3655b9d4d3e583d8a246cad76beb0976"},
-    {file = "portforward-0.5.0-cp311-cp311-win_amd64.whl", hash = "sha256:ca5d1b4f5035d6a2b45917637032709ec7825a4f1669b48dd98965da15879209"},
-    {file = "portforward-0.5.0-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:41d676b2107b7d06cb5b24ef1c6302405fa0dacaa3d7faf79ca92ca67c4f9384"},
-    {file = "portforward-0.5.0-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7336efbdeb3d57f392e46c67562f75a4f342082eae120e14066d12b3c7e34a9e"},
-    {file = "portforward-0.5.0-cp36-cp36m-win_amd64.whl", hash = "sha256:e4f62ae69508ddc43fde7b762bb36b4474d82272f94f47a61c90ce3d79829568"},
-    {file = "portforward-0.5.0-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:92dc2bb65aed987dfbbe579bec20b667990241737815f27eedf5c59b78aa03a0"},
-    {file = "portforward-0.5.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:903e39015537a626b94fe3397456e77b5461c2805dd807982646a44c180c6cc3"},
-    {file = "portforward-0.5.0-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8d1d450404332341c466ac9e0273e58b85013e2c4c00d674759a543d38c41934"},
-    {file = "portforward-0.5.0-cp37-cp37m-win_amd64.whl", hash = "sha256:5508648119e95ce2218845625ecccc568e560bed0d1820229deb77b7a3518690"},
-    {file = "portforward-0.5.0-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:608c445d7b78a117d0d4273e633a9c0b22f0804f00589fa1dfeda8b1bffc62f5"},
-    {file = "portforward-0.5.0-cp38-cp38-macosx_13_0_arm64.whl", hash = "sha256:cb427aae7252c7ee1c0ad0a4d104bf330bec3d532d73ca2e22b75852cd50fbd1"},
-    {file = "portforward-0.5.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8f00478d7eebfa1dce9604b5bc782a859cbe41dced420ceac62d86ee5812d461"},
-    {file = "portforward-0.5.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:681787507d9202dc686440c9da6dcb5e9d9a474ec063a717013bf6f1ccd4e267"},
-    {file = "portforward-0.5.0-cp38-cp38-win_amd64.whl", hash = "sha256:c8d6bbaacc587bf646b2116030754e9dae0baac8cb3391ec157fd234eb0c2b1c"},
-    {file = "portforward-0.5.0-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:af596048726acc3a067e692cee2d42b2c4e1a184907efe0f25b7f8dc2f5ef892"},
-    {file = "portforward-0.5.0-cp39-cp39-macosx_13_0_arm64.whl", hash = "sha256:d73759bf247ad16efa14ccbf29b1ff4d4c39275244f4d68445c4708626128486"},
-    {file = "portforward-0.5.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:011239b9c39d018c5e3a59eff033f8e8fa11243689e677863aa3084da6941ceb"},
-    {file = "portforward-0.5.0-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:810bd64cee8dff7666981886738c09a45b0f9d41566a5d1ebd16a49b00c51d75"},
-    {file = "portforward-0.5.0-cp39-cp39-win_amd64.whl", hash = "sha256:9517572683c82531ec3f434c907b7eecea923cef63610418473d4ccf786c3b9b"},
-    {file = "portforward-0.5.0.tar.gz", hash = "sha256:e568bddf60b1a9ba4b146c04ab953669c597b41ffffccc4e3c27c659d9bd628e"},
+    {file = "portforward-0.6.0-cp310-cp310-macosx_10_7_x86_64.whl", hash = "sha256:e228fff18b6a93772c54191b88f18f90c137469d104fe0966ce22af4fa4d80de"},
+    {file = "portforward-0.6.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:765b37ea0fb708b0eab5429a82b3e159d7f009a71227fab103a15b7aae1a8e4a"},
+    {file = "portforward-0.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ab221793c0a0d51173726a7b20039b612040420442fa8b8fe69d3ef0f9c77f86"},
+    {file = "portforward-0.6.0-cp310-none-win_amd64.whl", hash = "sha256:3fd03812a64a77cf55711ae531e5a914f46018455e4915bd4a9004889a01fe40"},
+    {file = "portforward-0.6.0-cp311-cp311-macosx_10_7_x86_64.whl", hash = "sha256:e5c713574ada101863580979662d44a4bbe26c65bd22d20bf6c0626e61a458dc"},
+    {file = "portforward-0.6.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:731b8fe58312aad736e7cc1e565df511ef8f5683c79fac27d96baab4075cd4d8"},
+    {file = "portforward-0.6.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:24cc1b4dbdc7a8812ce2edfc81015a50fdb3397aac765b095e12e6e6738ef0c1"},
+    {file = "portforward-0.6.0-cp311-none-win_amd64.whl", hash = "sha256:22d87a3f5f6ee45ff477d88181529a802fb0fecb48b27b3d283bc927e4f17dbf"},
+    {file = "portforward-0.6.0-cp37-cp37m-macosx_10_7_x86_64.whl", hash = "sha256:8515ef05b36acf3e9bc9a5dd6085f4e1b6137bbe7a4da46f553502d64941f901"},
+    {file = "portforward-0.6.0-cp37-cp37m-macosx_11_0_arm64.whl", hash = "sha256:078bf0a76cc696082710f12e79e619f210fe1289a7ed4da691b5606c255d6a45"},
+    {file = "portforward-0.6.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:20bd8882e2d6db7b7c51f0c0c06c6a7f74541a0a567651e0818055bd790cd951"},
+    {file = "portforward-0.6.0-cp37-none-win_amd64.whl", hash = "sha256:6845503c96a4a84dca38bde10548b2e7932ef3a106533c9d80ca290e8cec0775"},
+    {file = "portforward-0.6.0-cp38-cp38-macosx_10_7_x86_64.whl", hash = "sha256:d22ee7078f16cbd6faea5736484bf947d3bf84cbcb01a9694f9607afe189c9bb"},
+    {file = "portforward-0.6.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:cd4d19064c7e7cb31530d63df53d3dbba2690834660153837092c4790534847e"},
+    {file = "portforward-0.6.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:29a60a05719a88580c1b41411a48eca393b4b88de6fc86ae698ec6a58b0e1bf5"},
+    {file = "portforward-0.6.0-cp38-none-win_amd64.whl", hash = "sha256:3312620b08dbf0f094427a8cdf6e4677034ef6a4840f5bb0ae7fb4b99bbec0a0"},
+    {file = "portforward-0.6.0-cp39-cp39-macosx_10_7_x86_64.whl", hash = "sha256:cadaf34bc7a56c1b166d55ddcabb74721be5052e606698cbc2a7106483c768b1"},
+    {file = "portforward-0.6.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:58568102ae31fb5501084e89d35da6c72ecbf3dba1450a29740568eb49bd73af"},
+    {file = "portforward-0.6.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:652d4bc608331620bc30f8a7741f445ad1e988f3831e207a0821ab194d695a8c"},
+    {file = "portforward-0.6.0-cp39-none-win_amd64.whl", hash = "sha256:da8784aba934c0e6f9359b4957a9eff80e8b49af0081b97294f4ec1af74b423a"},
+    {file = "portforward-0.6.0.tar.gz", hash = "sha256:76370112ff5ba6e1bc9ac09fa1de459ba87485868325f506495723a4a781bab7"},
 ]
 
 [[package]]
@@ -1633,13 +1695,13 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "websocket-client"
-version = "1.6.3"
+version = "1.6.4"
 description = "WebSocket client for Python with low level API options"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "websocket-client-1.6.3.tar.gz", hash = "sha256:3aad25d31284266bcfcfd1fd8a743f63282305a364b8d0948a43bd606acc652f"},
-    {file = "websocket_client-1.6.3-py3-none-any.whl", hash = "sha256:6cfc30d051ebabb73a5fa246efdcc14c8fbebbd0330f8984ac3bb6d9edd2ad03"},
+    {file = "websocket-client-1.6.4.tar.gz", hash = "sha256:b3324019b3c28572086c4a319f91d1dcd44e6e11cd340232978c684a7650d0df"},
+    {file = "websocket_client-1.6.4-py3-none-any.whl", hash = "sha256:084072e0a7f5f347ef2ac3d8698a5e0b4ffbfcab607628cadabc650fc9a83a24"},
 ]
 
 [package.extras]
@@ -1650,4 +1712,4 @@ test = ["websockets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.11"
-content-hash = "df529378f3c9fc56b8e8e4f1a5a6d8d1ff9531c6cbcd9ce909c61335aa74a101"
+content-hash = "e414cbd9111d6bbe4122d65262f8f4172ea740faf00553788f0b12392d23297f"

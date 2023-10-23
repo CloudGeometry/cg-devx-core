@@ -108,7 +108,7 @@ class AwsSdk:
             return False
         return bucket_name, region
 
-    def get_name_severs(self, domain_name: str) -> Tuple[List[str], str, bool]:
+    def get_name_servers(self, domain_name: str) -> Tuple[List[str], str, bool]:
         r53_client = self._session_manager.session.client('route53')
         hosted_zones = r53_client.list_hosted_zones()
 
