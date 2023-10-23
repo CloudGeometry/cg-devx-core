@@ -3,7 +3,7 @@ resource "random_password" "robot_password" {
   special = false
 }
 
-resource "harbor_robot_account" "workload-robot" {
+resource "harbor_robot_account" "workload_robot" {
   name        = "${var.project}-robot"
   description = "${var.project} workload project level robot account"
   level       = "project"
@@ -17,6 +17,10 @@ resource "harbor_robot_account" "workload-robot" {
     access {
       action   = "push"
       resource = "repository"
+    }
+    access {
+      action   = "create"
+      resource = "labels"
     }
     kind      = "project"
     namespace = harbor_project.this.name

@@ -3,5 +3,5 @@ module "workloads" {
   for_each = var.workloads
 
   project_name      = each.key
-  description        = each.value.description
+  description       = each.value.description
 }

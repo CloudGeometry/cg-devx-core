@@ -9,8 +9,6 @@ terraform {
 resource "harbor_project" "this" {
   name          = var.project_name
   public        = false
-# disable the quota later
-  storage_quota = 5
 }
 
 resource "harbor_immutable_tag_rule" "this" {
@@ -19,35 +17,35 @@ resource "harbor_immutable_tag_rule" "this" {
   tag_matching  = "**"
 }
 
-resource "harbor_group" "workload-developers" {
+resource "harbor_group" "workload_developers" {
   group_name = "${var.project}-developers"
   group_type = 3
 }
 
-resource "harbor_group" "workload-admins" {
+resource "harbor_group" "workload_admins" {
   group_name = "${var.project}-admins"
   group_type = 3
 }
 
-resource "harbor_project_member_group" "platform-developers" {
+resource "harbor_project_member_group" "platform_developers" {
   project_id    = harbor_project.this.id
   group_name    = "developers"
-  role          = "projectadmin"
+  role          = "guest"
   type          = "oidc"
 }
 
-resource "harbor_project_member_group" "workload-developers" {
+resource "harbor_project_member_group" "workload_developers" {
   project_id    = harbor_project.this.id
   group_name    = "${var.project}-developers"
 ##choose correct role for workload developers from projectadmin, maintainer(master), developer, guest, limited guest
 ## https://goharbor.io/docs/2.0.0/administration/managing-users/user-permissions-by-role/
-  role          = "projectadmin"
+  role          = "developer"
   type          = "oidc"
 }
 
-resource "harbor_project_member_group" "workload-admins" {
+resource "harbor_project_member_group" "workload_admins" {
   project_id    = harbor_project.this.id
   group_name    = "${var.project}-admins"
-  role          = "projectadmin"
+  role          = "maintainer"
   type          = "oidc"
 }
