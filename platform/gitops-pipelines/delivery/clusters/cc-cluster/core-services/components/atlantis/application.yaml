@@ -15,7 +15,7 @@ spec:
       values: |-
         statefulSet:
           annotations:
-            secret.reloader.stakater.com/reload: "atlantis-secrets"
+            secret.reloader.stakater.com/reload: "atlantis-envs-secrets"
         atlantisUrl: https://<IAC_PR_AUTOMATION_INGRESS_URL>
         orgAllowlist: <GIT_REPOSITORY_ROOT>/*
         hidePrevPlanComments: true
