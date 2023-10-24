@@ -152,7 +152,7 @@ class GitOpsTemplateManager:
         try:
             for root, dirs, files in os.walk(folder):
                 for name in files:
-                    if name.endswith(".tf") or name.endswith(".yaml") or name.endswith(".md"):
+                    if name.endswith(".tf") or name.endswith(".yaml") or name.endswith(".yml") or name.endswith(".md"):
                         file_path = os.path.join(root, name)
                         with open(file_path, "r") as file:
                             data = file.read()

@@ -84,7 +84,7 @@ class AwsSdk:
         return sorted([result['EvalActionName'] for result in results
                        if result['EvalDecision'] != "allowed"])
 
-    def create_bucket(self, bucket_name, region=None):
+    def create_bucket(self, bucket_name, region=None) -> str:
         """Create an S3 bucket in a specified region
 
         If a region is not specified, the bucket is created in the S3 default region.
@@ -106,7 +106,7 @@ class AwsSdk:
         except ClientError as e:
             logging.error(e)
             return False
-        return bucket_name, region
+        return bucket_name
 
     def get_name_servers(self, domain_name: str) -> Tuple[List[str], str, bool]:
         r53_client = self._session_manager.session.client('route53')

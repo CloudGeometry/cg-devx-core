@@ -4,8 +4,6 @@ terraform {
       source = "hashicorp/azurerm"
     }
   }
-
-  required_version = ">= 0.14.9"
 }
 
 resource "azurerm_monitor_diagnostic_setting" "settings" {
@@ -19,19 +17,6 @@ resource "azurerm_monitor_diagnostic_setting" "settings" {
   eventhub_authorization_rule_id = var.eventhub_authorization_rule_id
 
   storage_account_id = var.storage_account_id
-
-  dynamic "log" {
-    for_each = toset(logs)
-    content {
-      category = each.key
-      enabled  = true
-
-      retention_policy {
-        enabled = var.retention_policy_enabled
-        days    = var.retention_policy_days
-      }
-    }
-  }
 
   dynamic "metric" {
     for_each = toset(metrics)
