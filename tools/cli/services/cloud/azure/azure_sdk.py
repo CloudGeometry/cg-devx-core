@@ -6,13 +6,14 @@ from azure.core.exceptions import ResourceNotFoundError, HttpResponseError, Azur
 from azure.identity import AzureCliCredential
 from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.dns import DnsManagementClient
+from azure.mgmt.privatedns import PrivateDnsManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
-from azure.storage.blob import BlobServiceClient
-from azure.mgmt.privatedns import PrivateDnsManagementClient
 from azure.mgmt.storage.v2021_04_01.models import SkuName, Kind
-from common.utils.generators import random_string_generator
 from azure.mgmt.subscription import SubscriptionClient
+from azure.storage.blob import BlobServiceClient
+
+from common.utils.generators import random_string_generator
 
 
 class AzureSdk:
@@ -371,23 +372,23 @@ class AzureSdk:
             logging.warning(
                 f"Blob container '{container_name}' already exists in storage account '{storage_account_name}'.")
 
-    def create_storage(self, container_name: str) -> Tuple[str, str]:
+    def create_storage(self, container_name: str, storage_account_name: str, resource_group_name: str) -> str:
         """
         Create storage resources including a resource group, a storage account, and a blob container.
 
         Args:
             container_name (str): The desired name for the blob container.
+            storage_account_name (str): The desired name for the storage account.
+            resource_group_name (str): The desired name for the resource group.
 
         Returns:
             Tuple[str, str]: A tuple containing the name of the created blob container and the Azure location where
                              the storage resources were created.
         """
-        storage_account_name = self._generate_storage_account_name()
-        resource_group_name = self._generate_resource_group_name(storage_account_name)
         self.create_resource_group(resource_group_name)
         self.create_storage_account(resource_group_name, storage_account_name)
         self.create_blob_container(storage_account_name, container_name)
-        return container_name, self.location
+        return container_name
 
     def _validate_location(self, location: Optional[str]) -> str:
         """Validate if the provided Azure location is valid. If not, return 'centralus'.

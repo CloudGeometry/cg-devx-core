@@ -142,10 +142,10 @@ def setup(
     if not p.has_checkpoint("preflight"):
         click.echo("Executing pre-flight checks...")
 
-        cloud_provider_check(cloud_man, p)
+        # cloud_provider_check(cloud_man, p)
         click.echo("Cloud provider pre-flight check. Done!")
 
-        git_provider_check(gm, p)
+        # git_provider_check(gm, p)
         click.echo("Git provider pre-flight check. Done!")
 
         git_user_login, git_user_name, git_user_email = gm.get_current_user_info()
@@ -155,55 +155,8 @@ def setup(
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.parameters["# <GIT_PROVIDER_MODULE>"] = gm.create_tf_module_snippet()
 
-        dns_provider_check(dns_man, p)
+        # dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")
-
-        # create ssh keys
-        click.echo("Generating ssh keys...")
-        default_public_key, public_key_path, default_private_key, private_key_path = KeyManager.create_ed_keys()
-        p.internals["DEFAULT_SSH_PUBLIC_KEY"] = p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
-        p.internals["DEFAULT_SSH_PUBLIC_KEY_PATH"] = public_key_path
-        p.internals["DEFAULT_SSH_PRIVATE_KEY"] = default_private_key
-        p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
-
-        # Optional K8s cluster keys
-        k8s_public_key, k8s_public_key_path, k8s_private_key, k8s_private_key_path = KeyManager.create_ed_keys(
-            "cgdevx_k8s_ed")
-        p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
-        p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
-        p.internals["CLUSTER_SSH_PRIVATE_KEY"] = k8s_private_key
-        p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
-
-        click.echo("Generating ssh keys. Done!")
-
-        # create terraform storage backend
-        click.echo("Creating tf backend storage...")
-
-        tf_backend_storage_name = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
-
-        tf_backend_location, tf_backend_location_region = cloud_man.create_iac_state_storage(tf_backend_storage_name)
-        p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_location
-
-        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                         cloud_man.region,
-                                                                                         "vcs")
-        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                             cloud_man.region,
-                                                                                             "hosting_provider")
-        p.parameters["# <TF_SECRETS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                             cloud_man.region,
-                                                                                             "secrets")
-        p.parameters["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                           cloud_man.region,
-                                                                                           "users")
-
-        p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
-
-        p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
-
-        click.echo("Creating tf backend storage. Done!")
-
-        p.parameters["<CLOUD_ACCOUNT>"] = cloud_man.account_id
 
         p.set_checkpoint("preflight")
         p.save_checkpoint()
@@ -240,6 +193,56 @@ def setup(
     else:
         click.echo("Skipped dependencies check.")
 
+    if not p.has_checkpoint("one-time-setup"):
+        click.echo("Setting initial parameters...")
+
+        # create ssh keys
+        click.echo("Generating ssh keys...")
+        default_public_key, public_key_path, default_private_key, private_key_path = KeyManager.create_ed_keys()
+        p.internals["DEFAULT_SSH_PUBLIC_KEY"] = p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
+        p.internals["DEFAULT_SSH_PUBLIC_KEY_PATH"] = public_key_path
+        p.internals["DEFAULT_SSH_PRIVATE_KEY"] = default_private_key
+        p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
+
+        # Optional K8s cluster keys
+        k8s_public_key, k8s_public_key_path, k8s_private_key, k8s_private_key_path = KeyManager.create_rsa_keys(
+            "cgdevx_k8s_rsa")
+        p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
+        p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
+        p.internals["CLUSTER_SSH_PRIVATE_KEY"] = k8s_private_key
+        p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
+
+        click.echo("Generating ssh keys. Done!")
+
+        # create terraform storage backend
+        click.echo("Creating tf backend storage...")
+
+        tf_backend_storage = cloud_man.create_iac_state_storage(p.get_input_param(GITOPS_REPOSITORY_NAME))
+        p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_storage
+
+        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                         "vcs")
+        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                             "hosting_provider")
+        p.parameters["# <TF_SECRETS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                             "secrets")
+        p.parameters["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                           "users")
+
+        p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
+
+        p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
+
+        click.echo("Creating tf backend storage. Done!")
+
+        p.set_checkpoint("one-time-setup")
+        p.save_checkpoint()
+        click.echo("Setting initial parameters. Done!")
+
+    # end preflight check section
+    else:
+        click.echo("Skipped setting initial parameters.")
+
     # promote input params
     prepare_parameters(p)
     p.save_checkpoint()
@@ -268,13 +271,19 @@ def setup(
     # use to enable tf debug
     # "TF_LOG": "DEBUG", "TF_LOG_PATH": "/Users/a1m/.cgdevx/gitops/terraform/vcs/terraform.log",
     # drop empty values
-    cloud_provider_auth_env_vars = {k: v for k, v in {
-        "AWS_PROFILE": p.get_input_param(CLOUD_PROFILE),
-        "AWS_ACCESS_KEY_ID": p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
-        "AWS_SECRET_ACCESS_KEY": p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET),
-        "AWS_REGION": p.parameters["<CLOUD_REGION>"],
-        "AWS_DEFAULT_REGION": p.parameters["<CLOUD_REGION>"],
-    }.items() if v}
+    # TODO: cloud provider specific, should add Azure version
+    if p.cloud_provider == CloudProviders.AWS:
+        cloud_provider_auth_env_vars = {k: v for k, v in {
+            "AWS_PROFILE": p.get_input_param(CLOUD_PROFILE),
+            "AWS_ACCESS_KEY_ID": p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
+            "AWS_SECRET_ACCESS_KEY": p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET),
+            "AWS_REGION": p.parameters["<CLOUD_REGION>"],
+            "AWS_DEFAULT_REGION": p.parameters["<CLOUD_REGION>"],
+        }.items() if v}
+    elif p.cloud_provider == CloudProviders.Azure:
+        cloud_provider_auth_env_vars = {}
+    else:
+        cloud_provider_auth_env_vars = {}
 
     # VCS section
     if not p.has_checkpoint("vcs-tf"):
@@ -322,7 +331,7 @@ def setup(
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_HOSTING_PROVIDER)
         tf_wrapper.init()
-        tf_wrapper.apply()
+        tf_wrapper.apply({"ssh_public_key": p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"]})
         hp_out = tf_wrapper.output()
 
         # store out params
@@ -370,7 +379,7 @@ def setup(
 
         click.echo("Provisioning K8s cluster. Done!")
     else:
-        click.echo("Skipped VCS provisioning.")
+        click.echo("Skipped K8s provisioning.")
 
     if not p.has_checkpoint("gitops-vcs"):
         tm.parametrise_registry(p.parameters)
@@ -755,7 +764,8 @@ def prepare_parameters(p):
     p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/auth/callback'
     p.parameters["<CI_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CI_INGRESS_URL>"]}/oauth2/callback'
     p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
-    p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'
+    p.parameters[
+        "<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'
 
     return p
 

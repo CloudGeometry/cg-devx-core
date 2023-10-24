@@ -8,12 +8,8 @@ class CloudProviderManager(ABC):
     def region(self) -> str:
         pass
 
-    @property
-    def account_id(self) -> str:
-        pass
-
     @abstractmethod
-    def detect_cli_presence(self, cli: str) -> bool:
+    def detect_cli_presence(self) -> bool:
         """
         Check if cloud provider CLI tools are installed
         :return: True or False
@@ -29,7 +25,7 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def create_iac_state_storage(self, bucket: str):
+    def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
         """
         Creates cloud native terraform remote state storage
         :return: Resource identifier
@@ -44,7 +40,7 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def create_iac_backend_snippet(self, location: str, region: str = None, service: str = "default"):
+    def create_iac_backend_snippet(self, location: str, service: str = "default", **kwargs: dict):
         """
         Creates terraform backend snippet
         :return: Code snippet
@@ -60,7 +56,7 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def create_secret_manager_seal_snippet(self, role_arn: str, region: str = None):
+    def create_secret_manager_seal_snippet(self, key_id: str):
         """
         Creates helm vault seal snippet
         :return: Helm snippet
@@ -76,7 +72,7 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def get_k8s_auth_command(self) -> str:
+    def get_k8s_auth_command(self):
         """
         Returns kubeconfig cluster aut command
         :return: command

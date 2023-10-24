@@ -39,7 +39,7 @@ resource "vault_generic_secret" "atlantis_secrets" {
   path = "secret/atlantis/envs-secrets"
 
   # variables that appear duplicated are for circumstances where both terraform
-  # and seperately the terraform provider each need the value
+  # and separately the terraform provider each need the value
 
   data_json = jsonencode(
     {
@@ -56,11 +56,7 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url,
       TF_VAR_b64_docker_auth              = var.b64_docker_auth,
-      TF_VAR_<GIT_PROVIDER>_token         = var.vcs_token,
-      # aws specific section
-      # ----
-      TF_VAR_aws_account_id               = "<CLOUD_ACCOUNT>",
-      TF_VAR_aws_region                   = "<CLOUD_REGION>",
+      TF_VAR_vcs_token                    = var.vcs_token,
       # ----
       TF_VAR_hosted_zone_name             = "<DOMAIN_NAME>",
       TF_VAR_vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key,
