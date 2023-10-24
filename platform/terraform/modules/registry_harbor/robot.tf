@@ -1,13 +1,8 @@
-resource "random_password" "main_robot_password" {
-  length  = 12
-  special = false
-}
-
 resource "harbor_robot_account" "main" {
   name        = "main-robot"
   description = "server level robot account"
   level       = "system"
-  secret      = resource.random_password.main_robot_password.result
+  secret      = var.registry_main_robot_password
 #modify permissions to required later
   permissions {
     access {
@@ -25,14 +20,6 @@ resource "harbor_robot_account" "main" {
     access {
       action   = "push"
       resource = "repository"
-    }
-    access {
-      action   = "read"
-      resource = "helm-chart"
-    }
-    access {
-      action   = "read"
-      resource = "helm-chart-version"
     }
     kind      = "project"
     namespace = "*"

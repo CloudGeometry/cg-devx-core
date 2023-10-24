@@ -26,7 +26,7 @@ spec:
             enabled: true
             certSource: secret
             secret:
-              secretName: "tls-harbor"
+              secretName: "harbor-tls"
           ingress:
             hosts:
               core: <REGISTRY_INGRESS_URL>
@@ -50,7 +50,7 @@ spec:
               rootdirectory: /storage
           persistentVolumeClaim:
             registry:
-              size: 20Gi
+              size: 50Gi
         redis:
           type: internal
         notary:

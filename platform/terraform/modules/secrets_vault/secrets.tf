@@ -66,8 +66,9 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key,
       # harbor specific section
       # ----
-      TF_VAR_artifact_registry_oidc_client_id      = module.harbor.vault_oidc_client_id
-      TF_VAR_artifact_registry_oidc_client_secret  = module.harbor.vault_oidc_client_secret
+      TF_VAR_registry_oidc_client_id      = module.harbor.vault_oidc_client_id
+      TF_VAR_registry_oidc_client_secret  = module.harbor.vault_oidc_client_secret
+      TF_VAR_registry_main_robot_password = random_password.harbor_main_robot_password.result
       HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>"
       HARBOR_USERNAME                     = "admin"
       HARBOR_PASSWORD                     = random_password.harbor_password.result
@@ -137,6 +138,25 @@ resource "vault_generic_secret" "harbor_admin_secret" {
     {
       HARBOR_ADMIN_NAME     = "admin",
       HARBOR_ADMIN_PASSWORD = random_password.harbor_password.result,
+    }
+  )
+
+  depends_on = [vault_mount.secret]
+}
+
+resource "random_password" "harbor_main_robot_password" {
+  length           = 22
+  special          = true
+  override_special = "!#$"
+}
+
+resource "vault_generic_secret" "harbor_main_robot_secret" {
+  path = "secret/harbor/main-robot-auth"
+
+  data_json = jsonencode(
+    {
+      HARBOR_ADMIN_NAME     = "robot@main-robot",
+      HARBOR_ADMIN_PASSWORD = random_password.harbor_main_robot_password.result,
     }
   )
 
