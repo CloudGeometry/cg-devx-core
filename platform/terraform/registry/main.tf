@@ -11,7 +11,6 @@ terraform {
 
 # Credential to harbor provider passed through env variables HARBOR_URL, HARBOR_USERNAME, and HARBOR_PASSWORD
 provider "harbor" {
-  source = "goharbor/harbor"
 }
 
 locals {
