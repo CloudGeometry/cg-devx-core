@@ -1,12 +1,25 @@
 # harbor OIDC secrets
 output "registry_oidc_client_id" {
-  value = module.secrets.network_id
+  value = module.secrets.registry_oidc_client_id
   description = "Registry OIDC client ID"
 }
 
 output "registry_oidc_client_secret" {
-  value = module.secrets.iam_cd_role
+  value = module.secrets.registry_oidc_client_secret
   description = "Registry OIDC client secret"
   sensitive = true
 }
 
+# harbor admin password
+output "registry_admin_user_password" {
+  value = module.secrets.registry_admin_password
+  description = "admin password"
+  sensitive = true
+}
+
+# harbor main robot password
+output "registry_main_robot_user_password" {
+  value = module.secrets.registry_main_robot_password
+  description = "main-robot password"
+  sensitive = true
+}

@@ -1,8 +1,8 @@
-import base64
-import json
+import os
 import os
 import re
 import time
+import webbrowser
 
 import click
 import portforward
@@ -10,8 +10,8 @@ import yaml
 
 from common.command_utils import init_cloud_provider
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
-    LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS
-from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, FALLBACK_AUTHOR_EMAIL
+    LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_REGISTRY
+from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVIDER, CLOUD_ACCOUNT_ACCESS_KEY, \
@@ -196,6 +196,9 @@ def setup(
         p.parameters["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
                                                                                            cloud_man.region,
                                                                                            "users")
+        p.parameters["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
+                                                                                              cloud_man.region,
+                                                                                              "registry")
 
         p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
@@ -503,21 +506,6 @@ def setup(
                                         annotations,
                                         repo_labels)
 
-        # TODO: properly init harbor auth
-        harbor_reg_url = p.parameters["<REGISTRY_REGISTRY_URL>"]
-        registry_auth_method = {"username": p.internals["REGISTRY_ROBO_USER"],
-                                "password": p.internals["REGISTRY_ROBO_USER_PASSWORD"],
-                                "auth": p.internals["REGISTRY_ROBO_USER_AUTH"]
-                                }
-
-        registry_secret = {
-            "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": registry_auth_method}}})
-        }
-
-        kube_client.create_plain_secret(ARGO_WORKFLOW_NAMESPACE, "docker-config", registry_secret)
-        # TODO: figure out if we need it
-        # kube_client.create_plain_secret(ARGO_WORKFLOW_NAMESPACE, "registry-auth", registry_secret)
-
         # argocd pods are ready, get and set credentials
         argo_pas = kube_client.get_secret(ARGOCD_NAMESPACE, "argocd-initial-admin-secret")
         p.internals["ARGOCD_USER"] = "admin"
@@ -591,7 +579,7 @@ def setup(
         #         }
         #         for i, x in enumerate(vault_keys):
         #             vault_secret[f"root-unseal-key-{i}"] = x
-        #         kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
+        #         kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
 
         time.sleep(15)
         try:
@@ -611,7 +599,7 @@ def setup(
         for i, v in vault_keys:
             vault_secret[f"root-unseal-key-{i}"] = v
 
-        kube_client.create_plain_secret("vault", "vault-unseal-secret", vault_secret)
+        kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
         p.internals["VAULT_ROOT_TOKEN"] = vault_root_token[0]
 
         p.set_checkpoint("secrets-management")
@@ -626,8 +614,12 @@ def setup(
     if not p.has_checkpoint("secrets-management-tf"):
         click.echo("Setting Secrets...")
 
-        ingress = kube_client.get_ingress("vault", "vault")
+        ingress = kube_client.get_ingress(VAULT_NAMESPACE, "vault")
         kube_client.wait_for_ingress(ingress)
+
+        tls_cert = kube_client.get_custom_object(VAULT_NAMESPACE, "vault-tls",
+                                                 "cert-manager.io", "v1", "certificates")
+        kube_client.wait_for_custom_object(tls_cert, "cert-manager.io", "v1", "certificates")
 
         # run security manager tf to create secrets and roles
         sec_man_tf_env_vars = {
@@ -644,13 +636,35 @@ def setup(
         tf_wrapper.apply({
             "vcs_bot_ssh_public_key": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
             "vcs_bot_ssh_private_key": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
-            "b64_docker_auth": p.internals["REGISTRY_ROBO_USER_AUTH"],
             "vcs_token": p.internals["GIT_ACCESS_TOKEN"],
             "atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
             "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
             "vault_token": p.internals["VAULT_ROOT_TOKEN"]
         })
         sec_man_out = tf_wrapper.output()
+        p.internals["REGISTRY_OIDC_CLIENT_ID"] = sec_man_out["registry_oidc_client_id"]
+        p.internals["REGISTRY_OIDC_CLIENT_SECRET"] = sec_man_out["registry_oidc_client_secret"]
+        p.internals["REGISTRY_ROBO_USER_PASSWORD"] = sec_man_out["registry_main_robot_user_password"]
+        p.internals["REGISTRY_PASSWORD"] = sec_man_out["registry_admin_user_password"]
+
+        # prepare registry machine user
+        robo_user_name = "robot@main-robot"
+        p.internals["REGISTRY_ROBO_USER"] = robo_user_name
+
+        # TODO: figure out if we need it
+        # harbor auth for argo workflow
+        # robo_auth = f'{robo_user_name}:{p.internals["REGISTRY_ROBO_USER_PASSWORD"]}'
+        # p.internals["REGISTRY_ROBO_USER_AUTH"] = base64.b64encode(robo_auth.encode("utf-8")).decode("utf-8")
+        # harbor_reg_url = p.parameters["<REGISTRY_REGISTRY_URL>"]
+        # registry_auth_method = {"username": p.internals["REGISTRY_ROBO_USER"],
+        #                         "password": p.internals["REGISTRY_ROBO_USER_PASSWORD"],
+        #                         "auth": p.internals["REGISTRY_ROBO_USER_AUTH"]
+        #                         }
+        # registry_secret = {
+        #     "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": registry_auth_method}}})
+        # }
+        # kube_client.create_plain_secret(ARGO_WORKFLOW_NAMESPACE, "docker-config", registry_secret)
+        # end
 
         # unset envs as no longer needed
         unset_envs(sec_man_tf_env_vars)
@@ -694,9 +708,74 @@ def setup(
     else:
         click.echo("Skipped provisioning Users.")
 
-    # TODO: commit changes
+    if not p.has_checkpoint("registry-tf"):
+        click.echo("Configuring Registry...")
+
+        # time.sleep(30)
+
+        ingress = kube_client.get_ingress(ATLANTIS_NAMESPACE, "atlantis")
+        kube_client.wait_for_ingress(ingress)
+
+        tls_cert = kube_client.get_custom_object(ATLANTIS_NAMESPACE, "atlantis-tls",
+                                                 "cert-manager.io", "v1", "certificates")
+        kube_client.wait_for_custom_object(tls_cert, "cert-manager.io", "v1", "certificates")
+
+        p.internals["REGISTRY_USERNAME"] = "admin"
+        # run security manager tf to create secrets and roles
+        registry_tf_env_vars = {
+            **{
+                "HARBOR_URL": f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}',
+                "HARBOR_USERNAME": p.internals["REGISTRY_USERNAME"],
+                "HARBOR_PASSWORD": p.internals["REGISTRY_PASSWORD"]
+            },
+            **cloud_provider_auth_env_vars}
+        # set envs as required by tf
+        set_envs(registry_tf_env_vars)
+
+        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_REGISTRY)
+        tf_wrapper.init()
+        tf_wrapper.apply({
+            "registry_oidc_client_id": p.internals["REGISTRY_OIDC_CLIENT_ID"],
+            "registry_oidc_client_secret": p.internals["REGISTRY_OIDC_CLIENT_SECRET"],
+            "registry_main_robot_password": p.internals["REGISTRY_ROBO_USER_PASSWORD"]
+        })
+        registry_out = tf_wrapper.output()
+
+        # unset envs as no longer needed
+        unset_envs(registry_tf_env_vars)
+
+        p.set_checkpoint("registry-tf")
+        p.save_checkpoint()
+        click.echo("Configuring Registry. Done!")
+
+    else:
+        click.echo("Skipped Registry configuration.")
+
+    show_credentials(p)
 
     return True
+
+
+def show_credentials(p):
+    click.secho('ATTENTION', blink=True, bold=True)
+    click.secho("Below are the credentials to your platform services. Please store them securely.", bg="green")
+
+    click.secho("Secrets manager", bg="green")
+    click.secho(f'URL: https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', bg="green")
+    click.secho(f'Root login token: {p.internals["VAULT_ROOT_TOKEN"]}', bg="green")
+    webbrowser.open(f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', autoraise=False)
+
+    click.secho("Continuous Delivery system", bg="green")
+    click.secho(f'URL: https://{p.parameters["<CD_INGRESS_URL>"]}', bg="green")
+    click.secho(f'Admin login: {p.internals["ARGOCD_USER"]} password: {p.internals["ARGOCD_PASSWORD"]}', bg="green")
+    webbrowser.open(f'https://{p.parameters["<CD_INGRESS_URL>"]}', autoraise=False)
+
+    click.secho(f'Kubeconfig file: {p.internals["KCTL_CONFIG_PATH"]}', bg="green")
+
+    click.secho(f'Links to all core platform services could be found in your GitOps repo readme file at: {p.parameters["<GIT_REPOSITORY_URL>"]}', bg="green")
+    webbrowser.open(f'{p.parameters["<GIT_REPOSITORY_URL>"]}', autoraise=False)
+
+    return
 
 
 def set_envs(env_vars):
@@ -711,25 +790,17 @@ def unset_envs(env_vars):
 
 def prepare_parameters(p):
     # TODO: move to appropriate place
-    p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL)
+    p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL).lower()
     p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
     p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
     p.parameters["<GIT_PROVIDER>"] = p.git_provider
     p.internals["GIT_ACCESS_TOKEN"] = p.get_input_param(GIT_ACCESS_TOKEN)
-    p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME)
-    p.parameters["<GIT_ORGANIZATION_NAME>"] = p.get_input_param(GIT_ORGANIZATION_NAME)
-    p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME)
-    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{p.get_input_param(GIT_ORGANIZATION_NAME)}'
+    p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME).lower()
+    org_name = p.get_input_param(GIT_ORGANIZATION_NAME).lower()
+    p.parameters["<GIT_ORGANIZATION_NAME>"] = org_name
+    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{org_name}'
+    p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME).lower()
     p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
-
-    # prepare registry machine user
-    robo_user_name = "robot@robo-main"
-    p.internals["REGISTRY_ROBO_USER"] = robo_user_name
-    if "REGISTRY_ROBO_USER_SECRET" not in p.parameters:
-        p.internals["REGISTRY_ROBO_USER_PASSWORD"] = random_string_generator(20)
-
-    robo_auth = f'{robo_user_name}:{p.internals["REGISTRY_ROBO_USER_PASSWORD"]}'
-    p.internals["REGISTRY_ROBO_USER_AUTH"] = base64.b64encode(robo_auth.encode("utf-8")).decode("utf-8")
 
     # set IaC webhook secret
     if "<IAC_PR_AUTOMATION_WEBHOOK_SECRET>" not in p.parameters:

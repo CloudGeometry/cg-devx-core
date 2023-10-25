@@ -10,10 +10,15 @@ output "registry_oidc_client_secret" {
   sensitive = true
 }
 
-# harbor main robot password
+# harbor admin password
+output "registry_admin_password" {
+  value = random_password.harbor_password.result
+  description = "admin password"
+  sensitive = true
+}
+
 output "registry_main_robot_password" {
   value = random_password.harbor_main_robot_password.result
   description = "main-robot password"
   sensitive = true
 }
-

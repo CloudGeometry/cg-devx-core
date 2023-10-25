@@ -101,7 +101,7 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role_binding(body=body)
         return res
 
-    def create_custom_object(self, amespace: str, custom_obj: dict, group: str, version: str, plurals: str):
+    def create_custom_object(self, namespace: str, custom_obj: dict, group: str, version: str, plural: str):
         """
         Creates a custom object.
         """
@@ -109,15 +109,15 @@ class KubeClient:
             custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
 
             res = custom_v1_instance.create_namespaced_custom_object(group=group, version=version,
-                                                                     namespace=amespace,
-                                                                     plural=plurals,
+                                                                     namespace=namespace,
+                                                                     plural=plural,
                                                                      body=custom_obj)
 
             return res
         except ApiException as e:
             raise e
 
-    def patch_custom_object(self, namespace: str, name: str, patch, group: str, version: str, plurals: str):
+    def patch_custom_object(self, namespace: str, name: str, patch, group: str, version: str, plural: str):
         """
         Patch custom object.
         """
@@ -130,7 +130,7 @@ class KubeClient:
             res = custom_v1_instance.patch_namespaced_custom_object(group=group, version=version,
                                                                     namespace=namespace,
                                                                     name=name,
-                                                                    plural=plurals,
+                                                                    plural=plural,
                                                                     body=patch)
             return res
         except ApiException as e:
@@ -228,6 +228,20 @@ class KubeClient:
 
         try:
             res = network_v1_instance.read_namespaced_ingress(name=name, namespace=namespace)
+            return res
+        except ApiException as e:
+            raise e
+
+    @exponential_backoff_decorator()
+    def get_custom_object(self, namespace: str, name: str, group: str, version: str, plurals: str):
+        """
+        Reads a custom object.
+        """
+        custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
+
+        try:
+            res = custom_v1_instance.get_namespaced_custom_object(name=name, namespace=namespace, group=group,
+                                                                  version=version, plural=plurals)
             return res
         except ApiException as e:
             raise e
@@ -384,6 +398,31 @@ class KubeClient:
                 if event["type"] == "DELETED":
                     # Ingress was deleted while waiting for it to start
                     raise Exception("%s deleted before it started", name)
+
+        except ApiException as e:
+            raise e
+
+    def wait_for_custom_object(self, cust_object, group: str, version: str, plurals: str, timeout: int = 300):
+        object_name = cust_object["metadata"]["name"]
+        namespace = cust_object["metadata"]["namespace"]
+
+        custom_v1_instance = client.CustomObjectsApi(client.ApiClient(self._configuration))
+        w = watch.Watch()
+
+        try:
+            for event in w.stream(func=custom_v1_instance.list_namespaced_custom_object,
+                                  namespace=namespace,
+                                  group=group,
+                                  version=version,
+                                  plural=plurals,
+                                  timeout_seconds=timeout):
+                if event["object"]["status"]["conditions"][0]["reason"] == "Ready":
+                    w.stop()
+                    return
+                # event.type: ADDED, MODIFIED, DELETED
+                if event["type"] == "DELETED":
+                    # Custom Object was deleted while waiting for it to start
+                    raise Exception("%s deleted before it started", object_name)
 
         except ApiException as e:
             raise e
