@@ -1,5 +1,6 @@
 import textwrap
 
+from common.utils.generators import random_string_generator
 from services.cloud.aws.aws_sdk import AwsSdk
 from services.cloud.aws.iam_permissions import vpc_permissions, eks_permissions, s3_permissions, \
     own_iam_permissions, iam_permissions
@@ -19,20 +20,21 @@ class AWSManager(CloudProviderManager):
     def region(self):
         return self.__aws_sdk.region
 
-    @property
-    def account_id(self):
-        return self.__aws_sdk.account_id
-
-    def detect_cli_presence(self, cli=CLI) -> bool:
+    def detect_cli_presence(self) -> bool:
         """Check whether `name` is on PATH and marked as executable."""
-        return detect_command_presence(cli)
+        return detect_command_presence(CLI)
 
-    def create_iac_state_storage(self, bucket: str):
+    def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
         """
         Creates cloud native terraform remote state storage
         :return: Resource identifier, Region
         """
-        return self.__aws_sdk.create_bucket(bucket)
+        region = self.region
+        if kwargs and "region" in kwargs:
+            region = kwargs["region"]
+        tf_backend_storage_name = f'{name}-{random_string_generator()}'.lower()
+        self.__aws_sdk.create_bucket(tf_backend_storage_name, region)
+        return tf_backend_storage_name
 
     def destroy_iac_state_storage(self, bucket: str):
         """
@@ -40,10 +42,12 @@ class AWSManager(CloudProviderManager):
         """
         return self.__aws_sdk.delete_bucket(bucket)
 
-    def create_iac_backend_snippet(self, location: str, region: str = None, service="default"):
-        if region is None:
-            region = self.region
+    def create_iac_backend_snippet(self, location: str, service="default", **kwargs: dict):
         # TODO: consider replacing with file template
+        region = self.region
+        if kwargs and "region" in kwargs:
+            region = kwargs["region"]
+
         return textwrap.dedent('''\
             backend "s3" {{
             bucket = "{bucket}"
@@ -59,31 +63,28 @@ class AWSManager(CloudProviderManager):
           default_tags {
             tags = {
               ClusterName   = local.cluster_name
-              ProvisionedBy = local.provisioned_by
+              ProvisionedBy = "CGDevX"
             }
           }
         }''')
 
-    def create_secret_manager_seal_snippet(self, role_arn: str, region: str = None):
-        if region is None:
-            region = self.region
-
+    def create_secret_manager_seal_snippet(self, key_id: str):
         return '''seal "awskms" {{
                   region     = "{region}"
-                  kms_key_id = "{role_arn}"
-                }}'''.format(region=region, role_arn=role_arn)
+                  kms_key_id = "{kms_key_id}"
+                }}'''.format(region=self.region, kms_key_id=key_id)
 
     def create_k8s_cluster_role_mapping_snippet(self):
         # TODO: consider replacing with file template
         return "eks.amazonaws.com/role-arn"
 
-    def get_k8s_auth_command(self) -> str:
+    def get_k8s_auth_command(self) -> tuple[str, [str]]:
         args = [
-            '--region',
-            '<CLUSTER_REGION>',
-            'eks',
-            'get-token',
-            '--cluster-name',
+            "--region",
+            "<CLUSTER_REGION>",
+            "eks",
+            "get-token",
+            "--cluster-name",
             "<CLUSTER_NAME>"
         ]
         return "aws", args

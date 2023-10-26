@@ -9,7 +9,7 @@ resource "random_string" "random_suffix" {
 module "artifacts_repository" {
   source = "terraform-aws-modules/s3-bucket/aws"
 
-  bucket = "artifacts-repository-${random_string.random_suffix.id}"
+  bucket = "${local.name}-artifacts-repository-${random_string.random_suffix.id}"
   acl    = "private"
 
   control_object_ownership = true

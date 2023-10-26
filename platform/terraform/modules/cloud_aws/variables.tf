@@ -20,7 +20,7 @@ variable "az_count" {
 
 variable "cluster_name" {
   type    = string
-  default = "gxc"
+  default = "CGDevX"
   validation {
     condition     = (length(var.cluster_name) <= 16) && (length(var.cluster_name) >= 2)
     error_message = "Must be between 2 and 16 symbols long"
@@ -40,15 +40,13 @@ variable "node_group_type" {
 }
 variable "node_groups" {
   type = list(object({
-    name           = optional(string, "")
+    name           = optional(string, "default")
     instance_types = optional(list(string), ["t3.large"])
     capacity_type  = optional(string, "on_demand")
     min_size       = optional(number, 3)
     max_size       = optional(number, 5)
     desired_size   = optional(number, 3)
-  }
-  )
-  )
+  }))
   default = [
     {
       name           = "default"
@@ -68,4 +66,10 @@ variable "cluster_node_labels" {
 
 variable "alert_emails" {
   type = list(string)
+}
+
+variable "ssh_public_key" {
+  description = "(Optional) SSH public key to access worker nodes."
+  type        = string
+  default     = ""
 }

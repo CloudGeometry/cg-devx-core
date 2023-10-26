@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# todo: add override using env var
 LOCAL_FOLDER = Path().home() / ".cgdevx"
 LOCAL_GITOPS_FOLDER = LOCAL_FOLDER / "gitops"
 LOCAL_TF_FOLDER = LOCAL_GITOPS_FOLDER / "terraform"
