@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://argoproj.github.io/argo-helm
-    targetRevision: 0.20.1
+    targetRevision: 0.36.1
     helm:
       values: |-
         nameOverride: argo
@@ -22,6 +22,7 @@ spec:
               cpu: 1
               memory: 1024Mi
         server:
+          authMode: sso
           serviceAccount:
             create: true
             name: argo-server
@@ -29,7 +30,6 @@ spec:
               <K8S_ROLE_MAPPING>: '<CI_IAM_ROLE_RN>'
           extraArgs:
           - --secure
-          - --auth-mode=client
           - --auth-mode=sso
           ingress:
             enabled: true
@@ -46,6 +46,7 @@ spec:
                 hosts:
                   - <CI_INGRESS_URL>
           sso:
+            enabled: true
             issuer: https://<OIDC_PROVIDER_URL>
             clientId:
               name: argo-secrets
@@ -64,7 +65,7 @@ spec:
             rbac:
               enabled: true
         useDefaultArtifactRepo: true
-        useStaticCredentials: true
+        useStaticCredentials: false
         artifactRepository:
           archiveLogs: false
           s3:
