@@ -16,36 +16,52 @@ class AzureManager(CloudProviderManager):
     """Azure wrapper."""
 
     def __init__(self, subscription_id: str, location: Optional[str] = None):
-        self.iac_backend_resource_group_name = None
-        self.iac_backend_storage_account_name = None
+        self.iac_backend_storage_container_name: Optional[str] = None
         self.__azure_sdk = AzureSdk(subscription_id, location)
 
     @property
     def region(self):
         return self.__azure_sdk.location
 
-    def destroy_iac_state_storage(self, bucket: str):
-        raise NotImplementedError()
+    def destroy_iac_state_storage(self, bucket: str) -> bool:
+        """
+        Destroy the cloud-native Terraform remote state storage.
 
-    def create_iac_backend_snippet(self, location: str, service: str = "default", **kwargs: dict):
-        resource_group = self.iac_backend_resource_group_name
-        storage_account = self.iac_backend_storage_account_name
+        This function uses the Azure SDK to destroy the resource group associated with the specified bucket.
+        The resource group name is generated based on the current class attributes, and the class attribute
+        `iac_backend_storage_container_name` is updated with the provided bucket name before generating
+         the resource group name.
 
-        if kwargs and "resource_group" in kwargs:
-            resource_group = kwargs["resource_group"]
-        if kwargs and "storage_account" in kwargs:
-            storage_account = kwargs["storage_account"]
+        Args:
+            bucket (str): The name of the bucket associated with the resource group to be destroyed.
 
-        return textwrap.dedent('''\
+        Returns:
+            bool: True if the resource group was successfully destroyed, False otherwise.
+        """
+        self.iac_backend_storage_container_name = bucket
+        return self.__azure_sdk.destroy_resource_group(self._generate_resource_group_name())
+
+    def create_iac_backend_snippet(self, service: str = "default", **kwargs) -> str:
+        """
+        Generate the Terraform configuration for the Azure backend.
+
+        This function creates a text snippet that can be used as the backend configuration in a Terraform file.
+        It uses the Azure Resource Manager (azurerm) backend type and includes the resource group name,
+        storage account name, and container name, which are generated based on the current class attributes.
+
+        Args:
+            service (str): The name of the service, which is used as part of the key in the backend configuration.
+
+        Returns:
+            str: The Terraform backend configuration snippet.
+        """
+        return textwrap.dedent(f'''\
             backend "azurerm" {{
-              resource_group_name  = "{resource_group}"
-              storage_account_name = "{storage_account}"
-              container_name       = "{container_name}"
+              resource_group_name  = "{self._generate_resource_group_name()}"
+              storage_account_name = "{self._generate_storage_account_name()}"
+              container_name       = "{self.iac_backend_storage_container_name}"
               key                  = "terraform/{service}/terraform.tfstate"
-            }}'''.format(resource_group=resource_group,
-                         storage_account=storage_account,
-                         container_name=location,
-                         service=service))
+            }}''')
 
     def create_hosting_provider_snippet(self):
         # TODO: consider replacing with file template
@@ -90,23 +106,10 @@ class AzureManager(CloudProviderManager):
         Creates cloud native terraform remote state storage
         :return: Resource identifier
         """
-
-        container_name = f"{name}-{random_string_generator()}".lower()
-        if kwargs and "storage_account" in kwargs:
-            self.iac_backend_storage_account_name = kwargs["storage_account"]
-        else:
-            # remove characters as storage account name could only contain numbers and letters
-            safe_name = name.replace('_', '').replace('-', '')
-            self.iac_backend_storage_account_name = f"{safe_name}{random_string_generator(4)}".lower()
-
-        if kwargs and "resource_group" in kwargs:
-            self.iac_backend_resource_group_name = kwargs["resource_group"]
-        else:
-            self.iac_backend_resource_group_name = f"rg-{self.iac_backend_storage_account_name}-iac-backend".lower()
-
-        return self.__azure_sdk.create_storage(container_name,
-                                               self.iac_backend_storage_account_name,
-                                               self.iac_backend_resource_group_name)
+        self.iac_backend_storage_container_name = f"{name}-{random_string_generator()}".lower()
+        return self.__azure_sdk.create_storage(self.iac_backend_storage_container_name,
+                                               self._generate_storage_account_name(),
+                                               self._generate_resource_group_name())
 
     def evaluate_permissions(self) -> bool:
         """
@@ -119,3 +122,38 @@ class AzureManager(CloudProviderManager):
         missing_permissions.extend(self.__azure_sdk.blocked(vnet_permissions))
         missing_permissions.extend(self.__azure_sdk.blocked(rbac_permissions))
         return len(missing_permissions) == 0
+
+    @staticmethod
+    def _generate_container_name(base_name: str) -> str:
+        """
+        Generate a unique container name based on the provided base name and a random string.
+
+        Args:
+            base_name (str): The base name for the container.
+
+        Returns:
+            str: The generated unique container name.
+        """
+        return f"{base_name}-{random_string_generator()}".lower()
+
+    def _generate_storage_account_name(self) -> str:
+        """
+        Generate a unique storage account name that adheres to Azure's naming conventions.
+
+        Azure's storage account name must be between 3 and 24 characters in length and can only use numbers and lower-case letters.
+
+        Returns:
+            str: A unique storage account name adhering to Azure's naming conventions.
+        """
+        # Remove characters as storage account name could only contain numbers and letters
+        safe_name = self.iac_backend_storage_container_name.replace('_', '').replace('-', '')
+        return f"{safe_name[:20]}-iac".lower()
+
+    def _generate_resource_group_name(self) -> str:
+        """
+        Generate a unique resource group name based on the container name.
+
+        Returns:
+            str: A unique name for the resource group.
+        """
+        return f"rg-{self.iac_backend_storage_container_name[:20]}"

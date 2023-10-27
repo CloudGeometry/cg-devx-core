@@ -1,4 +1,3 @@
-import logging
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -6,6 +5,7 @@ from typing import Dict, List, Optional, Tuple
 from awscli.customizations.eks.get_token import STSClientFactory, TokenGenerator, TOKEN_EXPIRATION_MINS
 from botocore.exceptions import ClientError
 
+from common.logging_config import logger
 from services.cloud.aws.aws_session_manager import AwsSessionManager
 from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
@@ -37,7 +37,7 @@ class AwsSdk:
             return user["User"]["Arn"]
 
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             raise e
 
     def blocked(self, actions: List[str],
@@ -104,7 +104,7 @@ class AwsSdk:
             bucket = s3_client.create_bucket(Bucket=bucket_name,
                                              CreateBucketConfiguration=location)
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             return False
         return bucket_name
 
@@ -226,6 +226,6 @@ class AwsSdk:
 
             s3_client.delete_bucket(Bucket=bucket_name)
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             return False
         return True

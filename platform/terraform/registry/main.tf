@@ -1,6 +1,6 @@
 terraform {
   # Remote backend configuration
-  # <TF_REGISTRY_REMOTE_BACKEND>
+  # <TF_ARTIFACT_REGISTRY_REMOTE_BACKEND>
 
   required_providers {
     harbor = {

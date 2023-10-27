@@ -22,6 +22,7 @@ from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVI
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
+from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.generators import random_string_generator
 from services.cloud.cloud_provider_manager import CloudProviderManager
@@ -68,15 +69,22 @@ from services.vcs.gitlab.gitlab_manager import GitLabProviderManager
 @click.option('--setup-demo-workload', '-dw', 'install_demo', help='Setup demo workload', default=False,
               flag_value='setup-demo')
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
+@click.option('--verbosity', type=click.Choice(
+    ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    case_sensitive=False
+), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
 def setup(
         email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_key: str, cloud_secret: str,
         cloud_region: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
         dns_reg_key: str, dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
         gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool,
-        config: click.File
+        config: click.File, verbosity: str
 ):
     """Creates new CG DevX installation."""
     click.echo("Setup CG DevX installation...")
+
+    # Set up global logger
+    configure_logging(verbosity)
 
     p: StateStore
     if config is not None:
@@ -120,7 +128,7 @@ def setup(
 
     cloud_man, dns_man = init_cloud_provider(p)
 
-    p.parameters["<CLOUD_REGION>"] = cloud_man.region
+    # p.parameters["<CLOUD_REGION>"] = cloud_man.region
 
     # init proper git provider
     if p.git_provider == GitProviders.GitHub:
@@ -142,10 +150,10 @@ def setup(
     if not p.has_checkpoint("preflight"):
         click.echo("Executing pre-flight checks...")
 
-        # cloud_provider_check(cloud_man, p)
+        cloud_provider_check(cloud_man, p)
         click.echo("Cloud provider pre-flight check. Done!")
 
-        # git_provider_check(gm, p)
+        git_provider_check(gm, p)
         click.echo("Git provider pre-flight check. Done!")
 
         git_user_login, git_user_name, git_user_email = gm.get_current_user_info()
