@@ -15,7 +15,20 @@ module "artifacts_repository" {
   control_object_ownership = true
   object_ownership         = "ObjectWriter"
 
-  versioning = {
-    enabled = true
-  }
+  force_destroy  = true
+  lifecycle_rule = [
+    {
+      id     = "delete-after-30-days"
+      status = "Enabled"
+
+      expiration = {
+        days = 30
+      }
+      # transition example
+      # transition = {
+      #   days = 30
+      #   storage_class = "GLACIER"
+      # }
+    }
+  ]
 }
