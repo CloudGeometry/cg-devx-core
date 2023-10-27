@@ -45,8 +45,12 @@ def get_domain_txt_records_dot(domain_name: str, name_servers=None):
         name_servers = ["8.8.8.8"]
     rv = dns.resolver.Resolver()
     rv.nameservers = name_servers
-    answers = rv.resolve(domain_name, dns.rdatatype.TXT)
-    return [txt.to_text() for txt in answers]
+    try:
+        answers = rv.resolve(domain_name, dns.rdatatype.TXT)
+    except dns.resolver.NoAnswer:
+        return []
+    else:
+        return [txt.to_text() for txt in answers]
 
 
 def get_domain_txt_records_doh(domain_name: str, name_server: str = "8.8.8.8"):

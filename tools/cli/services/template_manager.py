@@ -1,4 +1,3 @@
-import logging
 import os
 import pathlib
 import shutil
@@ -11,8 +10,6 @@ from git import Repo, RemoteProgress, GitError, Actor
 
 from common.const.common_path import LOCAL_TF_FOLDER, LOCAL_GITOPS_FOLDER
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
-
-logging.basicConfig(level=logging.INFO)
 
 
 class GitOpsTemplateManager:
