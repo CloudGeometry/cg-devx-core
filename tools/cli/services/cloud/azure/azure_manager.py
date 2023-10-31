@@ -41,7 +41,7 @@ class AzureManager(CloudProviderManager):
         self.iac_backend_storage_container_name = bucket
         return self.__azure_sdk.destroy_resource_group(self._generate_resource_group_name())
 
-    def create_iac_backend_snippet(self, service: str = "default", **kwargs) -> str:
+    def create_iac_backend_snippet(self, location: str, service: str, **kwargs) -> str:
         """
         Generate the Terraform configuration for the Azure backend.
 
@@ -50,6 +50,7 @@ class AzureManager(CloudProviderManager):
         storage account name, and container name, which are generated based on the current class attributes.
 
         Args:
+            location (str): The name of the storage container
             service (str): The name of the service, which is used as part of the key in the backend configuration.
 
         Returns:
@@ -70,34 +71,29 @@ class AzureManager(CloudProviderManager):
            features {}
          }''')
 
-    def create_secret_manager_seal_snippet(self, key_id: str):
-        return '''seal "azurekeyvault" {{
-                  tenant_id     = "tenant-id"
-                  vault_name     = "hc-vault"
-                  key_name       = "key-name"
-                }}'''
+    def create_seal_snippet(self, key_id: str, **kwargs) -> str:
+        if kwargs and "name" in kwargs:
+            name = kwargs["name"]
+        else:
+            raise Exception("Required parameter missing")
 
-    def create_k8s_cluster_role_mapping_snippet(self):
+        tenant_id = self.__azure_sdk.get_tenant_id()
+        return '''seal "azurekeyvault" {{
+                  tenant_id     = "{tenant_id}"
+                  vault_name     = "{name}-kv"
+                  key_name       = "{key_id}"
+                }}'''.format(key_id=key_id, tenant_id=tenant_id, name=name)
+
+    def create_k8s_cluster_role_mapping_snippet(self) -> str:
         return "azure.workload.identity/client-id"
 
     def get_k8s_auth_command(self) -> tuple[str, [str]]:
-        args = [
-            "aks"
-            "get-credentials"
-            "--name",
-            "<CLUSTER_NAME>"
-            "--resource-group",
-            "<CLUSTER_NAME>-rg",
-            "--admin",
-            "--public-fqdn"
-            "true"
-        ]
-        return "az", args
+        raise NotImplementedError()
 
     def get_k8s_token(self, cluster_name: str) -> str:
         raise NotImplementedError()
 
-    def detect_cli_presence(self):
+    def detect_cli_presence(self) -> bool:
         """Check whether dependencies are on PATH and marked as executable."""
         return detect_command_presence(CLI) & detect_command_presence(K8s)
 
@@ -147,7 +143,7 @@ class AzureManager(CloudProviderManager):
         """
         # Remove characters as storage account name could only contain numbers and letters
         safe_name = self.iac_backend_storage_container_name.replace('_', '').replace('-', '')
-        return f"{safe_name[:20]}-iac".lower()
+        return f"{safe_name[:20]}iac".lower()
 
     def _generate_resource_group_name(self) -> str:
         """
@@ -156,4 +152,26 @@ class AzureManager(CloudProviderManager):
         Returns:
             str: A unique name for the resource group.
         """
-        return f"rg-{self.iac_backend_storage_container_name[:20]}"
+        return f"{self.iac_backend_storage_container_name[:20]}-rg"
+
+    def create_additional_labels(self) -> str:
+        return 'azure.workload.identity/use: "true"'
+
+    def create_external_secrets_config(self, **kwargs) -> str:
+        if kwargs and "location" in kwargs:
+            location = kwargs["location"]
+        else:
+            raise Exception("Required parameter missing")
+
+        return '''
+        provider: azure
+        secretConfiguration:
+          enabled: true
+          mountPath: "/etc/kubernetes/"
+          data:
+            azure.json: |
+              {{
+                "subscriptionId": "{subscription_id}",
+                "resourceGroup": "{resource_group}",
+                "useWorkloadIdentityExtension": true
+              }}'''.format(subscription_id=self.__azure_sdk.subscription_id, resource_group=location)

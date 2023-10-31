@@ -55,7 +55,6 @@ alert_emails        = [""]
 | <a name="output_cert_manager_role"></a> [cert\_manager\_role](#output\_cert\_manager\_role)                                                      | Certificate Manager IAM role for a K8s service account     |
 | <a name="output_cluster_certificate_authority_data"></a> [cluster\_certificate\_authority\_data](#output\_cluster\_certificate\_authority\_data) | K8s cluster Certificate Authority certificate data         |
 | <a name="output_cluster_endpoint"></a> [cluster\_endpoint](#output\_cluster\_endpoint)                                                           | K8s cluster admin API endpoint                             |
-| <a name="output_cluster_oidc_provider"></a> [cluster\_oidc\_provider](#output\_cluster\_oidc\_provider)                                          | K8s cluster OIDC provider endpoint                         |
 | <a name="output_external_dns_role"></a> [external\_dns\_role](#output\_external\_dns\_role)                                                      | External DNS IAM role for a K8s service account            |
 | <a name="output_iac_pr_automation_role"></a> [iac\_pr\_automation\_role](#output\_iac\_pr\_automation\_role)                                     | IaC PR automation IAM role for a K8s service account       |
 | <a name="output_iam_cd_role"></a> [iam\_cd\_role](#output\_iam\_cd\_role)                                                                        | Continuous Delivery IAM role for a K8s service account     |

@@ -1,21 +1,4 @@
 #custom policies
-resource "aws_iam_policy" "cd" {
-  name        = "${local.name}-cd-policy"
-  description = "Cloud Native CD IAM policy"
-
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Action" : "eks:*",
-        "Effect" : "Allow",
-        "Resource" : "arn:aws:eks:${var.region}:${local.aws_account}:*"
-      }
-    ]
-  })
-
-  tags = local.tags
-}
 
 resource "aws_iam_policy" "ci" {
   name        = "${local.name}-ci-policy"
@@ -35,24 +18,6 @@ resource "aws_iam_policy" "ci" {
   tags = local.tags
 }
 
-resource "aws_iam_policy" "registry_policy" {
-  name        = "${local.name}-registry-policy"
-  description = "Image registry policy for image replication"
-
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Action" : [
-          "ecr:ReplicateImage"
-        ],
-        "Effect" : "Allow",
-        "Resource" : "arn:aws:ecr:${var.region}:${local.aws_account}:*"
-      }
-    ]
-  })
-  tags = local.tags
-}
 resource "aws_iam_policy" "iac_pr_automation_policy" {
   name        = "${local.name}-iac-pr-automation-policy"
   description = "IaC PR Automation tool IAM policy"

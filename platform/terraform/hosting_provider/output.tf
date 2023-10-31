@@ -5,10 +5,6 @@ output "network_id" {
 }
 
 # IAM roles
-output "iam_cd_role" {
-  value = module.hosting-provider.iam_cd_irsa_role
-  description = "Continuous Delivery IAM role for a K8s service account"
-}
 output "iam_ci_role" {
   value = module.hosting-provider.iam_ci_irsa_role
   description = "Continuous Integration IAM role for K8s service account"
@@ -20,10 +16,6 @@ output "iac_pr_automation_role" {
 output "cert_manager_role" {
   value = module.hosting-provider.cert_manager_irsa_role
   description = "Certificate Manager IAM role for a K8s service account"
-}
-output "registry_role" {
-  value = module.hosting-provider.registry_irsa_role
-  description = "Registry IAM role for a K8s service account"
 }
 output "external_dns_role" {
   value = module.hosting-provider.external_dns_irsa_role
@@ -38,10 +30,7 @@ output "secret_manager_role" {
 output "cluster_endpoint" {
   value = module.hosting-provider.cluster_endpoint
   description = "K8s cluster admin API endpoint"
-}
-output "cluster_oidc_provider" {
-  value = module.hosting-provider.cluster_oidc_provider
-  description = " K8s cluster OIDC provider endpoint"
+  sensitive = true
 }
 output "cluster_certificate_authority_data" {
   value = module.hosting-provider.cluster_certificate_authority_data

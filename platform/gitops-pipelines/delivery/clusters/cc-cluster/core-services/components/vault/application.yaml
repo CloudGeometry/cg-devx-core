@@ -24,7 +24,9 @@ spec:
             create: true
             name: vault
             annotations:
-              <K8S_ROLE_MAPPING>: '<SECRET_MANAGER_IAM_ROLE_RN>'
+              <K8S_ROLE_MAPPING>: "<SECRET_MANAGER_IAM_ROLE_RN>"
+          extraLabels:
+            # <ADDITIONAL_LABELS>
           affinity: ""
           ha:
             enabled: true

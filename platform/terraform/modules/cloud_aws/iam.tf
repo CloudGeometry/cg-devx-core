@@ -66,23 +66,7 @@ module "iam_ci_role" {
 
   }
 }
-# Cloud Native CD
-module "iam_cd_role" {
-  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-cd-role"
 
-  role_policy_arns = {
-    policy = aws_iam_policy.cd.arn
-  }
-
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["argocd:argocd"]
-    }
-
-  }
-}
 # IaC PR automation
 module "iac_pr_automation_irsa_role" {
   source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -113,21 +97,6 @@ module "cert_manager_irsa_role" {
     }
   }
 
-}
-
-# container registry
-module "registry_irsa_role" {
-  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name      = "${local.name}-image-registry-role"
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["harbor:harbor"]
-    }
-  }
-  role_policy_arns = {
-    policy = aws_iam_policy.registry_policy.arn
-  }
 }
 
 # external DNS

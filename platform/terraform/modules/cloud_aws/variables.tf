@@ -1,7 +1,7 @@
-#Do we really want the region setting here?
 variable "region" {
-  type    = string
-  default = "eu-west-1"
+  type        = string
+  default     = "eu-west-1"
+  description = "Specifies the regions"
 }
 
 variable "cluster_network_cidr" {
@@ -16,20 +16,28 @@ variable "cluster_network_cidr" {
 variable "az_count" {
   type    = number
   default = 3
+  validation {
+    condition     = var.az_count > 0
+    error_message = "Must be > 0"
+  }
 }
 
 variable "cluster_name" {
-  type    = string
-  default = "CGDevX"
+  type        = string
+  default     = "CGDevX"
+  description = "(Required) Specifies the name of the EKS cluster."
   validation {
     condition     = (length(var.cluster_name) <= 16) && (length(var.cluster_name) >= 2)
     error_message = "Must be between 2 and 16 symbols long"
   }
 }
+
 variable "cluster_version" {
-  type    = string
-  default = "1.27"
+  type        = string
+  default     = "1.27"
+  description = "(Optional) Specifies the EKS Kubernetes version"
 }
+
 variable "node_group_type" {
   type    = string
   default = "EKS"
@@ -38,6 +46,7 @@ variable "node_group_type" {
     error_message = "Can be \"EKS\" for eks-managed  or \"SELF\" for self-managed node groups."
   }
 }
+
 variable "node_groups" {
   type = list(object({
     name           = optional(string, "default")
@@ -61,11 +70,15 @@ variable "node_groups" {
 
 variable "cluster_node_labels" {
   type    = map(any)
-  default = {}
+  default = {
+    ProvisionedBy = "CGDevX"
+  }
+  description = "(Optional) EKS node labels"
 }
 
 variable "alert_emails" {
-  type = list(string)
+  type    = list(string)
+  default = []
 }
 
 variable "ssh_public_key" {

@@ -52,7 +52,9 @@ class TfWrapper:
             output[k] = v["value"]
         return output
 
-    def destroy(self):
+    def destroy(self, variables: dict = None):
+        self._tf.variables = variables
+
         return_code, stdout, stderr = self._tf.destroy(force=IsNotFlagged, auto_approve=True, input=False)
 
         if return_code != 0:

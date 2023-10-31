@@ -1,11 +1,11 @@
 import textwrap
 
 from common.utils.generators import random_string_generator
+from common.utils.os_utils import detect_command_presence
 from services.cloud.aws.aws_sdk import AwsSdk
 from services.cloud.aws.iam_permissions import vpc_permissions, eks_permissions, s3_permissions, \
     own_iam_permissions, iam_permissions
 from services.cloud.cloud_provider_manager import CloudProviderManager
-from common.utils.os_utils import detect_command_presence
 
 CLI = 'aws'
 
@@ -36,13 +36,27 @@ class AWSManager(CloudProviderManager):
         self.__aws_sdk.create_bucket(tf_backend_storage_name, region)
         return tf_backend_storage_name
 
-    def destroy_iac_state_storage(self, bucket: str):
+    def destroy_iac_state_storage(self, bucket: str) -> bool:
         """
         Destroy cloud native terraform remote state storage
         """
         return self.__aws_sdk.delete_bucket(bucket)
 
-    def create_iac_backend_snippet(self, location: str, service="default", **kwargs: dict):
+    def create_iac_backend_snippet(self, location: str, service: str, **kwargs: dict) -> str:
+        """
+         Generate the Terraform configuration for the Aws backend.
+
+         This function creates a text snippet that can be used as the backend configuration in a Terraform file.
+         It uses the AWS S3 backend.
+
+         Args:
+             location (str): The name of the storage container
+             service (str): The name of the service,
+             which is used as part of the key in the backend configuration.
+
+         Returns:
+             str: The Terraform backend configuration snippet.
+         """
         # TODO: consider replacing with file template
         region = self.region
         if kwargs and "region" in kwargs:
@@ -56,7 +70,7 @@ class AWSManager(CloudProviderManager):
             encrypt = true
           }}'''.format(bucket=location, region=region, service=service))
 
-    def create_hosting_provider_snippet(self):
+    def create_hosting_provider_snippet(self) -> str:
         # TODO: consider replacing with file template
         return textwrap.dedent('''\
         provider "aws" {
@@ -68,13 +82,13 @@ class AWSManager(CloudProviderManager):
           }
         }''')
 
-    def create_secret_manager_seal_snippet(self, key_id: str):
+    def create_seal_snippet(self, key_id: str, **kwargs) -> str:
         return '''seal "awskms" {{
                   region     = "{region}"
                   kms_key_id = "{kms_key_id}"
                 }}'''.format(region=self.region, kms_key_id=key_id)
 
-    def create_k8s_cluster_role_mapping_snippet(self):
+    def create_k8s_cluster_role_mapping_snippet(self) -> str:
         # TODO: consider replacing with file template
         return "eks.amazonaws.com/role-arn"
 
@@ -105,3 +119,9 @@ class AWSManager(CloudProviderManager):
         missing_permissions.extend(self.__aws_sdk.blocked(s3_permissions))
         missing_permissions.extend(self.__aws_sdk.blocked(own_iam_permissions, [self.__aws_sdk.current_user_arn()]))
         return len(missing_permissions) == 0
+
+    def create_additional_labels(self) -> str:
+        return ""
+
+    def create_external_secrets_config(self, **kwargs) -> str:
+        return ""

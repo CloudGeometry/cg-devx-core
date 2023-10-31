@@ -40,7 +40,7 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def create_iac_backend_snippet(self, location: str, service: str = "default", **kwargs: dict):
+    def create_iac_backend_snippet(self, location: str, service: str, **kwargs: dict) -> str:
         """
         Creates terraform backend snippet
         :return: Code snippet
@@ -56,7 +56,7 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def create_secret_manager_seal_snippet(self, key_id: str):
+    def create_seal_snippet(self, key_id: str, **kwargs):
         """
         Creates helm vault seal snippet
         :return: Helm snippet
@@ -84,5 +84,21 @@ class CloudProviderManager(ABC):
         """
         Creates K8s cluster API key
         :return: API key
+        """
+        pass
+
+    @abstractmethod
+    def create_additional_labels(self) -> str:
+        """
+        Creates K8s resource additional labels
+        :return: Labels definition
+        """
+        pass
+
+    @abstractmethod
+    def create_external_secrets_config(self, **kwargs) -> str:
+        """
+        Creates external secrets operator configuration
+        :return: External secrets operator configuration
         """
         pass

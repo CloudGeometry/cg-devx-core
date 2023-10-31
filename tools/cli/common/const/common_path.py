@@ -1,7 +1,8 @@
+import os
 from pathlib import Path
 
 # todo: add override using env var
-LOCAL_FOLDER = Path().home() / ".cgdevx"
+LOCAL_FOLDER = Path().home() / os.environ.get("CGDEVX_LOCAL_FOLDER", ".cgdevx")
 LOCAL_GITOPS_FOLDER = LOCAL_FOLDER / "gitops"
 LOCAL_TF_FOLDER = LOCAL_GITOPS_FOLDER / "terraform"
 LOCAL_TF_FOLDER_HOSTING_PROVIDER = LOCAL_TF_FOLDER / "hosting_provider"

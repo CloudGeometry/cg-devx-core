@@ -10,7 +10,7 @@ class Route53Manager(DNSManager):
     def __init__(self, profile=None, key=None, secret=None):
         self.__aws_sdk = AwsSdk(None, profile, key, secret)
 
-    def evaluate_domain_ownership(self, domain_name):
+    def evaluate_domain_ownership(self, domain_name: str):
         """
         Check if domain is owned by user and create liveness check record
         :return: True or False
@@ -22,6 +22,10 @@ class Route53Manager(DNSManager):
                 return False
 
         return self.__aws_sdk.set_hosted_zone_liveness(domain_name, zone_id, name_servers)
+
+    def get_domain_zone(self, domain_name: str) -> tuple[str, bool]:
+        name_servers, zone_id, is_private = self.__aws_sdk.get_name_servers(domain_name)
+        return zone_id, is_private
 
     def evaluate_permissions(self):
         """

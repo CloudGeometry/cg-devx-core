@@ -11,6 +11,9 @@ from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
 
 class AwsSdk:
+    RETRY_COUNT = 100
+    RETRY_SLEEP = 10  # in seconds
+
     def __init__(self, region, profile, key, secret):
         self._account_id = None
         self._session_manager = AwsSessionManager()
@@ -131,7 +134,7 @@ class AwsSdk:
 
         return ns, zone_id, is_private
 
-    def set_hosted_zone_liveness(self, hosted_zone_name, hosted_zone_id, name_servers):
+    def set_hosted_zone_liveness(self, hosted_zone_name: str, hosted_zone_id: str, name_servers: List[str]):
 
         route53_record_name = f'cgdevx-liveness.{hosted_zone_name}'
         route53_record_value = "domain record propagated"
@@ -162,19 +165,16 @@ class AwsSdk:
 
             r = r53_client.change_resource_record_sets(HostedZoneId=hosted_zone_id, ChangeBatch=batch)
 
-        # check if record is updated
-        loop_count = 100
-        while loop_count > 0:
-            time.sleep(10)
-            # ["https://" + str(s).rstrip('.') for s in name_servers][0]
-            existing_txt = get_domain_txt_records_dot(route53_record_name)
+        for _ in range(self.RETRY_COUNT):
+            time.sleep(self.RETRY_SLEEP)
+            existing_txt = get_domain_txt_records_dot(route53_record_name, name_servers=name_servers)
 
             if set(existing_txt).issubset(set([f'"{route53_record_value}"'])):
-                break
+                return True
 
-            loop_count -= 1
+            logger.info(f"Waiting for {route53_record_value} to propagate. Retrying...")
 
-        return True
+        return False
 
     def get_token(self, cluster_name: str, role_arn: str = None) -> dict:
         # hack to get botcore session and properly initialise client factory

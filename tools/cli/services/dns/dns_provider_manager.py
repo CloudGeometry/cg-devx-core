@@ -23,11 +23,19 @@ class DNSManager(ABC):
         pass
 
     @abstractmethod
+    def get_domain_zone(self, domain_name: str) -> tuple[str, bool]:
+        """
+        Return domain zone information
+        :return: zone, is_private
+        """
+        pass
+
+    @abstractmethod
     def evaluate_permissions(self):
         """
         Check if provided credentials have required permissions
         :return: True or False
-            """
+        """
         pass
 
 

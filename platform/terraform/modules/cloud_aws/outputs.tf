@@ -20,7 +20,6 @@ output "kms_key_id" {
   value       = module.eks.kms_key_id
 }
 #put roles arns here
-
 output "vpc_cni_irsa" {
   description = "vpc_cni role ARN"
   value       = module.vpc_cni_irsa.iam_role_arn
@@ -34,11 +33,6 @@ output "efs_csi_irsa_role" {
   description = "CSI EFS IAM Role ARN"
   value       = module.efs_csi_irsa_role.iam_role_arn
 }
-
-output "iam_cd_irsa_role" {
-  description = "Cloud Native CD IAM role ARN"
-  value       = module.iam_cd_role.iam_role_arn
-}
 output "iam_ci_irsa_role" {
   description = "Cloud Native CI IAM role ARN"
   value       = module.iam_ci_role.iam_role_arn
@@ -51,10 +45,6 @@ output "cert_manager_irsa_role" {
   description = "Cert Manager IAM Role ARN"
   value       = module.cert_manager_irsa_role.iam_role_arn
 }
-output "registry_irsa_role" {
-  description = "Image registry Role ARN"
-  value       = module.registry_irsa_role.iam_role_arn
-}
 output "external_dns_irsa_role" {
   description = "External DNS IAM Role ARN"
   value       = module.external_dns_irsa_role.iam_role_arn
@@ -63,9 +53,6 @@ output "secret_manager_irsa_role" {
   description = "AWS Secretsmanager IAM Role ARN"
   value       = module.secret_manager_irsa_role.iam_role_arn
 }
-
-
-
 
 ################################################################################
 # Cluster

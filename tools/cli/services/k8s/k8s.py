@@ -1,6 +1,6 @@
 import base64
 
-from kubernetes import client, watch
+from kubernetes import client, watch, config
 from kubernetes.client import ApiException
 
 from common.const.common_path import LOCAL_FOLDER
@@ -16,12 +16,17 @@ def write_ca_cert(ca_cert_data):
 
 
 class KubeClient:
-    def __init__(self, ca_cert_path, api_key, endpoint):
+    def __init__(self, *args, **kwargs):
         self._configuration = client.Configuration()
-        self._configuration.ssl_ca_cert = ca_cert_path  # <<< look here>>>
-        self._configuration.api_key['authorization'] = api_key
-        self._configuration.api_key_prefix['authorization'] = 'Bearer'
-        self._configuration.host = endpoint
+        if "config_file" in kwargs:
+            config.load_kube_config(config_file=kwargs["config_file"], client_configuration=self._configuration)
+        if "ca_cert_path" in kwargs:
+            self._configuration.ssl_ca_cert = kwargs["ca_cert_path"]
+        if "api_key" in kwargs:
+            self._configuration.api_key['authorization'] = kwargs["api_key"]
+            self._configuration.api_key_prefix['authorization'] = 'Bearer'
+        if "endpoint" in kwargs:
+            self._configuration.host = kwargs["endpoint"]
 
     def create_namespace(self, name: str):
         """

@@ -475,3 +475,12 @@ class AzureSdk:
             str: The generated account URL.
         """
         return f'https://{storage_account_name}.blob.core.windows.net'
+
+    def get_tenant_id(self) -> str:
+        """Get tenant id.
+
+        Returns:
+            str: The tenant id.
+        """
+        for tenant in self.subscription_client.tenants.list():
+            return tenant.tenant_id

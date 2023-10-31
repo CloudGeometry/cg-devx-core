@@ -1,5 +1,3 @@
-import os
-import os
 import re
 import time
 import webbrowser
@@ -8,7 +6,8 @@ import click
 import portforward
 import yaml
 
-from common.command_utils import init_cloud_provider
+from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, set_envs, \
+    unset_envs
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_REGISTRY
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
@@ -22,13 +21,13 @@ from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVI
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
-from common.logging_config import configure_logging, logger
+from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.utils.generators import random_string_generator
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
 from services.dns.dns_provider_manager import DNSManager
-from services.k8s.config_builder import create_k8s_config
+from services.k8s.config_builder import create_k8s_config, write_k8s_config
 from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token
 from services.k8s.k8s import KubeClient, write_ca_cert
 from services.k8s.kctl_wrapper import KctlWrapper
@@ -36,8 +35,6 @@ from services.keys.key_manager import KeyManager
 from services.template_manager import GitOpsTemplateManager
 from services.tf_wrapper import TfWrapper
 from services.vcs.git_provider_manager import GitProviderManager
-from services.vcs.github.github_manager import GitHubProviderManager
-from services.vcs.gitlab.gitlab_manager import GitLabProviderManager
 
 
 @click.command()
@@ -128,20 +125,9 @@ def setup(
 
     cloud_man, dns_man = init_cloud_provider(p)
 
-    # p.parameters["<CLOUD_REGION>"] = cloud_man.region
+    p.parameters["<CLOUD_REGION>"] = cloud_man.region
 
-    # init proper git provider
-    if p.git_provider == GitProviders.GitHub:
-        gm: GitProviderManager = GitHubProviderManager(p.get_input_param(GIT_ACCESS_TOKEN),
-                                                       p.get_input_param(GIT_ORGANIZATION_NAME))
-    elif p.git_provider == GitProviders.GitLab:
-        gm: GitProviderManager = GitLabProviderManager(
-            p.get_input_param(GIT_ACCESS_TOKEN),
-            p.get_input_param(GIT_ORGANIZATION_NAME)
-        )
-    else:
-        click.echo('Error: None of the available Git providers were specified')
-        return
+    git_man = init_git_provider(p)
 
     # init proper dns registrar provider
     # Note!: Route53 is initialised with AWS Cloud Provider
@@ -153,15 +139,15 @@ def setup(
         cloud_provider_check(cloud_man, p)
         click.echo("Cloud provider pre-flight check. Done!")
 
-        git_provider_check(gm, p)
+        git_provider_check(git_man, p)
         click.echo("Git provider pre-flight check. Done!")
 
-        git_user_login, git_user_name, git_user_email = gm.get_current_user_info()
+        git_user_login, git_user_name, git_user_email = git_man.get_current_user_info()
         p.internals["GIT_USER_LOGIN"] = git_user_login
         p.internals["GIT_USER_NAME"] = git_user_name
         p.parameters["<GIT_USER_NAME>"] = git_user_name
         p.internals["GIT_USER_EMAIL"] = git_user_email
-        p.parameters["# <GIT_PROVIDER_MODULE>"] = gm.create_tf_module_snippet()
+        p.parameters["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
 
         # dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")
@@ -201,6 +187,14 @@ def setup(
     else:
         click.echo("Skipped dependencies check.")
 
+    # promote input params
+    prepare_parameters(p)
+    p.save_checkpoint()
+
+    tm = GitOpsTemplateManager(p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_URL),
+                               p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_BRANCH),
+                               p.get_input_param(GIT_ACCESS_TOKEN))
+
     if not p.has_checkpoint("one-time-setup"):
         click.echo("Setting initial parameters...")
 
@@ -236,13 +230,21 @@ def setup(
                                                                                              "secrets")
         p.parameters["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
                                                                                            "users")
-        p.parameters["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                              cloud_man.region,
+        p.parameters["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
                                                                                               "registry")
 
         p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
+
+        p.parameters["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
+
+        # dns zone info for external dns
+        dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
+        p.internals["DNS_ZONE_NAME"] = dns_zone_name
+        p.internals["DNS_ZONE_IS_PRIVATE"] = is_dns_zone_private
+
+        p.parameters["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(location=dns_zone_name, is_private=is_dns_zone_private)
 
         click.echo("Creating tf backend storage. Done!")
 
@@ -253,14 +255,6 @@ def setup(
     # end preflight check section
     else:
         click.echo("Skipped setting initial parameters.")
-
-    # promote input params
-    prepare_parameters(p)
-    p.save_checkpoint()
-
-    tm = GitOpsTemplateManager(p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_URL),
-                               p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_BRANCH),
-                               p.get_input_param(GIT_ACCESS_TOKEN))
 
     if not p.has_checkpoint("repo-prep"):
         click.echo("Preparing your GitOps code...")
@@ -281,20 +275,8 @@ def setup(
 
     # use to enable tf debug
     # "TF_LOG": "DEBUG", "TF_LOG_PATH": "/Users/a1m/.cgdevx/gitops/terraform/vcs/terraform.log",
-    # drop empty values
-    # TODO: cloud provider specific, should add Azure version
-    if p.cloud_provider == CloudProviders.AWS:
-        cloud_provider_auth_env_vars = {k: v for k, v in {
-            "AWS_PROFILE": p.get_input_param(CLOUD_PROFILE),
-            "AWS_ACCESS_KEY_ID": p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
-            "AWS_SECRET_ACCESS_KEY": p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET),
-            "AWS_REGION": p.parameters["<CLOUD_REGION>"],
-            "AWS_DEFAULT_REGION": p.parameters["<CLOUD_REGION>"],
-        }.items() if v}
-    elif p.cloud_provider == CloudProviders.Azure:
-        cloud_provider_auth_env_vars = {}
-    else:
-        cloud_provider_auth_env_vars = {}
+
+    cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
 
     # VCS section
     if not p.has_checkpoint("vcs-tf"):
@@ -342,47 +324,54 @@ def setup(
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_HOSTING_PROVIDER)
         tf_wrapper.init()
-        tf_wrapper.apply({"ssh_public_key": p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"]})
+        tf_wrapper.apply({"ssh_public_key": p.parameters.get("<CC_CLUSTER_SSH_PUBLIC_KEY>", "")})
         hp_out = tf_wrapper.output()
 
         # store out params
         # network
         p.parameters["<NETWORK_ID>"] = hp_out["network_id"]
         # roles
-        p.parameters["<CD_IAM_ROLE_RN>"] = hp_out["iam_cd_role"]
         p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["iam_ci_role"]
         p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"] = hp_out["iac_pr_automation_role"]
         p.parameters["<CERT_MANAGER_IAM_ROLE_RN>"] = hp_out["cert_manager_role"]
-        p.parameters["<REGISTRY_IAM_ROLE_RN>"] = hp_out["registry_role"]
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
         p.parameters["<SECRET_MANAGER_IAM_ROLE_RN>"] = hp_out["secret_manager_role"]
         # cluster
         p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
         p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
-        p.internals["CC_CLUSTER_OIDC_PROVIDER"] = hp_out["cluster_oidc_provider"]  # do we need it?
         # artifact storage
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
         # kms keys
         sec_man_key = hp_out["secret_manager_seal_key"]
         p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
-        p.parameters["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_secret_manager_seal_snippet(sec_man_key)
+        # TODO: find a better way to pass cloud provider specific params
+        p.parameters["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_seal_snippet(sec_man_key,
+                                                                                name=p.parameters[
+                                                                                    "<PRIMARY_CLUSTER_NAME>"])
 
         # unset envs as no longer needed
         unset_envs(hp_tf_env_vars)
 
-        # user could get kubeconfig by running command
-        # AWS: `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
-        # CLI could not follow this approach as aws client could be not configured properly when keys are used
-        # CLI is creating this file programmatically
-        command, command_args = cloud_man.get_k8s_auth_command()
-        kubeconfig_params = {
-            "<ENDPOINT>": p.internals["CC_CLUSTER_ENDPOINT"],
-            "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
-            "<CLUSTER_NAME>": p.parameters["<PRIMARY_CLUSTER_NAME>"],
-            "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
-        }
-        kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+        if p.cloud_provider == CloudProviders.AWS:
+            # user could get kubeconfig by running command
+            # `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
+            # CLI could not follow this approach as aws client could be not configured properly when keys are used
+            # CLI is creating this file programmatically
+            command, command_args = cloud_man.get_k8s_auth_command()
+            kubeconfig_params = {
+                "<ENDPOINT>": p.internals["CC_CLUSTER_ENDPOINT"],
+                "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
+                "<CLUSTER_NAME>": p.parameters["<PRIMARY_CLUSTER_NAME>"],
+                "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
+            }
+            kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+        elif p.cloud_provider == CloudProviders.Azure:
+            # user could get kubeconfig by running command
+            # `az aks get-credentials --name my-cluster --resource-group my-rg --admin`
+            # get config from tf output
+            kctl_config_path = write_k8s_config(hp_out["kube_config_raw"])
+
         p.internals["KCTL_CONFIG_PATH"] = kctl_config_path
 
         p.set_checkpoint("k8s-tf")
@@ -413,9 +402,10 @@ def setup(
     # k8s
     # default token life-time is 14m
     # to be safe should refresh token each time
-    k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
-    kube_client = KubeClient(p.internals["CC_CLUSTER_CA_CERT_PATH"], k8s_token, p.internals["CC_CLUSTER_ENDPOINT"])
+    # k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
+    # kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"], api_key=k8s_token, endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
     kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
+    kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
     cd_man = DeliveryServiceManager(kube_client)
 
     # install ArgoCD
@@ -434,9 +424,7 @@ def setup(
         kube_client.create_namespace(ARGOCD_NAMESPACE)
         kube_client.create_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
         kube_client.create_cluster_role(ARGOCD_NAMESPACE, argocd_bootstrap_name)
-        # extract role name from arn
-        # TODO: move to tf
-        argo_cd_role_name = p.parameters["<CD_IAM_ROLE_RN>"].split("/")[-1]
+
         kube_client.create_cluster_role_binding(ARGOCD_NAMESPACE, argocd_bootstrap_name, argocd_bootstrap_name)
 
         job = cd_man.create_argocd_bootstrap_job(argocd_bootstrap_name)
@@ -793,16 +781,6 @@ def show_credentials(p):
     webbrowser.open(f'{p.parameters["<GIT_REPOSITORY_URL>"]}', autoraise=False)
 
     return
-
-
-def set_envs(env_vars):
-    for k, vault_i in env_vars.items():
-        os.environ[k] = vault_i
-
-
-def unset_envs(env_vars):
-    for k in env_vars.keys():
-        os.environ.pop(k)
 
 
 def prepare_parameters(p):

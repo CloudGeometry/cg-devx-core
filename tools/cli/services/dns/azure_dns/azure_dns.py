@@ -27,6 +27,10 @@ class AzureDNSManager(DNSManager):
             name_servers=name_servers
         )
 
+    def get_domain_zone(self, domain_name: str) -> tuple[str, bool]:
+        name_servers, is_private, resource_group_name = self.__azure_sdk.get_name_servers(domain_name)
+        return resource_group_name, is_private
+
     def evaluate_permissions(self):
         """
         Check if provided credentials have required permissions
