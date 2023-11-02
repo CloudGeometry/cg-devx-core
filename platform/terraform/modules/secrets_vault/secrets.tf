@@ -1,9 +1,13 @@
+locals {
+  b64_docker_auth = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
+}
+
 resource "vault_generic_secret" "docker_config" {
   path = "secret/dockerconfigjson"
 
   data_json = jsonencode(
     {
-      dockerconfig = jsonencode({ "auths" : { "ghcr.io" : { "auth" : "${var.b64_docker_auth}" } } }),
+      dockerconfig = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } } }),
     }
   )
 
@@ -15,7 +19,7 @@ resource "vault_generic_secret" "registry_auth" {
 
   data_json = jsonencode(
     {
-      auth = jsonencode({ "auths" : { "ghcr.io" : { "auth" : "${var.b64_docker_auth}" } } }),
+      auth = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } } }),
     }
   )
 
@@ -56,7 +60,6 @@ resource "vault_generic_secret" "atlantis_secrets" {
       # ----
       TF_VAR_atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url,
-      TF_VAR_b64_docker_auth              = var.b64_docker_auth,
       TF_VAR_vcs_token                    = var.vcs_token,
       # aws specific section
       # ----
@@ -66,12 +69,12 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_vcs_bot_ssh_private_key = var.vcs_bot_ssh_private_key,
       # harbor specific section
       # ----
-      TF_VAR_registry_oidc_client_id      = module.harbor.vault_oidc_client_id
-      TF_VAR_registry_oidc_client_secret  = module.harbor.vault_oidc_client_secret
-      TF_VAR_registry_main_robot_password = random_password.harbor_main_robot_password.result
-      HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>"
-      HARBOR_USERNAME                     = "admin"
-      HARBOR_PASSWORD                     = random_password.harbor_password.result
+      TF_VAR_registry_oidc_client_id      = module.harbor.vault_oidc_client_id,
+      TF_VAR_registry_oidc_client_secret  = module.harbor.vault_oidc_client_secret,
+      TF_VAR_registry_main_robot_password = random_password.harbor_main_robot_password.result,
+      HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>",
+      HARBOR_USERNAME                     = "admin",
+      HARBOR_PASSWORD                     = random_password.harbor_password.result,
       # vault specific section
       # ----
       TF_VAR_vault_addr  = "http://vault.vault.svc.cluster.local:8200",
@@ -83,9 +86,9 @@ resource "vault_generic_secret" "atlantis_secrets" {
       # SONARQUBE_USER                         = "admin"
       # SONARQUBE_PASS                         = random_password.sonarqube_password.result
       # SONARQUBE_HOST                         = "https://<SONARQUBE_INGRESS_URL>"
-      TF_VAR_code_quality_oidc_client_id     = module.harbor.vault_oidc_client_id
-      TF_VAR_code_quality_oidc_client_secret = module.harbor.vault_oidc_client_secret
-      TF_VAR_code_quality_admin_password     = random_password.sonarqube_password.result
+      TF_VAR_code_quality_oidc_client_id     = module.harbor.vault_oidc_client_id,
+      TF_VAR_code_quality_oidc_client_secret = module.harbor.vault_oidc_client_secret,
+      TF_VAR_code_quality_admin_password     = random_password.sonarqube_password.result,
     }
   )
 
@@ -162,8 +165,9 @@ resource "vault_generic_secret" "harbor_main_robot_secret" {
 
   data_json = jsonencode(
     {
-      HARBOR_ADMIN_NAME     = "robot@main-robot",
-      HARBOR_ADMIN_PASSWORD = random_password.harbor_main_robot_password.result,
+      HARBOR_ROBOT_NAME     = "robot@main-robot",
+      HARBOR_ROBOT_PASSWORD = random_password.harbor_main_robot_password.result,
+      HARBOR_ROBOT_B64_AUTH = local.b64_docker_auth,
     }
   )
 
@@ -181,7 +185,7 @@ resource "vault_generic_secret" "sonarqube_admin_secret" {
   data_json = jsonencode(
     {
       username        = "admin",
-      currentPassword = "admin"
+      currentPassword = "admin",
       password        = random_password.sonarqube_password.result,
     }
   )

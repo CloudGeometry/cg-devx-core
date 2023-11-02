@@ -5,13 +5,6 @@ variable "cluster_name" {
 
 }
 
-variable "b64_docker_auth" {
-  description = "container registry auth"
-  default = ""
-  type = string
-  sensitive   = true
-}
-
 variable "vcs_token" {
   description = "token for git operations"
   default = ""

@@ -18,13 +18,6 @@ variable "vcs_token" {
   sensitive   = true
 }
 
-variable "b64_docker_auth" {
-  description = "container registry auth"
-  default = ""
-  type = string
-  sensitive   = true
-}
-
 variable "atlantis_repo_webhook_secret" {
   description = "atlantis webhook secret"
   default = ""

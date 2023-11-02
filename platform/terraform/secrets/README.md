@@ -16,8 +16,6 @@ workloads                    = local.workloads
 vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
 # Git machine user SSH private key
 vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key
-# Registry auth string
-b64_docker_auth              = var.b64_docker_auth
 # Git access token
 vcs_token                    = var.vcs_token
 # IaC PR automation webhook secret
@@ -32,7 +30,6 @@ vault_token                  = var.vault_token
 |------------------------------------------------------------------------------------------------------------------------------|--------------------------------|----------|---------|:--------:|
 | <a name="input_atlantis_repo_webhook_secret"></a> [atlantis\_repo\_webhook\_secret](#input\_atlantis\_repo\_webhook\_secret) | atlantis webhook secret        | `string` | `""`    |    no    |
 | <a name="input_atlantis_repo_webhook_url"></a> [atlantis\_repo\_webhook\_url](#input\_atlantis\_repo\_webhook\_url)          | atlantis webhook url           | `string` | `""`    |    no    |
-| <a name="input_b64_docker_auth"></a> [b64\_docker\_auth](#input\_b64\_docker\_auth)                                          | container registry auth        | `string` | `""`    |    no    |
 | <a name="input_vault_token"></a> [vault\_token](#input\_vault\_token)                                                        | vault token                    | `string` | `""`    |    no    |
 | <a name="input_vcs_bot_ssh_private_key"></a> [vcs\_bot\_ssh\_private\_key](#input\_vcs\_bot\_ssh\_private\_key)              | private key for git operations | `string` | `""`    |    no    |
 | <a name="input_vcs_bot_ssh_public_key"></a> [vcs\_bot\_ssh\_public\_key](#input\_vcs\_bot\_ssh\_public\_key)                 | public key for git operations  | `string` | `""`    |    no    |
