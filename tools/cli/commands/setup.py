@@ -646,6 +646,9 @@ def setup(
         p.internals["REGISTRY_OIDC_CLIENT_SECRET"] = sec_man_out["registry_oidc_client_secret"]
         p.internals["REGISTRY_ROBO_USER_PASSWORD"] = sec_man_out["registry_main_robot_user_password"]
         p.internals["REGISTRY_PASSWORD"] = sec_man_out["registry_admin_user_password"]
+        p.internals["CODE_QUALITY_OIDC_CLIENT_ID"] = sec_man_out["code_quality_oidc_client_id"]
+        p.internals["CODE_QUALITY_OIDC_CLIENT_SECRET"] = sec_man_out["code_quality_oidc_client_secret"]
+        p.internals["CODE_QUALITY_PASSWORD"] = sec_man_out["code_quality_admin_password"]
 
         # prepare registry machine user
         robo_user_name = "robot@main-robot"
@@ -708,8 +711,8 @@ def setup(
     else:
         click.echo("Skipped provisioning Users.")
 
-    if not p.has_checkpoint("registry-tf"):
-        click.echo("Configuring Registry...")
+    if not p.has_checkpoint("core-services-tf"):
+        click.echo("Configuring core services...")
 
         # time.sleep(30)
 
@@ -722,7 +725,7 @@ def setup(
 
         p.internals["REGISTRY_USERNAME"] = "admin"
         # run security manager tf to create secrets and roles
-        registry_tf_env_vars = {
+        core_services_tf_env_vars = {
             **{
                 "HARBOR_URL": f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}',
                 "HARBOR_USERNAME": p.internals["REGISTRY_USERNAME"],
@@ -730,26 +733,29 @@ def setup(
             },
             **cloud_provider_auth_env_vars}
         # set envs as required by tf
-        set_envs(registry_tf_env_vars)
+        set_envs(core_services_tf_env_vars)
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_REGISTRY)
         tf_wrapper.init()
         tf_wrapper.apply({
             "registry_oidc_client_id": p.internals["REGISTRY_OIDC_CLIENT_ID"],
             "registry_oidc_client_secret": p.internals["REGISTRY_OIDC_CLIENT_SECRET"],
-            "registry_main_robot_password": p.internals["REGISTRY_ROBO_USER_PASSWORD"]
+            "registry_main_robot_password": p.internals["REGISTRY_ROBO_USER_PASSWORD"],
+            "code_quality_oidc_client_id": p.internals["CODE_QUALITY_OIDC_CLIENT_ID"],
+            "code_quality_oidc_client_secret": p.internals["CODE_QUALITY_OIDC_CLIENT_SECRET"],
+            "code_quality_admin_password": p.internals["CODE_QUALITY_PASSWORD"]
         })
         registry_out = tf_wrapper.output()
 
         # unset envs as no longer needed
-        unset_envs(registry_tf_env_vars)
+        unset_envs(core_services_tf_env_vars)
 
-        p.set_checkpoint("registry-tf")
+        p.set_checkpoint("core-services-tf")
         p.save_checkpoint()
-        click.echo("Configuring Registry. Done!")
+        click.echo("Configuring core services. Done!")
 
     else:
-        click.echo("Skipped Registry configuration.")
+        click.echo("Skipped core services configuration.")
 
     show_credentials(p)
 
