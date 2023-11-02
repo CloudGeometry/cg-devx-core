@@ -10,7 +10,7 @@ import yaml
 
 from common.command_utils import init_cloud_provider
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
-    LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_REGISTRY
+    LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE
@@ -735,7 +735,7 @@ def setup(
         # set envs as required by tf
         set_envs(core_services_tf_env_vars)
 
-        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_REGISTRY)
+        tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_CORE_SERVICES)
         tf_wrapper.init()
         tf_wrapper.apply({
             "registry_oidc_client_id": p.internals["REGISTRY_OIDC_CLIENT_ID"],
