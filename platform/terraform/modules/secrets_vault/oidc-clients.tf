@@ -73,7 +73,7 @@ module "sonarqube" {
   identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris = [
-    "https://<SONARQUBE_INGRESS_URL>/oauth2/callback/oidc",
+    "https://<CODE_QUALITY_INGRESS_URL>/oauth2/callback/oidc",
   ]
   secret_mount_path = "secret"
 }

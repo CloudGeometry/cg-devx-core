@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: k8s-toolkit-sonarqube-tls
+  namespace: sonarqube
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8s-toolkit-sonarqube-tls
+  namespace: sonarqube
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cert-manager-view
+subjects:
+  - kind: ServiceAccount
+    name: k8s-toolkit-sonarqube-tls
+    namespace: sonarqube
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+  name: wait-sonarqube-tls
+  namespace: sonarqube
+spec:
+  template:
+    spec:
+      containers:
+        - args:
+            - wait
+            - certificates.cert-manager.io/sonarqube-tls
+            - --for=condition=Ready
+            - --namespace
+            - sonarqube
+            - --timeout=900s
+          image: registry.hub.docker.com/bitnami/kubectl:1.27.4
+          imagePullPolicy: IfNotPresent
+          name: wait
+      restartPolicy: OnFailure
+      serviceAccountName: k8s-toolkit-sonarqube-tls

@@ -38,7 +38,6 @@ module "secrets" {
   workloads                    = local.workloads
   vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
   vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key
-  b64_docker_auth              = var.b64_docker_auth
   vcs_token                    = var.vcs_token
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url

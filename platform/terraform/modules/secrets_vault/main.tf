@@ -9,6 +9,5 @@ terraform {
       version = ">= 4.47"
     }
   }
+
 }
-
-

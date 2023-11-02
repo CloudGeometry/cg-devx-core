@@ -22,3 +22,21 @@ output "registry_main_robot_password" {
   description = "main-robot password"
   sensitive = true
 }
+
+# code quality secrets
+output "code_quality_oidc_client_id" {
+  value = module.sonarqube.vault_oidc_client_id
+  description = "code quality OIDC client ID"
+}
+
+output "code_quality_oidc_client_secret" {
+  value = module.sonarqube.vault_oidc_client_secret
+  description = "code quality OIDC client secret"
+  sensitive = true
+}
+
+output "code_quality_admin_password" {
+  value = random_password.sonarqube_password.result
+  description = "code quality password"
+  sensitive = true
+}

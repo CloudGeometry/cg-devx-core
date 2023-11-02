@@ -50,7 +50,7 @@ Ingress URLs for core components. Note!: URL does not contain protocol prefix
 - `REGISTRY_INGRESS_URL` - Registry (Harbor) ingress URL
 - `REGISTRY_REGISTRY_URL` - Registry (Harbor) entrypoint
 - `SECRET_MANAGER_INGRESS_URL` - Secrets Manager (Vault) ingress URL
-- `SONARQUBE_INGRESS_URL` - Code Quality (SonarQube) ingress URL
+- `CODE_QUALITY_INGRESS_URL` - Code Quality (SonarQube) ingress URL
 
 ### Git
 
