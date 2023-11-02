@@ -22,11 +22,11 @@ provider "harbor" {
 provider "sonarqube" {
   user = "admin"
   pass = var.code_quality_admin_password
-  host = local.code_quality_oidc_endpoint
+  host = local.code_quality_url
 }
 
 provider "restapi" {
-  uri = local.code_quality_oidc_endpoint
+  uri = local.code_quality_url
 
   create_returns_object = false
   write_returns_object  = false

@@ -137,8 +137,7 @@ resource "vault_generic_secret" "atlantis_auth_secrets" {
 # harbor web ui admin auth credentials
 resource "random_password" "harbor_password" {
   length           = 22
-  special          = true
-  override_special = "!#$"
+  special = false  
 }
 
 resource "vault_generic_secret" "harbor_admin_secret" {
@@ -156,8 +155,7 @@ resource "vault_generic_secret" "harbor_admin_secret" {
 
 resource "random_password" "harbor_main_robot_password" {
   length           = 22
-  special          = true
-  override_special = "!#$"
+  special = false
 }
 
 resource "vault_generic_secret" "harbor_main_robot_secret" {

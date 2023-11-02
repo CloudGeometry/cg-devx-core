@@ -31,5 +31,5 @@ resource "sonarqube_permissions" "workload-admins" {
 resource "sonarqube_permissions" "workload-developers" {
     group_name  = "${var.project_name}-developers"
     project_key = sonarqube_project.this.project
-    permissions = ["gateadmin", "scan"]
+    permissions = ["codeviewer", "issueadmin", "securityhotspotadmin", "scan"]
 }
