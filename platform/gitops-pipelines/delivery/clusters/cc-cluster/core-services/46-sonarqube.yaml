@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: harbor-components
+  name: sonarqube-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '45'
+    argocd.argoproj.io/sync-wave: '46'
 spec:
   project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/harbor
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/sonarqube
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: harbor
+    namespace: sonarqube
   syncPolicy:
     automated:
       prune: true
