@@ -233,6 +233,7 @@ def setup(
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
         p.parameters["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
+        p.parameters["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
         p.parameters["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
 
         # dns zone info for external dns

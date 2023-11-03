@@ -152,6 +152,9 @@ class AzureManager(CloudProviderManager):
         """
         return f"{self.iac_backend_storage_container_name[:20]}-rg"
 
+    def create_ingress_annotations(self) -> str:
+        return 'service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/healthz"'
+
     def create_additional_labels(self) -> str:
         return 'azure.workload.identity/use: "true"'
 

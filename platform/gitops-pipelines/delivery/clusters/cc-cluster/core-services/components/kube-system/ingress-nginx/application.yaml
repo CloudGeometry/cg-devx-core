@@ -25,7 +25,7 @@ spec:
             enabled: true
           service:
             annotations:
-              service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/healthz"
+              # <INGRESS_ANNOTATIONS>
           extraArgs:
             publish-service: ingress-nginx/ingress-nginx-controller
             enable-ssl-passthrough: true

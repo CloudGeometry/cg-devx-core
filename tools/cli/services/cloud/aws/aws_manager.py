@@ -120,6 +120,10 @@ class AWSManager(CloudProviderManager):
         missing_permissions.extend(self.__aws_sdk.blocked(own_iam_permissions, [self.__aws_sdk.current_user_arn()]))
         return len(missing_permissions) == 0
 
+    def create_ingress_annotations(self) -> str:
+        return '''service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+              service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"'''
+
     def create_additional_labels(self) -> str:
         return ""
 

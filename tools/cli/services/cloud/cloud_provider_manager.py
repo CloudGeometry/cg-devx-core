@@ -88,6 +88,14 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
+    def create_ingress_annotations(self) -> str:
+        """
+        Creates K8s ingress additional annotations
+        :return: Annotation definition
+        """
+        pass
+
+    @abstractmethod
     def create_additional_labels(self) -> str:
         """
         Creates K8s resource additional labels
