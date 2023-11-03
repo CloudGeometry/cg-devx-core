@@ -48,7 +48,7 @@ terraform {
 
 locals {
   name          = "test-cluster"
-  ProvisionedBy = "cgdevx"
+  ProvisionedBy = "CGDevX"
 }
 
 # configure through env variables AWS_REGION and AWS_PROFILE for local

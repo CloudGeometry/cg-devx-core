@@ -5,5 +5,5 @@ output "app_client_id" {
 
 output "subscription_id" {
   value       = data.azurerm_client_config.current_subscription.subscription_id
-  description = "Surrent azure subscription ID"
+  description = "Current azure subscription ID"
 }

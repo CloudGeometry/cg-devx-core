@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns
-    targetRevision: 1.12.1
+    targetRevision: 1.13.1
     helm:
       releaseName: external-dns
       values: |
@@ -17,7 +17,10 @@ spec:
           create: true
           name: external-dns
           annotations:
-            <K8S_ROLE_MAPPING>: '<EXTERNAL_DNS_IAM_ROLE_RN>'
+            <K8S_ROLE_MAPPING>: "<EXTERNAL_DNS_IAM_ROLE_RN>"
+        podLabels:
+          # <ADDITIONAL_LABELS>
+        # <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>
         domainFilters:
           - <CC_CLUSTER_FQDN>
     chart: external-dns

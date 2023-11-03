@@ -1,4 +1,3 @@
-import logging
 import time
 from typing import List, Tuple, Optional
 
@@ -6,13 +5,15 @@ from azure.core.exceptions import ResourceNotFoundError, HttpResponseError, Azur
 from azure.identity import AzureCliCredential
 from azure.mgmt.authorization import AuthorizationManagementClient
 from azure.mgmt.dns import DnsManagementClient
+from azure.mgmt.privatedns import PrivateDnsManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
-from azure.storage.blob import BlobServiceClient
-from azure.mgmt.privatedns import PrivateDnsManagementClient
 from azure.mgmt.storage.v2021_04_01.models import SkuName, Kind
-from common.utils.generators import random_string_generator
 from azure.mgmt.subscription import SubscriptionClient
+from azure.storage.blob import BlobServiceClient
+
+from common.logging_config import logger
+from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
 
 class AzureSdk:
@@ -31,25 +32,25 @@ class AzureSdk:
         self.subscription_client = SubscriptionClient(self.credential)
         self.location = self._validate_location(location)
 
-    def get_name_servers(self, domain_name: str) -> Tuple[List[str], str, bool]:
+    def get_name_servers(self, domain_name: str) -> Tuple[List[str], bool, str]:
         """
-        Retrieve name servers and etag by searching all resource groups in the subscription.
+        Retrieve name servers and resource group name by searching all resource groups in the subscription.
 
         Args:
         - domain_name (str): Name of the domain.
 
         Returns:
-        - Tuple[List[str], str, bool]: Name servers, etag, and is_private flag.
+        - Tuple[List[str], bool, str]: Name servers, is_private flag, and resource_group name.
         """
         try:
             return self._find_domain_name_servers(domain_name)
         except ValueError:
-            return [], "", False
+            return [], False, ""
         except HttpResponseError as he:
-            logging.error(f"HTTP error occurred: {str(he)}", exc_info=True)
+            logger.error(f"HTTP error occurred: {str(he)}", exc_info=True)
             raise RuntimeError("An HTTP error occurred while fetching domain details") from he
 
-    def _find_domain_name_servers(self, domain_name: str) -> Tuple[List[str], str, bool]:
+    def _find_domain_name_servers(self, domain_name: str) -> Tuple[List[str], bool, str]:
         """
         Iterate through Azure resource groups to find the specified domain's name servers.
 
@@ -61,38 +62,37 @@ class AzureSdk:
         - domain_name (str): The domain name for which name servers are being sought.
 
         Returns:
-        Tuple[List[str], str, bool]:
+        Tuple[List[str], bool, str]:
         - A list of name server URLs.
-        - A string representing the ETag of the DNS zone.
         - A boolean indicating whether the DNS zone is private (True) or public (False).
+        - The name of the resource group in which the domain was found.
 
         Raises:
         - ValueError: If the domain cannot be found in any of the available resource groups.
         """
         for resource_group in self.resource_client.resource_groups.list():
-            name_servers = self._get_name_servers_from_resource_group(resource_group.name, domain_name)
-            if name_servers:
-                return name_servers
+            result = self._get_name_servers_from_resource_group(resource_group.name, domain_name)
+            if result:
+                return (*result, resource_group.name)
         raise ValueError("Domain not found")
 
     def _get_name_servers_from_resource_group(
             self, resource_group: str, domain_name: str
-    ) -> Optional[Tuple[List[str], str, bool]]:
+    ) -> Optional[Tuple[List[str], bool]]:
         """
         Retrieve the name servers for a specific domain within a specified Azure resource group.
 
         This method tries to retrieve the domain information from both Public DNS and Private DNS
-        within the given resource group. If the domain is found, it returns the name servers, ETag,
-        and a boolean flag indicating whether it's a private DNS zone.
+        within the given resource group. If the domain is found, it returns the name servers and a
+        boolean flag indicating whether it's a private DNS zone.
 
         Args:
         - resource_group (str): The name of the resource group in which to seek the domain.
         - domain_name (str): The domain name for which information is being sought.
 
         Returns:
-        Optional[Tuple[List[str], str, bool]]:
+        Optional[Tuple[List[str], bool]]:
         - A list of name server URLs, or None if the domain is not found.
-        - A string representing the ETag of the DNS zone, or None if the domain is not found.
         - A boolean indicating whether the DNS zone is private (True) or public (False), or None if the domain is not found.
 
         Note:
@@ -104,7 +104,7 @@ class AzureSdk:
         try:
             zone = self.dns_client.zones.get(resource_group, domain_name)
             ns = [f'{z}.' if not z.endswith('.') else z for z in zone.name_servers] if zone.name_servers else []
-            return ns, zone.etag, False
+            return ns, False
         except ResourceNotFoundError:
             pass
 
@@ -112,7 +112,7 @@ class AzureSdk:
         try:
             zone = self.private_dns_client.private_zones.get(resource_group, domain_name)
             ns = [f'{z}.' if not z.endswith('.') else z for z in zone.name_servers] if zone.name_servers else []
-            return ns, zone.etag, True
+            return ns, True
         except ResourceNotFoundError:
             pass
 
@@ -133,12 +133,12 @@ class AzureSdk:
 
         self._set_txt_record(resource_group_name, hosted_zone_name, record_name, self.RECORD_VALUE)
 
-        is_propagated = self._wait_for_record_propagation(record_name, self.RECORD_VALUE)
+        is_propagated = self._wait_for_record_propagation(hosted_zone_name, record_name, self.RECORD_VALUE)
 
         if is_propagated:
-            logging.info(f"TXT record for {record_name} propagated successfully.")
+            logger.info(f"TXT record for {record_name} propagated successfully.")
         else:
-            logging.warning(f"TXT record for {record_name} did not propagate within the expected time.")
+            logger.warning(f"TXT record for {record_name} did not propagate within the expected time.")
 
         return is_propagated
 
@@ -165,13 +165,36 @@ class AzureSdk:
         try:
             self.dns_client.record_sets.get(resource_group_name, hosted_zone_name, record_name, 'TXT')
         except ResourceNotFoundError:
-            logging.info(f"Creating TXT record {record_name} in {hosted_zone_name}.")
+            logger.info(f"Creating TXT record {record_name} in {hosted_zone_name}.")
             self.dns_client.record_sets.create_or_update(
                 resource_group_name, hosted_zone_name, record_name, 'TXT',
                 {'ttl': 10, 'txt_records': [{'value': [value]}]}
             )
 
-    def _wait_for_record_propagation(self, record_name: str, expected_value: str) -> bool:
+    def _get_txt_record(self, resource_group_name: str, hosted_zone_name: str, record_name: str) -> List[str]:
+        """
+        Retrieve the values of a TXT record from a specified DNS zone.
+
+        Args:
+        - resource_group_name (str): The name of the Azure resource group where the DNS zone is located.
+        - hosted_zone_name (str): The name of the DNS zone where the TXT record is located.
+        - record_name (str): The name of the TXT record to retrieve.
+
+        Returns:
+        - List[str]: A list of string values associated with the TXT record.
+                      An empty list is returned if the TXT record does not exist.
+
+        Raises:
+        - azure.core.exceptions.HttpResponseError: If there is an error accessing the DNS zone or TXT record.
+        """
+        try:
+            record_set = self.dns_client.record_sets.get(resource_group_name, hosted_zone_name, record_name, 'TXT')
+            return [record.value for record in record_set.txt_records]
+        except ResourceNotFoundError:
+            logger.warning(f"TXT record {record_name} not found in {hosted_zone_name}.")
+            return []
+
+    def _wait_for_record_propagation(self, hosted_zone_name: str, record_name: str, expected_value: str) -> bool:
         """
         Periodically checks if the TXT record has propagated and its value matches the expected one.
 
@@ -180,6 +203,7 @@ class AzureSdk:
         servers.
 
         Args:
+        - hosted_zone_name (str): The name of the DNS hosted zone.
         - record_name (str): The name of the TXT record to check.
         - expected_value (str): The value that the TXT record should contain.
 
@@ -190,12 +214,12 @@ class AzureSdk:
         """
         for _ in range(self.RETRY_COUNT):
             time.sleep(self.RETRY_SLEEP)
-            existing_txt = self.get_txt_record(record_name)  # Assuming this method is defined elsewhere
+            existing_txt = get_domain_txt_records_dot(hosted_zone_name)
 
             if expected_value in existing_txt:
                 return True
 
-            logging.info(f"Waiting for {record_name} to propagate. Retrying...")
+            logger.info(f"Waiting for {record_name} to propagate. Retrying...")
 
         return False
 
@@ -323,9 +347,9 @@ class AzureSdk:
         """
         try:
             self.resource_client.resource_groups.create_or_update(resource_group_name, {"location": self.location})
-            logging.info(f"Provisioned resource group {resource_group_name} in {self.location}")
+            logger.info(f"Provisioned resource group {resource_group_name} in {self.location}")
         except AzureError as ae:
-            logging.error(f"Error provisioning resource group {resource_group_name} in {self.location}: {ae}")
+            logger.error(f"Error provisioning resource group {resource_group_name} in {self.location}: {ae}")
             raise
 
     def create_storage_account(self, resource_group_name: str, storage_account_name: str) -> None:
@@ -348,10 +372,10 @@ class AzureSdk:
                 resource_group_name, storage_account_name, creation_properties
             )
             account_result = poller.result()
-            logging.info(f"Provisioned storage account {account_result.name}")
+            logger.info(f"Provisioned storage account {account_result.name}")
 
         except ResourceExistsError:
-            logging.warning(f"Storage name {storage_account_name} is already in use. Try another name.")
+            logger.warning(f"Storage name {storage_account_name} is already in use. Try another name.")
 
     def create_blob_container(self, storage_account_name: str, container_name: str) -> None:
         """Create a blob container in the specified storage account.
@@ -366,28 +390,28 @@ class AzureSdk:
         )
         try:
             blob_service_client.create_container(container_name)
-            logging.info(f"Blob container '{container_name}' created in storage account '{storage_account_name}'.")
+            logger.info(f"Blob container '{container_name}' created in storage account '{storage_account_name}'.")
         except ResourceExistsError:
-            logging.warning(
+            logger.warning(
                 f"Blob container '{container_name}' already exists in storage account '{storage_account_name}'.")
 
-    def create_storage(self, container_name: str) -> Tuple[str, str]:
+    def create_storage(self, container_name: str, storage_account_name: str, resource_group_name: str) -> str:
         """
         Create storage resources including a resource group, a storage account, and a blob container.
 
         Args:
             container_name (str): The desired name for the blob container.
+            storage_account_name (str): The desired name for the storage account.
+            resource_group_name (str): The desired name for the resource group.
 
         Returns:
             Tuple[str, str]: A tuple containing the name of the created blob container and the Azure location where
                              the storage resources were created.
         """
-        storage_account_name = self._generate_storage_account_name()
-        resource_group_name = self._generate_resource_group_name(storage_account_name)
         self.create_resource_group(resource_group_name)
         self.create_storage_account(resource_group_name, storage_account_name)
         self.create_blob_container(storage_account_name, container_name)
-        return container_name, self.location
+        return container_name
 
     def _validate_location(self, location: Optional[str]) -> str:
         """Validate if the provided Azure location is valid. If not, return 'centralus'.
@@ -406,6 +430,37 @@ class AzureSdk:
         else:
             return 'centralus'
 
+    def destroy_resource_group(self, resource_group_name: str) -> bool:
+        """
+        Destroy a resource group along with all its resources.
+
+        This function triggers an asynchronous deletion of the specified resource group,
+        including all resources contained within it. It waits for the deletion process to complete and logs the result.
+        If an error occurs during the deletion process, it is logged, and the function returns False.
+
+        Args:
+            resource_group_name (str): The name of the resource group to destroy.
+
+        Returns:
+            bool: True if the resource group was successfully destroyed, False otherwise.
+
+        Raises:
+            AzureError: If there's an error during the deletion process.
+        """
+        try:
+            # Asynchronous deletion of a resource group. This includes all resources within the group.
+            poller = self.resource_client.resource_groups.begin_delete(resource_group_name)
+
+            # Optionally, wait for the deletion to complete
+            result = poller.result()  # This will block until deletion completes
+
+            logger.info(f"Resource group {resource_group_name} and all its resources have been deleted.")
+        except AzureError as ae:
+            logger.error(f"Error deleting resource group {resource_group_name}: {ae}")
+            return False
+        else:
+            return True
+
     @staticmethod
     def _get_account_url(storage_account_name: str) -> str:
         """Generate the account URL for the given storage account name.
@@ -418,27 +473,11 @@ class AzureSdk:
         """
         return f'https://{storage_account_name}.blob.core.windows.net'
 
-    @staticmethod
-    def _generate_resource_group_name(storage_account_name: str) -> str:
-        """Generate a unique resource group name based on the storage account name and a random string.
-
-        Args:
-            storage_account_name (str): Name of the storage account.
+    def get_tenant_id(self) -> str:
+        """Get tenant id.
 
         Returns:
-            str: A unique name for the resource group.
+            str: The tenant id.
         """
-        return f'rg-{storage_account_name}'
-
-    @staticmethod
-    def _generate_storage_account_name() -> str:
-        """
-        Generate a random storage account name that adheres to Azure's naming conventions.
-
-        Azure's storage account name must be between 3 and 24 characters in length
-        and can only use numbers and lower-case letters.
-
-        Returns:
-            str: A randomly generated storage account name adhering to Azure's naming conventions.
-        """
-        return f'{random_string_generator()}'
+        for tenant in self.subscription_client.tenants.list():
+            return tenant.tenant_id

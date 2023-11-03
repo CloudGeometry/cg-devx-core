@@ -17,6 +17,7 @@ output "registry_admin_password" {
   sensitive = true
 }
 
+# harbor main robot password
 output "registry_main_robot_password" {
   value = random_password.harbor_main_robot_password.result
   description = "main-robot password"
