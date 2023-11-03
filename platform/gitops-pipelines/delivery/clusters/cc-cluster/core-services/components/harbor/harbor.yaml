@@ -11,7 +11,7 @@ spec:
   destination:
     namespace: harbor
     server: https://kubernetes.default.svc
-  project: default
+  project: core
   source:
     chart: harbor
     repoURL: https://helm.goharbor.io

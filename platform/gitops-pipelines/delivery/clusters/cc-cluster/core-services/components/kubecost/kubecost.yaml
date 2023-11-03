@@ -22,7 +22,7 @@ spec:
         global:
           prometheus:
             enabled: false
-            fqdn: http://my-prometheus-server.prometheus.svc
+            fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
   syncPolicy:
     automated:
       prune: true

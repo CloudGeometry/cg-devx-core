@@ -26,13 +26,63 @@ spec:
         prometheusOperator:
             admissionWebhooks:
               failurePolicy: Ignore
+        # https://stackoverflow.com/questions/71924744/how-to-overwrite-alertmanager-configuration-in-kube-prometheus-stack-helm-chart
+        # https://github.com/prometheus-community/helm-charts/issues/355
+        alertmanager:
+          config:
+            global:
+              resolve_timeout: 10m
+              # slack_api_url: "https://hooks.slack.com/services/PLACE/HERE/YOURTOKEN"
+            route:
+              group_by: ['namespace']
+              group_wait: 30s
+              group_interval: 5m
+              repeat_interval: 12h
+              # receiver: 'slack-notifications'
+              routes:
+              - receiver: 'null'
+                matchers:
+                  - alertname =~ "InfoInhibitor|Watchdog"
+              # - receiver: 'slack-notifications'
+              #   continue: true
+            receivers:
+            - name: 'null'
+            # - name: 'slack-notifications'
+            #   slack_configs:
+            #   - channel: 'alerts-channel'
+            #     username: 'AlertBot'
+            #     send_resolved: true
+            #     title_link: ' '
+            #     title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] Monitoring Event Notification'
+            #     text: >-
+            #       {{ range .Alerts }}
+            #         *Alert:* {{ .Annotations.summary }} - `{{ .Labels.severity }}`
+            #         *Description:* {{ .Annotations.description }}
+            #         *Details:*
+            #         {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+            #         {{ end }}
+            #       {{ end }}
+        ## Component scraping the kube controller manager
+        ##
+        kubeControllerManager:
+          enabled: false
+        ## Component scraping kube scheduler
+        ##
+        kubeScheduler:
+          enabled: false
         grafana:
           envFromSecret: grafana-secrets
+          persistence:
+            enabled: true
+            type: statefulset
           admin:
               existingSecret: grafana-secrets
               userKey: grafana-user
               passwordKey: grafana-pass
-          # adminPassword: $grafana-oidc-secret:grafana-pass
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki:3100
           grafana.ini:
             check_for_updates: false
             reporting_enabled: false
@@ -43,6 +93,9 @@ spec:
               disable_gravatar: true
             dashboards:
               min_refresh_interval: 60s
+            users:
+              auto_assign_org: true
+              auto_assign_org_role: Viewer
             auth.generic_oauth:
               name: Vault
               enabled: true
@@ -53,10 +106,13 @@ spec:
               auth_url: https://<OIDC_PROVIDER_AUTHORIZE_URL>
               token_url: https://<OIDC_PROVIDER_TOKEN_URL>
               api_url: https://<OIDC_PROVIDER_USERINFO_URL>
+              allow_assign_grafana_admin: true
+              skip_org_role_sync: false
+              # use_refresh_token: false
               scopes: openid groups user profile email
-              allowed_domains: # add domain to whitelist
-              auto_assign_org_role: Editor
-              role_attribute_path: contains(info.groups[*], 'admins') && 'Admin' || contains(info.groups[*], 'developers') && 'Editor' || 'Editor'
+              allowed_domains: # TODO: add domain to whitelist
+              role_attribute_strict: false
+              role_attribute_path: contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'developers') && 'Editor' || 'Viewer'
           ingress:
             enabled: true
             ingressClassName: nginx
@@ -124,5 +180,4 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-    - ServerSideApply=true
     - CreateNamespace=true

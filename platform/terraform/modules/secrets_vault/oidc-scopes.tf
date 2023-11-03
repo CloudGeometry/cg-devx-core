@@ -13,6 +13,7 @@ resource "vault_identity_oidc_scope" "user_scope" {
   template    = <<EOF
 {
     "username": {{identity.entity.aliases.${vault_auth_backend.userpass.accessor}.name}},
+    "preferred_username": {{identity.entity.aliases.${vault_auth_backend.userpass.accessor}.name}},
     "contact": {
         "email": {{identity.entity.metadata.email}}
     }
