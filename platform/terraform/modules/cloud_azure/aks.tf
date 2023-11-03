@@ -36,10 +36,10 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     enable_auto_scaling    = true
     enable_host_encryption = false
     enable_node_public_ip  = false
-    max_pods               = local.max_pods
-    max_count              = local.default_node_group.max_size
-    min_count              = local.default_node_group.min_size
     node_count             = local.default_node_group.desired_size
+    min_count              = local.default_node_group.min_size
+    max_count              = local.default_node_group.max_size
+    max_pods               = local.max_pods
     tags                   = local.tags
   }
 
@@ -76,11 +76,18 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     azure_rbac_enabled = true
   }
 
+  # may need to enable this
+  # http_proxy_config {
+  #   no_proxy = azurerm_subnet.private_subnet.address_prefixes
+  # }
 
   lifecycle {
     ignore_changes = [
       kubernetes_version,
-      tags
+      tags,
+      # node_count is still affected by issue https://github.com/hashicorp/terraform-provider-azurerm/issues/14522
+      # ignore changes as workaround
+      default_node_pool.0.node_count
     ]
   }
 }

@@ -96,6 +96,14 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
+    def create_sidecar_annotation(self) -> str:
+        """
+        Creates K8s resource sidecar annotation
+        :return: Definition
+        """
+        pass
+
+    @abstractmethod
     def create_external_secrets_config(self, **kwargs) -> str:
         """
         Creates external secrets operator configuration

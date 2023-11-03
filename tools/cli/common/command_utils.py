@@ -1,4 +1,5 @@
 import os
+import time
 
 from common.const.parameter_names import CLOUD_REGION, CLOUD_PROFILE, CLOUD_ACCOUNT_ACCESS_KEY, \
     CLOUD_ACCOUNT_ACCESS_SECRET, DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, GIT_ACCESS_TOKEN, \
@@ -22,6 +23,7 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
     cloud_manager: CloudProviderManager = None
     domain_manager: DNSManager = None
     # init proper cloud provider
+
     if state.cloud_provider == CloudProviders.AWS:
         cloud_manager: AWSManager = AWSManager(state.get_input_param(CLOUD_REGION),
                                                state.get_input_param(CLOUD_PROFILE),
@@ -30,6 +32,7 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
 
         # check if cloud native DNS registrar is selected
         if state.dns_registrar == DnsRegistrars.Route53:
+            # Note!: Route53 is initialised with AWS Cloud Provider
             if state.get_input_param(DNS_REGISTRAR_ACCESS_KEY) is None and state.get_input_param(
                     DNS_REGISTRAR_ACCESS_SECRET) is None:
                 # initialize with cloud account permissions
@@ -55,7 +58,7 @@ def init_git_provider(state: StateStore) -> GitProviderManager:
     # init proper git provider
     if state.git_provider == GitProviders.GitHub:
         git_man: GitProviderManager = GitHubProviderManager(state.get_input_param(GIT_ACCESS_TOKEN),
-                                                       state.get_input_param(GIT_ORGANIZATION_NAME))
+                                                            state.get_input_param(GIT_ORGANIZATION_NAME))
     elif state.git_provider == GitProviders.GitLab:
         git_man: GitProviderManager = GitLabProviderManager(
             state.get_input_param(GIT_ACCESS_TOKEN),
@@ -94,3 +97,7 @@ def unset_envs(env_vars):
     for k, vault_i in env_vars.items():
         if vault_i:
             os.environ.pop(k)
+
+
+def wait(seconds: float = 15):
+    time.sleep(seconds)

@@ -454,9 +454,6 @@ class AzureSdk:
             # Optionally, wait for the deletion to complete
             result = poller.result()  # This will block until deletion completes
 
-            # Log the result
-            logger.info(f"Deletion result for resource group {resource_group_name}: {result.status()}")
-
             logger.info(f"Resource group {resource_group_name} and all its resources have been deleted.")
         except AzureError as ae:
             logger.error(f"Error deleting resource group {resource_group_name}: {ae}")

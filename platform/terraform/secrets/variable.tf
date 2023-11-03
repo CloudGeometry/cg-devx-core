@@ -44,3 +44,8 @@ variable "vault_token" {
   type    = string
   sensitive   = true
 }
+
+variable "cluster_endpoint" {
+  description = "(Required) K8s cluster endpoint"
+  type = string
+}

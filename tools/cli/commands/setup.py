@@ -1,5 +1,4 @@
 import re
-import time
 import webbrowser
 
 import click
@@ -7,7 +6,7 @@ import portforward
 import yaml
 
 from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, set_envs, \
-    unset_envs
+    unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_REGISTRY
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
@@ -129,10 +128,6 @@ def setup(
 
     git_man = init_git_provider(p)
 
-    # init proper dns registrar provider
-    # Note!: Route53 is initialised with AWS Cloud Provider
-    # TODO: DNS provider init
-
     if not p.has_checkpoint("preflight"):
         click.echo("Executing pre-flight checks...")
 
@@ -238,13 +233,15 @@ def setup(
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
         p.parameters["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
+        p.parameters["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
 
         # dns zone info for external dns
         dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
         p.internals["DNS_ZONE_NAME"] = dns_zone_name
         p.internals["DNS_ZONE_IS_PRIVATE"] = is_dns_zone_private
 
-        p.parameters["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(location=dns_zone_name, is_private=is_dns_zone_private)
+        p.parameters["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(
+            location=dns_zone_name, is_private=is_dns_zone_private)
 
         click.echo("Creating tf backend storage. Done!")
 
@@ -516,7 +513,7 @@ def setup(
         p.internals["ARGOCD_USER"] = "admin"
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
-        time.sleep(30)
+        wait(30)
 
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
@@ -550,13 +547,13 @@ def setup(
         click.echo("Initializing Secrets Manager...")
 
         # need to wait here as vault is not available just after argo app deployment
-        time.sleep(30)
+        wait(30)
 
         # wait for cert manager as it's created just before vault
         cert_manager = kube_client.get_deployment("cert-manager", "cert-manager")
         kube_client.wait_for_deployment(cert_manager)
 
-        time.sleep(60)
+        wait(60)
 
         # wait for vault readiness
         try:
@@ -586,11 +583,11 @@ def setup(
         #             vault_secret[f"root-unseal-key-{i}"] = x
         #         kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
 
-        time.sleep(15)
+        wait(30)
         try:
             out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
         except Exception as e:
-            raise click.ClickException("Could not unseal vault")
+            raise click.ClickException(f"Could not unseal vault: {e}")
 
         vault_keys = re.findall("^Recovery\\sKey\\s(?P<index>\\d):\\s(?P<key>.+)$", out, re.MULTILINE)
         vault_root_token = re.findall("^Initial\\sRoot\\sToken:\\s(?P<token>.+)$", out, re.MULTILINE)
@@ -612,7 +609,7 @@ def setup(
 
         click.echo("Vault initialization. Done!")
 
-        time.sleep(15)
+        wait(15)
     else:
         click.echo("Skipped Secrets Manager initialization.")
 
@@ -644,7 +641,8 @@ def setup(
             "vcs_token": p.internals["GIT_ACCESS_TOKEN"],
             "atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
             "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
-            "vault_token": p.internals["VAULT_ROOT_TOKEN"]
+            "vault_token": p.internals["VAULT_ROOT_TOKEN"],
+            "cluster_endpoint": p.internals["CC_CLUSTER_ENDPOINT"]
         })
         sec_man_out = tf_wrapper.output()
         p.internals["REGISTRY_OIDC_CLIENT_ID"] = sec_man_out["registry_oidc_client_id"]
@@ -716,7 +714,7 @@ def setup(
     if not p.has_checkpoint("registry-tf"):
         click.echo("Configuring Registry...")
 
-        # time.sleep(30)
+        wait(30)
 
         ingress = kube_client.get_ingress(ATLANTIS_NAMESPACE, "atlantis")
         kube_client.wait_for_ingress(ingress)
@@ -777,7 +775,9 @@ def show_credentials(p):
 
     click.secho(f'Kubeconfig file: {p.internals["KCTL_CONFIG_PATH"]}', bg="green")
 
-    click.secho(f'Links to all core platform services could be found in your GitOps repo readme file at: {p.parameters["<GIT_REPOSITORY_URL>"]}', bg="green")
+    click.secho(
+        f'Links to all core platform services could be found in your GitOps repo readme file at: {p.parameters["<GIT_REPOSITORY_URL>"]}',
+        bg="green")
     webbrowser.open(f'{p.parameters["<GIT_REPOSITORY_URL>"]}', autoraise=False)
 
     return

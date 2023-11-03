@@ -6,10 +6,6 @@ terraform {
     vault = {
       source = "hashicorp/vault"
     }
-    aws = {
-      source  = "hashicorp/aws"
-      version = ">= 4.47"
-    }
   }
 }
 
@@ -24,7 +20,7 @@ provider "vault" {
 locals {
   cluster_name     = "<PRIMARY_CLUSTER_NAME>"
   provisioned_by   = "cgdevx"
-### Workload groups definition bellow
+  ### Workload groups definition bellow
   workloads        = {
     # "workload-demo" = {
     # },
@@ -43,4 +39,5 @@ module "secrets" {
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
   vault_token                  = var.vault_token
+  cluster_endpoint             = var.cluster_endpoint
 }

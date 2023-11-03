@@ -77,12 +77,10 @@ class AzureManager(CloudProviderManager):
         else:
             raise Exception("Required parameter missing")
 
-        tenant_id = self.__azure_sdk.get_tenant_id()
         return '''seal "azurekeyvault" {{
-                  tenant_id     = "{tenant_id}"
                   vault_name     = "{name}-kv"
                   key_name       = "{key_id}"
-                }}'''.format(key_id=key_id, tenant_id=tenant_id, name=name)
+                }}'''.format(key_id=key_id, name=name)
 
     def create_k8s_cluster_role_mapping_snippet(self) -> str:
         return "azure.workload.identity/client-id"
@@ -156,6 +154,9 @@ class AzureManager(CloudProviderManager):
 
     def create_additional_labels(self) -> str:
         return 'azure.workload.identity/use: "true"'
+
+    def create_sidecar_annotation(self) -> str:
+        return 'azure.workload.identity/inject-proxy-sidecar: "true"'
 
     def create_external_secrets_config(self, **kwargs) -> str:
         if kwargs and "location" in kwargs:

@@ -71,7 +71,7 @@ variable "node_groups" {
 variable "cluster_node_labels" {
   type    = map(any)
   default = {
-    ProvisionedBy = "CGDevX"
+    ProvisionedBy = "CG DevX"
   }
   description = "(Optional) EKS node labels"
 }

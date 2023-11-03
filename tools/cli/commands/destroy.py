@@ -1,12 +1,11 @@
 import os
 import shutil
-import time
 
 import click
 import portforward
 import urllib3
 
-from common.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs
+from common.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, LOCAL_FOLDER, \
     LOCAL_STATE_FILE
 from common.const.namespaces import ARGOCD_NAMESPACE
@@ -80,17 +79,18 @@ def destroy(verbosity: str):
         except Exception as e:
             pass
 
-        # need to wait here
-        time.sleep(120)
+        try:
+            with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
+                                     config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
 
-        with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
+                argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
+                delete_application(registry_app_name, argocd_token)
 
-            argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
-            delete_application(registry_app_name, argocd_token)
-
-        # need to wait here
-        time.sleep(300)
+            # need to wait here
+            wait(300)
+        except Exception as e:
+            # suppress exception and continue without deleting ArgoCD app
+            pass
 
     # K8s Cluster section
     if p.has_checkpoint("k8s-tf"):

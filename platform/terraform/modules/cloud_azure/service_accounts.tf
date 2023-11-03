@@ -5,8 +5,11 @@ module "iac_pr_automation_sa" {
   resource_group_name  = azurerm_resource_group.rg.name
   name                 = "atlantis"
   service_account_name = "atlantis"
-  role_definitions     = [{ "name" = "Contributor", "scope" = "" }]
-  namespace            = "atlantis"
+  role_definitions     = [
+    { "name" = "Contributor", "scope" = "" },
+    { "name" = "Key Vault Administrator", "scope" = "" }
+  ]
+  namespace = "atlantis"
 
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]
 }
@@ -57,7 +60,7 @@ module "secret_manager_sa" {
   resource_group_name  = azurerm_resource_group.rg.name
   name                 = "vault"
   service_account_name = "vault"
-  role_definitions     = [{ "name" = "Contributor", "scope" = "" }]
+  role_definitions     = [{ "name" = "Key Vault Administrator", "scope" = "" }]
   namespace            = "vault"
 
   depends_on = [azurerm_kubernetes_cluster.aks_cluster]

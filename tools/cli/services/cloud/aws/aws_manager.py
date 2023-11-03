@@ -123,5 +123,8 @@ class AWSManager(CloudProviderManager):
     def create_additional_labels(self) -> str:
         return ""
 
+    def create_sidecar_annotation(self) -> str:
+        return ""
+
     def create_external_secrets_config(self, **kwargs) -> str:
         return ""

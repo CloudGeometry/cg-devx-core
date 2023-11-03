@@ -43,18 +43,18 @@ variable "node_groups" {
     name           = optional(string, "default")
     instance_types = optional(list(string), ["Standard_B2s"])
     capacity_type  = optional(string, "Regular")
-    min_size       = optional(number, 3)
-    max_size       = optional(number, 5)
-    desired_size   = optional(number, 3)
+    min_size       = optional(number, 5)
+    max_size       = optional(number, 9)
+    desired_size   = optional(number, 7)
   }))
   default = [
     {
       name           = "default"
       instance_types = ["Standard_B2s"]
       capacity_type  = "on_demand"
-      min_size       = 3
-      max_size       = 5
-      desired_size   = 3
+      min_size       = 5
+      max_size       = 9
+      desired_size   = 7
     }
   ]
 }

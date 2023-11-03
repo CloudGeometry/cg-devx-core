@@ -17,26 +17,11 @@ resource "azurerm_key_vault" "key_vault" {
   soft_delete_retention_days = 7
 
   network_acls {
-    bypass         = "AzureServices"
-    default_action = "Deny"
+    bypass                     = "AzureServices"
+    default_action             = "Deny"
+    # still affected by issue https://github.com/hashicorp/terraform-provider-azurerm/issues/14783
     virtual_network_subnet_ids = [azurerm_subnet.private_subnet.id]
-    ip_rules = ["84.126.33.68"]
-  }
-
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_client_config.current.object_id
-
-    key_permissions = [
-      "Create",
-      "Delete",
-      "Get",
-      "Purge",
-      "Recover",
-      "Update",
-      "GetRotationPolicy",
-      "SetRotationPolicy"
-    ]
+    ip_rules                   = [chomp(data.http.runner_ip_address.body)]
   }
 
   lifecycle {
@@ -45,15 +30,22 @@ resource "azurerm_key_vault" "key_vault" {
     ]
   }
 
-  depends_on = [azurerm_subnet.private_subnet]
+  depends_on = [azurerm_subnet.private_subnet, time_sleep.wait_subnet]
 }
-data "azurerm_client_config" "example" {
+
+resource "time_sleep" "wait_subnet" {
+  depends_on = [azurerm_subnet.private_subnet]
+
+  create_duration = "15s"
+}
+
+data "azurerm_client_config" "client_identity" {
 }
 
 resource "azurerm_role_assignment" "rbac_keyvault_administrator" {
   scope                = azurerm_key_vault.key_vault.id
   role_definition_name = "Key Vault Administrator"
-  principal_id         = data.azurerm_client_config.example.object_id
+  principal_id         = data.azurerm_client_config.client_identity.object_id
 }
 
 resource "random_string" "key_random_suffix" {
