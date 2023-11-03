@@ -44,48 +44,42 @@ resource "vault_generic_secret" "atlantis_secrets" {
   path = "secret/atlantis/envs-secrets"
 
   # variables that appear duplicated are for circumstances where both terraform
-  # and seperately the terraform provider each need the value
+  # and separately the terraform provider each need the value
 
   data_json = jsonencode(
     {
-      ARGO_SERVER_URL = "argo.argo.svc.cluster.local:2746",
+      ARGO_SERVER_URL                     = "argo.argo.svc.cluster.local:2746",
       # github specific section
-      # ----
-      ATLANTIS_GH_HOSTNAME       = "github.com",
-      ATLANTIS_GH_TOKEN          = var.vcs_token,
-      ATLANTIS_GH_USER           = "<GIT_USER_NAME>",
-      ATLANTIS_GH_WEBHOOK_SECRET = var.atlantis_repo_webhook_secret,
-      GITHUB_OWNER               = "<GIT_ORGANIZATION_NAME>",
-      GITHUB_TOKEN               = var.vcs_token,
+      ATLANTIS_GH_HOSTNAME                = "github.com",
+      ATLANTIS_GH_TOKEN                   = var.vcs_token,
+      ATLANTIS_GH_USER                    = "<GIT_USER_NAME>",
+      ATLANTIS_GH_WEBHOOK_SECRET          = var.atlantis_repo_webhook_secret,
+      GITHUB_OWNER                        = "<GIT_ORGANIZATION_NAME>",
+      GITHUB_TOKEN                        = var.vcs_token,
       # ----
       TF_VAR_atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url,
       TF_VAR_vcs_token                    = var.vcs_token,
-      # aws specific section
-      # ----
 
-      TF_VAR_hosted_zone_name        = "<DOMAIN_NAME>",
-      TF_VAR_vcs_bot_ssh_public_key  = var.vcs_bot_ssh_public_key,
-      TF_VAR_vcs_bot_ssh_private_key = var.vcs_bot_ssh_private_key,
+      TF_VAR_hosted_zone_name             = "<DOMAIN_NAME>",
+      TF_VAR_vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key,
+      TF_VAR_vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key,
       # harbor specific section
-      # ----
       TF_VAR_registry_oidc_client_id      = module.harbor.vault_oidc_client_id,
       TF_VAR_registry_oidc_client_secret  = module.harbor.vault_oidc_client_secret,
       TF_VAR_registry_main_robot_password = random_password.harbor_main_robot_password.result,
       HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>",
-      HARBOR_USERNAME                     = "admin",
+      HARBOR_USERNAME                     = local.harbor_admin_user,
       HARBOR_PASSWORD                     = random_password.harbor_password.result,
-      # vault specific section
       # ----
+
+      # vault specific section
       TF_VAR_vault_addr  = "http://vault.vault.svc.cluster.local:8200",
       TF_VAR_vault_token = var.vault_token,
       VAULT_ADDR         = "http://vault.vault.svc.cluster.local:8200",
       VAULT_TOKEN        = var.vault_token,
-      # sonarqube
       # ----
-      # SONARQUBE_USER                         = "admin"
-      # SONARQUBE_PASS                         = random_password.sonarqube_password.result
-      # SONARQUBE_HOST                         = "https://<SONARQUBE_INGRESS_URL>"
+
       TF_VAR_code_quality_oidc_client_id     = module.harbor.vault_oidc_client_id,
       TF_VAR_code_quality_oidc_client_secret = module.harbor.vault_oidc_client_secret,
       TF_VAR_code_quality_admin_password     = random_password.sonarqube_password.result,
@@ -106,7 +100,7 @@ resource "vault_generic_secret" "grafana_secrets" {
 
   data_json = jsonencode(
     {
-      GRAFANA_USER = "admin",
+      GRAFANA_USER = local.grafana_admin_user,
       GRAFANA_PASS = random_password.grafana_password.result,
     }
   )
@@ -126,7 +120,7 @@ resource "vault_generic_secret" "atlantis_auth_secrets" {
 
   data_json = jsonencode(
     {
-      username = "admin",
+      username = local.atlantis_admin_user,
       password = random_password.atlantis_password.result,
     }
   )
@@ -136,8 +130,8 @@ resource "vault_generic_secret" "atlantis_auth_secrets" {
 
 # harbor web ui admin auth credentials
 resource "random_password" "harbor_password" {
-  length           = 22
-  special = false  
+  length  = 22
+  special = false
 }
 
 resource "vault_generic_secret" "harbor_admin_secret" {
@@ -145,7 +139,7 @@ resource "vault_generic_secret" "harbor_admin_secret" {
 
   data_json = jsonencode(
     {
-      HARBOR_ADMIN_NAME     = "admin",
+      HARBOR_ADMIN_NAME     = local.harbor_admin_user,
       HARBOR_ADMIN_PASSWORD = random_password.harbor_password.result,
     }
   )
@@ -154,7 +148,7 @@ resource "vault_generic_secret" "harbor_admin_secret" {
 }
 
 resource "random_password" "harbor_main_robot_password" {
-  length           = 22
+  length  = 22
   special = false
 }
 
@@ -182,7 +176,7 @@ resource "vault_generic_secret" "sonarqube_admin_secret" {
 
   data_json = jsonencode(
     {
-      username        = "admin",
+      username        = local.sonarqube_admin_user,
       currentPassword = "admin",
       password        = random_password.sonarqube_password.result,
     }

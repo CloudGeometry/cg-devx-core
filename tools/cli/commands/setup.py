@@ -821,7 +821,7 @@ def prepare_parameters(p):
     p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"] = f'atlantis.{cluster_fqdn}'
     p.parameters["<REGISTRY_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
     p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
-    p.parameters["<SONARQUBE_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
+    p.parameters["<CODE_QUALITY_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
 
     # OIDC config
     sec_man_ing = f'{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}'

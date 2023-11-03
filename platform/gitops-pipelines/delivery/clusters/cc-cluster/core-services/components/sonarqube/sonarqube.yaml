@@ -34,7 +34,7 @@ spec:
         ingress:
           enabled: true
           hosts:
-            - name: <SONARQUBE_INGRESS_URL>
+            - name: <CODE_QUALITY_INGRESS_URL>
               path: /
           annotations:
             kubernetes.io/ingress.class: "nginx"
@@ -45,7 +45,7 @@ spec:
           tls:
             - secretName: sonarqube-tls
               hosts:
-                - <SONARQUBE_INGRESS_URL>
+                - <CODE_QUALITY_INGRESS_URL>
         account:
           adminPasswordSecretName: "sonarqube-admin"
   syncPolicy:
