@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+  name: promtail
+  namespace: argocd
+spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  project: core
+  source:
+    chart: promtail
+    helm:
+      values: |-
+          config:
+            clients:
+              - url: http://loki:3100/loki/api/v1/push
+            snippets:
+              pipelineStages:
+                - cri: {}
+                - match:
+                    selector: '{app="specific-app"}' # use sensitive data obfuscating only for specific app
+                    stages:
+                      - replace:
+                          # IP4
+                          # https://github.com/helm/helm/issues/2798
+                          expression: '(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})'
+                          replace: >- 
+                            {{ printf "*IP4*{{ .Value | Hash \"salt\" }}*" }}
+                      - replace:
+                          # email
+                          expression: '([\w\.=-]+@[\w\.-]+\.[\w]{2,64})'
+                          replace: >-
+                            {{ printf "*email*{{ .Value | Hash \"salt\" }}*" }}
+              extraRelabelConfigs:
+                # drop logs for sources with the label drop-logs
+                - source_labels: [__meta_kubernetes_pod_label_drop_logs]
+                  action: drop
+                  regex: true
+          loki:
+            serviceName: "loki.monitoring.svc.cluster.local"
+            servicePort: 3100
+            serviceScheme: http
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 6.14.1
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
