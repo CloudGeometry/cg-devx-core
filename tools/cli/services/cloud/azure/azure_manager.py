@@ -1,8 +1,9 @@
+import textwrap
 from typing import Optional
 
+from common.utils.generators import random_string_generator
 from common.utils.os_utils import detect_command_presence
 from services.cloud.azure.azure_sdk import AzureSdk
-from services.cloud.azure.blob_storage import create_storage
 from services.cloud.azure.iam_permissions import aks_permissions, blob_permissions, vnet_permissions, \
     rbac_permissions
 from services.cloud.cloud_provider_manager import CloudProviderManager
@@ -15,47 +16,94 @@ class AzureManager(CloudProviderManager):
     """Azure wrapper."""
 
     def __init__(self, subscription_id: str, location: Optional[str] = None):
+        self.iac_backend_storage_container_name: Optional[str] = None
         self.__azure_sdk = AzureSdk(subscription_id, location)
 
     @property
-    def region(self) -> str:
-        raise NotImplementedError
+    def region(self):
+        return self.__azure_sdk.location
 
-    @property
-    def account_id(self) -> str:
-        raise NotImplementedError
+    def destroy_iac_state_storage(self, bucket: str) -> bool:
+        """
+        Destroy the cloud-native Terraform remote state storage.
 
-    def destroy_iac_state_storage(self, bucket: str):
-        raise NotImplementedError()
+        This function uses the Azure SDK to destroy the resource group associated with the specified bucket.
+        The resource group name is generated based on the current class attributes, and the class attribute
+        `iac_backend_storage_container_name` is updated with the provided bucket name before generating
+         the resource group name.
 
-    def create_iac_backend_snippet(self, location: str, region: str = None, service: str = "default"):
-        raise NotImplementedError()
+        Args:
+            bucket (str): The name of the bucket associated with the resource group to be destroyed.
 
-    def create_hosting_provider_snippet(self, location: str):
-        raise NotImplementedError()
+        Returns:
+            bool: True if the resource group was successfully destroyed, False otherwise.
+        """
+        self.iac_backend_storage_container_name = bucket
+        return self.__azure_sdk.destroy_resource_group(self._generate_resource_group_name())
 
-    def create_secret_manager_seal_snippet(self, role_arn: str, region: str = None):
-        pass
+    def create_iac_backend_snippet(self, location: str, service: str, **kwargs) -> str:
+        """
+        Generate the Terraform configuration for the Azure backend.
 
-    def create_k8s_cluster_role_mapping_snippet(self):
-        raise NotImplementedError()
+        This function creates a text snippet that can be used as the backend configuration in a Terraform file.
+        It uses the Azure Resource Manager (azurerm) backend type and includes the resource group name,
+        storage account name, and container name, which are generated based on the current class attributes.
 
-    def get_k8s_auth_command(self) -> str:
+        Args:
+            location (str): The name of the storage container
+            service (str): The name of the service, which is used as part of the key in the backend configuration.
+
+        Returns:
+            str: The Terraform backend configuration snippet.
+        """
+        return textwrap.dedent(f'''\
+            backend "azurerm" {{
+              resource_group_name  = "{self._generate_resource_group_name()}"
+              storage_account_name = "{self._generate_storage_account_name()}"
+              container_name       = "{self.iac_backend_storage_container_name}"
+              key                  = "terraform/{service}/terraform.tfstate"
+            }}''')
+
+    def create_hosting_provider_snippet(self):
+        # TODO: consider replacing with file template
+        return textwrap.dedent('''\
+         provider "azurerm" {
+           features {}
+         }''')
+
+    def create_seal_snippet(self, key_id: str, **kwargs) -> str:
+        if kwargs and "name" in kwargs:
+            name = kwargs["name"]
+        else:
+            raise Exception("Required parameter missing")
+
+        return '''seal "azurekeyvault" {{
+                  vault_name     = "{name}-kv"
+                  key_name       = "{key_id}"
+                }}'''.format(key_id=key_id, name=name)
+
+    def create_k8s_cluster_role_mapping_snippet(self) -> str:
+        return "azure.workload.identity/client-id"
+
+    def get_k8s_auth_command(self) -> tuple[str, [str]]:
         raise NotImplementedError()
 
     def get_k8s_token(self, cluster_name: str) -> str:
         raise NotImplementedError()
 
-    def detect_cli_presence(self, cli: str = CLI):
-        """Check whether `name` is on PATH and marked as executable."""
-        return detect_command_presence(cli)
+    def detect_cli_presence(self) -> bool:
+        """Check whether dependencies are on PATH and marked as executable."""
+        return detect_command_presence(CLI) & detect_command_presence(K8s)
 
-    def create_iac_state_storage(self, storage_name: str):
+    def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
         """
         Creates cloud native terraform remote state storage
         :return: Resource identifier
         """
-        return self.__azure_sdk.create_storage(storage_name)
+        self.iac_backend_storage_container_name = f"{name}-{random_string_generator()}".lower()
+        return self.__azure_sdk.create_storage(self.iac_backend_storage_container_name,
+                                               self._generate_storage_account_name(),
+                                               self._generate_resource_group_name())
 
     def evaluate_permissions(self) -> bool:
         """
@@ -68,3 +116,66 @@ class AzureManager(CloudProviderManager):
         missing_permissions.extend(self.__azure_sdk.blocked(vnet_permissions))
         missing_permissions.extend(self.__azure_sdk.blocked(rbac_permissions))
         return len(missing_permissions) == 0
+
+    @staticmethod
+    def _generate_container_name(base_name: str) -> str:
+        """
+        Generate a unique container name based on the provided base name and a random string.
+
+        Args:
+            base_name (str): The base name for the container.
+
+        Returns:
+            str: The generated unique container name.
+        """
+        return f"{base_name}-{random_string_generator()}".lower()
+
+    def _generate_storage_account_name(self) -> str:
+        """
+        Generate a unique storage account name that adheres to Azure's naming conventions.
+
+        Azure's storage account name must be between 3 and 24 characters in length and can only use numbers and lower-case letters.
+
+        Returns:
+            str: A unique storage account name adhering to Azure's naming conventions.
+        """
+        # Remove characters as storage account name could only contain numbers and letters
+        safe_name = self.iac_backend_storage_container_name.replace('_', '').replace('-', '')
+        return f"{safe_name[:20]}iac".lower()
+
+    def _generate_resource_group_name(self) -> str:
+        """
+        Generate a unique resource group name based on the container name.
+
+        Returns:
+            str: A unique name for the resource group.
+        """
+        return f"{self.iac_backend_storage_container_name[:20]}-rg"
+
+    def create_ingress_annotations(self) -> str:
+        return 'service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/healthz"'
+
+    def create_additional_labels(self) -> str:
+        return 'azure.workload.identity/use: "true"'
+
+    def create_sidecar_annotation(self) -> str:
+        return 'azure.workload.identity/inject-proxy-sidecar: "true"'
+
+    def create_external_secrets_config(self, **kwargs) -> str:
+        if kwargs and "location" in kwargs:
+            location = kwargs["location"]
+        else:
+            raise Exception("Required parameter missing")
+
+        return '''
+        provider: azure
+        secretConfiguration:
+          enabled: true
+          mountPath: "/etc/kubernetes/"
+          data:
+            azure.json: |
+              {{
+                "subscriptionId": "{subscription_id}",
+                "resourceGroup": "{resource_group}",
+                "useWorkloadIdentityExtension": true
+              }}'''.format(subscription_id=self.__azure_sdk.subscription_id, resource_group=location)

@@ -59,3 +59,8 @@ variable "workloads" {
     }))
   default = {}
 }
+
+variable "cluster_endpoint" {
+  description = "(Required) K8s cluster endpoint"
+  type = string
+}

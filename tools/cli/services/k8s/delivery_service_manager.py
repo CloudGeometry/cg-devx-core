@@ -27,6 +27,7 @@ def get_argocd_token(user, password):
         raise e
 
 
+@exponential_backoff_decorator(base_delay=5)
 def delete_application(app_name, token):
     try:
         response = requests.delete(f"https://localhost:8080/api/v1/applications/{app_name}?cascade=true",

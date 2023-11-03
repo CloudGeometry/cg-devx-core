@@ -23,7 +23,7 @@ spec:
           create: true
           mount: true
           annotations:
-            <K8S_ROLE_MAPPING>: '<IAC_PR_AUTOMATION_IAM_ROLE_RN>'
+            <K8S_ROLE_MAPPING>: "<IAC_PR_AUTOMATION_IAM_ROLE_RN>"
         resources:
           limits:
             cpu: 400m

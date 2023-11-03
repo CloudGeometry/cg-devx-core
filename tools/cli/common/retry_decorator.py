@@ -1,5 +1,6 @@
 import random
 import time
+from common.logging_config import logger
 
 
 def exponential_backoff_decorator(max_retries: int = 5, base_delay: float = 15):
@@ -11,10 +12,10 @@ def exponential_backoff_decorator(max_retries: int = 5, base_delay: float = 15):
                     result_func = func(*args, **kwargs)
                     return result_func
                 except Exception as e:
-                    print(f"Attempt {retries + 1} failed: {e}")
+                    logger.info(f"Attempt {retries + 1} failed: {e}")
                     retries += 1
                     delay = (base_delay * 2 ** retries + random.uniform(0, 1))
-                    print(f"Retrying in {delay:.2f} seconds...")
+                    logger.info(f"Retrying in {delay:.2f} seconds...")
                     time.sleep(delay)
             raise Exception("Max retries reached, operation failed.")
 

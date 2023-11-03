@@ -15,13 +15,21 @@ class AzureDNSManager(DNSManager):
         Check if domain is owned by user and create liveness check record
         :return: True or False
         """
-        name_servers, zone_id, _ = self.__azure_sdk.get_name_servers(domain_name)
+        name_servers, _, resource_group_name = self.__azure_sdk.get_name_servers(domain_name)
         if name_servers is not None:
             existing_ns = get_domain_ns_records(domain_name)
             if not set(existing_ns).issubset(set(name_servers)):
                 return False
 
-        return self.__azure_sdk.set_hosted_zone_liveness(domain_name, zone_id, name_servers)
+        return self.__azure_sdk.set_hosted_zone_liveness(
+            resource_group_name=resource_group_name,
+            hosted_zone_name=domain_name,
+            name_servers=name_servers
+        )
+
+    def get_domain_zone(self, domain_name: str) -> tuple[str, bool]:
+        name_servers, is_private, resource_group_name = self.__azure_sdk.get_name_servers(domain_name)
+        return resource_group_name, is_private
 
     def evaluate_permissions(self):
         """

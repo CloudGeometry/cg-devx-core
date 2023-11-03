@@ -1,14 +1,12 @@
-import os
-import os
 import re
-import time
 import webbrowser
 
 import click
 import portforward
 import yaml
 
-from common.command_utils import init_cloud_provider
+from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, set_envs, \
+    unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_REGISTRY
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
@@ -22,12 +20,13 @@ from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVI
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
+from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.utils.generators import random_string_generator
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
 from services.dns.dns_provider_manager import DNSManager
-from services.k8s.config_builder import create_k8s_config
+from services.k8s.config_builder import create_k8s_config, write_k8s_config
 from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token
 from services.k8s.k8s import KubeClient, write_ca_cert
 from services.k8s.kctl_wrapper import KctlWrapper
@@ -35,8 +34,6 @@ from services.keys.key_manager import KeyManager
 from services.template_manager import GitOpsTemplateManager
 from services.tf_wrapper import TfWrapper
 from services.vcs.git_provider_manager import GitProviderManager
-from services.vcs.github.github_manager import GitHubProviderManager
-from services.vcs.gitlab.gitlab_manager import GitLabProviderManager
 
 
 @click.command()
@@ -68,15 +65,22 @@ from services.vcs.gitlab.gitlab_manager import GitLabProviderManager
 @click.option('--setup-demo-workload', '-dw', 'install_demo', help='Setup demo workload', default=False,
               flag_value='setup-demo')
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
+@click.option('--verbosity', type=click.Choice(
+    ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    case_sensitive=False
+), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
 def setup(
         email: str, cloud_provider: CloudProviders, cloud_profile: str, cloud_key: str, cloud_secret: str,
         cloud_region: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
         dns_reg_key: str, dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
         gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool,
-        config: click.File
+        config: click.File, verbosity: str
 ):
     """Creates new CG DevX installation."""
     click.echo("Setup CG DevX installation...")
+
+    # Set up global logger
+    configure_logging(verbosity)
 
     p: StateStore
     if config is not None:
@@ -122,22 +126,7 @@ def setup(
 
     p.parameters["<CLOUD_REGION>"] = cloud_man.region
 
-    # init proper git provider
-    if p.git_provider == GitProviders.GitHub:
-        gm: GitProviderManager = GitHubProviderManager(p.get_input_param(GIT_ACCESS_TOKEN),
-                                                       p.get_input_param(GIT_ORGANIZATION_NAME))
-    elif p.git_provider == GitProviders.GitLab:
-        gm: GitProviderManager = GitLabProviderManager(
-            p.get_input_param(GIT_ACCESS_TOKEN),
-            p.get_input_param(GIT_ORGANIZATION_NAME)
-        )
-    else:
-        click.echo('Error: None of the available Git providers were specified')
-        return
-
-    # init proper dns registrar provider
-    # Note!: Route53 is initialised with AWS Cloud Provider
-    # TODO: DNS provider init
+    git_man = init_git_provider(p)
 
     if not p.has_checkpoint("preflight"):
         click.echo("Executing pre-flight checks...")
@@ -145,68 +134,18 @@ def setup(
         cloud_provider_check(cloud_man, p)
         click.echo("Cloud provider pre-flight check. Done!")
 
-        git_provider_check(gm, p)
+        git_provider_check(git_man, p)
         click.echo("Git provider pre-flight check. Done!")
 
-        git_user_login, git_user_name, git_user_email = gm.get_current_user_info()
+        git_user_login, git_user_name, git_user_email = git_man.get_current_user_info()
         p.internals["GIT_USER_LOGIN"] = git_user_login
         p.internals["GIT_USER_NAME"] = git_user_name
         p.parameters["<GIT_USER_NAME>"] = git_user_name
         p.internals["GIT_USER_EMAIL"] = git_user_email
-        p.parameters["# <GIT_PROVIDER_MODULE>"] = gm.create_tf_module_snippet()
+        p.parameters["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
 
-        dns_provider_check(dns_man, p)
+        # dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")
-
-        # create ssh keys
-        click.echo("Generating ssh keys...")
-        default_public_key, public_key_path, default_private_key, private_key_path = KeyManager.create_ed_keys()
-        p.internals["DEFAULT_SSH_PUBLIC_KEY"] = p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
-        p.internals["DEFAULT_SSH_PUBLIC_KEY_PATH"] = public_key_path
-        p.internals["DEFAULT_SSH_PRIVATE_KEY"] = default_private_key
-        p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
-
-        # Optional K8s cluster keys
-        k8s_public_key, k8s_public_key_path, k8s_private_key, k8s_private_key_path = KeyManager.create_ed_keys(
-            "cgdevx_k8s_ed")
-        p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
-        p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
-        p.internals["CLUSTER_SSH_PRIVATE_KEY"] = k8s_private_key
-        p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
-
-        click.echo("Generating ssh keys. Done!")
-
-        # create terraform storage backend
-        click.echo("Creating tf backend storage...")
-
-        tf_backend_storage_name = f'{p.get_input_param(GITOPS_REPOSITORY_NAME)}-{random_string_generator()}'.lower()
-
-        tf_backend_location, tf_backend_location_region = cloud_man.create_iac_state_storage(tf_backend_storage_name)
-        p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_location
-
-        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                         cloud_man.region,
-                                                                                         "vcs")
-        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                             cloud_man.region,
-                                                                                             "hosting_provider")
-        p.parameters["# <TF_SECRETS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                             cloud_man.region,
-                                                                                             "secrets")
-        p.parameters["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                           cloud_man.region,
-                                                                                           "users")
-        p.parameters["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage_name,
-                                                                                              cloud_man.region,
-                                                                                              "registry")
-
-        p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
-
-        p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
-
-        click.echo("Creating tf backend storage. Done!")
-
-        p.parameters["<CLOUD_ACCOUNT>"] = cloud_man.account_id
 
         p.set_checkpoint("preflight")
         p.save_checkpoint()
@@ -251,6 +190,70 @@ def setup(
                                p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_BRANCH),
                                p.get_input_param(GIT_ACCESS_TOKEN))
 
+    if not p.has_checkpoint("one-time-setup"):
+        click.echo("Setting initial parameters...")
+
+        # create ssh keys
+        click.echo("Generating ssh keys...")
+        default_public_key, public_key_path, default_private_key, private_key_path = KeyManager.create_ed_keys()
+        p.internals["DEFAULT_SSH_PUBLIC_KEY"] = p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"] = default_public_key
+        p.internals["DEFAULT_SSH_PUBLIC_KEY_PATH"] = public_key_path
+        p.internals["DEFAULT_SSH_PRIVATE_KEY"] = default_private_key
+        p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"] = private_key_path
+
+        # Optional K8s cluster keys
+        k8s_public_key, k8s_public_key_path, k8s_private_key, k8s_private_key_path = KeyManager.create_rsa_keys(
+            "cgdevx_k8s_rsa")
+        p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"] = k8s_public_key
+        p.internals["CLUSTER_SSH_PUBLIC_KEY_PATH"] = k8s_public_key_path
+        p.internals["CLUSTER_SSH_PRIVATE_KEY"] = k8s_private_key
+        p.internals["CLUSTER_SSH_PRIVATE_KEY_PATH"] = k8s_private_key_path
+
+        click.echo("Generating ssh keys. Done!")
+
+        # create terraform storage backend
+        click.echo("Creating tf backend storage...")
+
+        tf_backend_storage = cloud_man.create_iac_state_storage(p.get_input_param(GITOPS_REPOSITORY_NAME))
+        p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_storage
+
+        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                         "vcs")
+        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                             "hosting_provider")
+        p.parameters["# <TF_SECRETS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                             "secrets")
+        p.parameters["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                           "users")
+        p.parameters["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                              "registry")
+
+        p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
+
+        p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
+
+        p.parameters["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
+        p.parameters["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
+        p.parameters["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
+
+        # dns zone info for external dns
+        dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
+        p.internals["DNS_ZONE_NAME"] = dns_zone_name
+        p.internals["DNS_ZONE_IS_PRIVATE"] = is_dns_zone_private
+
+        p.parameters["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(
+            location=dns_zone_name, is_private=is_dns_zone_private)
+
+        click.echo("Creating tf backend storage. Done!")
+
+        p.set_checkpoint("one-time-setup")
+        p.save_checkpoint()
+        click.echo("Setting initial parameters. Done!")
+
+    # end preflight check section
+    else:
+        click.echo("Skipped setting initial parameters.")
+
     if not p.has_checkpoint("repo-prep"):
         click.echo("Preparing your GitOps code...")
 
@@ -270,14 +273,8 @@ def setup(
 
     # use to enable tf debug
     # "TF_LOG": "DEBUG", "TF_LOG_PATH": "/Users/a1m/.cgdevx/gitops/terraform/vcs/terraform.log",
-    # drop empty values
-    cloud_provider_auth_env_vars = {k: v for k, v in {
-        "AWS_PROFILE": p.get_input_param(CLOUD_PROFILE),
-        "AWS_ACCESS_KEY_ID": p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
-        "AWS_SECRET_ACCESS_KEY": p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET),
-        "AWS_REGION": p.parameters["<CLOUD_REGION>"],
-        "AWS_DEFAULT_REGION": p.parameters["<CLOUD_REGION>"],
-    }.items() if v}
+
+    cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
 
     # VCS section
     if not p.has_checkpoint("vcs-tf"):
@@ -325,47 +322,54 @@ def setup(
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_HOSTING_PROVIDER)
         tf_wrapper.init()
-        tf_wrapper.apply()
+        tf_wrapper.apply({"ssh_public_key": p.parameters.get("<CC_CLUSTER_SSH_PUBLIC_KEY>", "")})
         hp_out = tf_wrapper.output()
 
         # store out params
         # network
         p.parameters["<NETWORK_ID>"] = hp_out["network_id"]
         # roles
-        p.parameters["<CD_IAM_ROLE_RN>"] = hp_out["iam_cd_role"]
         p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["iam_ci_role"]
         p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"] = hp_out["iac_pr_automation_role"]
         p.parameters["<CERT_MANAGER_IAM_ROLE_RN>"] = hp_out["cert_manager_role"]
-        p.parameters["<REGISTRY_IAM_ROLE_RN>"] = hp_out["registry_role"]
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
         p.parameters["<SECRET_MANAGER_IAM_ROLE_RN>"] = hp_out["secret_manager_role"]
         # cluster
         p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
         p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
-        p.internals["CC_CLUSTER_OIDC_PROVIDER"] = hp_out["cluster_oidc_provider"]  # do we need it?
         # artifact storage
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
         # kms keys
         sec_man_key = hp_out["secret_manager_seal_key"]
         p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
-        p.parameters["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_secret_manager_seal_snippet(sec_man_key)
+        # TODO: find a better way to pass cloud provider specific params
+        p.parameters["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_seal_snippet(sec_man_key,
+                                                                                name=p.parameters[
+                                                                                    "<PRIMARY_CLUSTER_NAME>"])
 
         # unset envs as no longer needed
         unset_envs(hp_tf_env_vars)
 
-        # user could get kubeconfig by running command
-        # AWS: `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
-        # CLI could not follow this approach as aws client could be not configured properly when keys are used
-        # CLI is creating this file programmatically
-        command, command_args = cloud_man.get_k8s_auth_command()
-        kubeconfig_params = {
-            "<ENDPOINT>": p.internals["CC_CLUSTER_ENDPOINT"],
-            "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
-            "<CLUSTER_NAME>": p.parameters["<PRIMARY_CLUSTER_NAME>"],
-            "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
-        }
-        kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+        if p.cloud_provider == CloudProviders.AWS:
+            # user could get kubeconfig by running command
+            # `aws eks update-kubeconfig --region region-code --name my-cluster --kubeconfig my-config-path`
+            # CLI could not follow this approach as aws client could be not configured properly when keys are used
+            # CLI is creating this file programmatically
+            command, command_args = cloud_man.get_k8s_auth_command()
+            kubeconfig_params = {
+                "<ENDPOINT>": p.internals["CC_CLUSTER_ENDPOINT"],
+                "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
+                "<CLUSTER_NAME>": p.parameters["<PRIMARY_CLUSTER_NAME>"],
+                "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
+            }
+            kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+        elif p.cloud_provider == CloudProviders.Azure:
+            # user could get kubeconfig by running command
+            # `az aks get-credentials --name my-cluster --resource-group my-rg --admin`
+            # get config from tf output
+            kctl_config_path = write_k8s_config(hp_out["kube_config_raw"])
+
         p.internals["KCTL_CONFIG_PATH"] = kctl_config_path
 
         p.set_checkpoint("k8s-tf")
@@ -373,7 +377,7 @@ def setup(
 
         click.echo("Provisioning K8s cluster. Done!")
     else:
-        click.echo("Skipped VCS provisioning.")
+        click.echo("Skipped K8s provisioning.")
 
     if not p.has_checkpoint("gitops-vcs"):
         tm.parametrise_registry(p.parameters)
@@ -396,9 +400,10 @@ def setup(
     # k8s
     # default token life-time is 14m
     # to be safe should refresh token each time
-    k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
-    kube_client = KubeClient(p.internals["CC_CLUSTER_CA_CERT_PATH"], k8s_token, p.internals["CC_CLUSTER_ENDPOINT"])
+    # k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
+    # kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"], api_key=k8s_token, endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
     kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
+    kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
     cd_man = DeliveryServiceManager(kube_client)
 
     # install ArgoCD
@@ -417,9 +422,7 @@ def setup(
         kube_client.create_namespace(ARGOCD_NAMESPACE)
         kube_client.create_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
         kube_client.create_cluster_role(ARGOCD_NAMESPACE, argocd_bootstrap_name)
-        # extract role name from arn
-        # TODO: move to tf
-        argo_cd_role_name = p.parameters["<CD_IAM_ROLE_RN>"].split("/")[-1]
+
         kube_client.create_cluster_role_binding(ARGOCD_NAMESPACE, argocd_bootstrap_name, argocd_bootstrap_name)
 
         job = cd_man.create_argocd_bootstrap_job(argocd_bootstrap_name)
@@ -511,7 +514,7 @@ def setup(
         p.internals["ARGOCD_USER"] = "admin"
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
-        time.sleep(30)
+        wait(30)
 
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
@@ -545,13 +548,13 @@ def setup(
         click.echo("Initializing Secrets Manager...")
 
         # need to wait here as vault is not available just after argo app deployment
-        time.sleep(30)
+        wait(30)
 
         # wait for cert manager as it's created just before vault
         cert_manager = kube_client.get_deployment("cert-manager", "cert-manager")
         kube_client.wait_for_deployment(cert_manager)
 
-        time.sleep(60)
+        wait(60)
 
         # wait for vault readiness
         try:
@@ -581,11 +584,11 @@ def setup(
         #             vault_secret[f"root-unseal-key-{i}"] = x
         #         kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
 
-        time.sleep(15)
+        wait(30)
         try:
             out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
         except Exception as e:
-            raise click.ClickException("Could not unseal vault")
+            raise click.ClickException(f"Could not unseal vault: {e}")
 
         vault_keys = re.findall("^Recovery\\sKey\\s(?P<index>\\d):\\s(?P<key>.+)$", out, re.MULTILINE)
         vault_root_token = re.findall("^Initial\\sRoot\\sToken:\\s(?P<token>.+)$", out, re.MULTILINE)
@@ -607,7 +610,7 @@ def setup(
 
         click.echo("Vault initialization. Done!")
 
-        time.sleep(15)
+        wait(15)
     else:
         click.echo("Skipped Secrets Manager initialization.")
 
@@ -639,7 +642,8 @@ def setup(
             "vcs_token": p.internals["GIT_ACCESS_TOKEN"],
             "atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
             "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
-            "vault_token": p.internals["VAULT_ROOT_TOKEN"]
+            "vault_token": p.internals["VAULT_ROOT_TOKEN"],
+            "cluster_endpoint": p.internals["CC_CLUSTER_ENDPOINT"]
         })
         sec_man_out = tf_wrapper.output()
         p.internals["REGISTRY_OIDC_CLIENT_ID"] = sec_man_out["registry_oidc_client_id"]
@@ -711,7 +715,7 @@ def setup(
     if not p.has_checkpoint("registry-tf"):
         click.echo("Configuring Registry...")
 
-        # time.sleep(30)
+        wait(30)
 
         ingress = kube_client.get_ingress(ATLANTIS_NAMESPACE, "atlantis")
         kube_client.wait_for_ingress(ingress)
@@ -772,20 +776,12 @@ def show_credentials(p):
 
     click.secho(f'Kubeconfig file: {p.internals["KCTL_CONFIG_PATH"]}', bg="green")
 
-    click.secho(f'Links to all core platform services could be found in your GitOps repo readme file at: {p.parameters["<GIT_REPOSITORY_URL>"]}', bg="green")
+    click.secho(
+        f'Links to all core platform services could be found in your GitOps repo readme file at: {p.parameters["<GIT_REPOSITORY_URL>"]}',
+        bg="green")
     webbrowser.open(f'{p.parameters["<GIT_REPOSITORY_URL>"]}', autoraise=False)
 
     return
-
-
-def set_envs(env_vars):
-    for k, vault_i in env_vars.items():
-        os.environ[k] = vault_i
-
-
-def unset_envs(env_vars):
-    for k in env_vars.keys():
-        os.environ.pop(k)
 
 
 def prepare_parameters(p):
@@ -826,7 +822,8 @@ def prepare_parameters(p):
     p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/auth/callback'
     p.parameters["<CI_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CI_INGRESS_URL>"]}/oauth2/callback'
     p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
-    p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'
+    p.parameters[
+        "<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'
 
     return p
 

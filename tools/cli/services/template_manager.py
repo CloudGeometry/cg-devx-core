@@ -1,4 +1,3 @@
-import logging
 import os
 import pathlib
 import shutil
@@ -11,8 +10,6 @@ from git import Repo, RemoteProgress, GitError, Actor
 
 from common.const.common_path import LOCAL_TF_FOLDER, LOCAL_GITOPS_FOLDER
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
-
-logging.basicConfig(level=logging.INFO)
 
 
 class GitOpsTemplateManager:
@@ -152,7 +149,7 @@ class GitOpsTemplateManager:
         try:
             for root, dirs, files in os.walk(folder):
                 for name in files:
-                    if name.endswith(".tf") or name.endswith(".yaml") or name.endswith(".md"):
+                    if name.endswith(".tf") or name.endswith(".yaml") or name.endswith(".yml") or name.endswith(".md"):
                         file_path = os.path.join(root, name)
                         with open(file_path, "r") as file:
                             data = file.read()

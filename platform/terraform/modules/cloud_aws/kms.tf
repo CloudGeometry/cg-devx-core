@@ -4,7 +4,7 @@ module "secret_manager_unseal_kms_key" {
   source  = "terraform-aws-modules/kms/aws"
   version = "~> 1.5"
 
-  description = "CGDevX secret manager unseal key"
+  description = "CG DevX secret manager unseal key"
 
   # Key Policy
   key_users          = [module.secret_manager_irsa_role.iam_role_arn]

@@ -1,18 +1,16 @@
 import os
-import os
 import shutil
-import time
 
 import click
 import portforward
 import urllib3
 
-from common.command_utils import init_cloud_provider
+from common.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, LOCAL_FOLDER, \
     LOCAL_STATE_FILE
 from common.const.namespaces import ARGOCD_NAMESPACE
-from common.const.parameter_names import CLOUD_PROFILE, CLOUD_ACCOUNT_ACCESS_KEY, CLOUD_ACCOUNT_ACCESS_SECRET, \
-    GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
+from common.const.parameter_names import GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
+from common.logging_config import configure_logging
 from common.state_store import StateStore
 from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token, delete_application
 from services.k8s.k8s import KubeClient
@@ -22,8 +20,15 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 @click.command()
-def destroy():
+@click.option('--verbosity', type=click.Choice(
+    ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+    case_sensitive=False
+), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
+def destroy(verbosity: str):
     """Destroy existing CG DevX installation."""
+    # Set up global logger
+    configure_logging(verbosity)
+
     if not os.path.exists(LOCAL_STATE_FILE):
         click.echo("CG DevX installation local files not found.")
         return
@@ -32,13 +37,7 @@ def destroy():
     p: StateStore = StateStore()
 
     cloud_man, dns_man = init_cloud_provider(p)
-
-    cloud_provider_auth_env_vars = {
-        "AWS_PROFILE": p.get_input_param(CLOUD_PROFILE),
-        "AWS_ACCESS_KEY_ID": p.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
-        "AWS_SECRET_ACCESS_KEY": p.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET),
-        "AWS_DEFAULT_REGION": p.parameters["<CLOUD_REGION>"],
-    }
+    cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
 
     tf_env_vars = {
         **cloud_provider_auth_env_vars,
@@ -50,9 +49,7 @@ def destroy():
         }
     }
     # set envs as required by tf
-    for k, v in tf_env_vars.items():
-        if v:
-            os.environ[k] = v
+    set_envs(tf_env_vars)
 
     if p.has_checkpoint("vcs-tf"):
         click.echo("Destroying VCS...")
@@ -67,8 +64,7 @@ def destroy():
         click.echo("Removing ArgoCD configuration...")
 
         # remove apps with dependencies on external resources
-        k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
-        kube_client = KubeClient(p.internals["CC_CLUSTER_CA_CERT_PATH"], k8s_token, p.internals["CC_CLUSTER_ENDPOINT"])
+        kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
         cd_man = DeliveryServiceManager(kube_client)
         # turn off sync
         registry_app_name = "registry"
@@ -83,17 +79,18 @@ def destroy():
         except Exception as e:
             pass
 
-        # need to wait here
-        time.sleep(120)
+        try:
+            with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
+                                     config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
 
-        with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
+                argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
+                delete_application(registry_app_name, argocd_token)
 
-            argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
-            delete_application(registry_app_name, argocd_token)
-
-        # need to wait here
-        time.sleep(300)
+            # need to wait here
+            wait(300)
+        except Exception as e:
+            # suppress exception and continue without deleting ArgoCD app
+            pass
 
     # K8s Cluster section
     if p.has_checkpoint("k8s-tf"):
@@ -101,12 +98,10 @@ def destroy():
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_HOSTING_PROVIDER)
         tf_wrapper.init()
-        tf_wrapper.destroy()
+        tf_wrapper.destroy({"ssh_public_key": p.parameters.get("<CC_CLUSTER_SSH_PUBLIC_KEY>", "")})
 
     # unset envs as no longer needed
-    for k, v in tf_env_vars.items():
-        if v:
-            os.environ.pop(k)
+    unset_envs(tf_env_vars)
 
     # delete IaC backend storage bucket
     cloud_man.destroy_iac_state_storage(p.internals["TF_BACKEND_STORAGE_NAME"])

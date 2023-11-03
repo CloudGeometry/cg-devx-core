@@ -87,3 +87,14 @@ module "eks" {
   #self_managed_node_groups = local.node_groups
 
 }
+
+# key-pair for custom launch template
+#resource "aws_key_pair" "eks_nodes" {
+#  key_name   = "${local.name}-eks-nodes"
+#  public_key = var.ssh_public_key
+#}
+#
+#resource "aws_launch_template" "eks_node_with_keypair" {
+#  instance_type = coalesce(first(local.eks_node_groups[0].instance_types), "t3.medium")
+#  key_name = aws_key_pair.eks_nodes.key_name
+#}

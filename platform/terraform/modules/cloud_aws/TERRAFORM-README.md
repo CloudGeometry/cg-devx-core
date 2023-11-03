@@ -26,9 +26,7 @@
 | <a name="module_eks"></a> [eks](#module\_eks) | terraform-aws-modules/eks/aws | ~>19.16.0 |
 | <a name="module_external_dns_irsa_role"></a> [external\_dns\_irsa\_role](#module\_external\_dns\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
 | <a name="module_iac_pr_automation_irsa_role"></a> [iac\_pr\_automation\_irsa\_role](#module\_iac\_pr\_automation\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_iam_cd_role"></a> [iam\_cd\_role](#module\_iam\_cd\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
 | <a name="module_iam_ci_role"></a> [iam\_ci\_role](#module\_iam\_ci\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
-| <a name="module_registry_irsa_role"></a> [registry\_irsa\_role](#module\_registry\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
 | <a name="module_secret_manager_irsa_role"></a> [secret\_manager\_irsa\_role](#module\_secret\_manager\_irsa\_role) | terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks | n/a |
 | <a name="module_secret_manager_unseal_kms_key"></a> [secret\_manager\_unseal\_kms\_key](#module\_secret\_manager\_unseal\_kms\_key) | terraform-aws-modules/kms/aws | ~> 1.5 |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | terraform-aws-modules/vpc/aws | ~> 5.0 |
@@ -38,10 +36,8 @@
 
 | Name | Type |
 |------|------|
-| [aws_iam_policy.cd](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.ci](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.iac_pr_automation_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
-| [aws_iam_policy.registry_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [aws_iam_policy.secret_manager_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
 | [random_string.random_suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [aws_ami.eks_default](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
@@ -52,15 +48,16 @@
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_alert_emails"></a> [alert\_emails](#input\_alert\_emails) | n/a | `list(string)` | n/a | yes |
+| <a name="input_alert_emails"></a> [alert\_emails](#input\_alert\_emails) | n/a | `list(string)` | `[]` | no |
 | <a name="input_az_count"></a> [az\_count](#input\_az\_count) | n/a | `number` | `3` | no |
-| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | n/a | `string` | `"gxc"` | no |
+| <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | (Required) Specifies the name of the EKS cluster. | `string` | `"CGDevX"` | no |
 | <a name="input_cluster_network_cidr"></a> [cluster\_network\_cidr](#input\_cluster\_network\_cidr) | n/a | `string` | `"10.0.0.0/16"` | no |
-| <a name="input_cluster_node_labels"></a> [cluster\_node\_labels](#input\_cluster\_node\_labels) | n/a | `map(any)` | `{}` | no |
-| <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | n/a | `string` | `"1.27"` | no |
+| <a name="input_cluster_node_labels"></a> [cluster\_node\_labels](#input\_cluster\_node\_labels) | (Optional) EKS node labels | `map(any)` | <pre>{<br>  "ProvisionedBy": "CG DevX"<br>}</pre> | no |
+| <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | (Optional) Specifies the EKS Kubernetes version | `string` | `"1.27"` | no |
 | <a name="input_node_group_type"></a> [node\_group\_type](#input\_node\_group\_type) | n/a | `string` | `"EKS"` | no |
-| <a name="input_node_groups"></a> [node\_groups](#input\_node\_groups) | n/a | <pre>list(object({<br>    name           = optional(string, "")<br>    instance_types = optional(list(string), ["t3.large"])<br>    capacity_type  = optional(string, "on_demand")<br>    min_size       = optional(number, 3)<br>    max_size       = optional(number, 5)<br>    desired_size   = optional(number, 3)<br>  }<br>  )<br>  )</pre> | <pre>[<br>  {<br>    "capacity_type": "on_demand",<br>    "desired_size": 3,<br>    "instance_types": [<br>      "t3.large"<br>    ],<br>    "max_size": 5,<br>    "min_size": 3,<br>    "name": "default"<br>  }<br>]</pre> | no |
-| <a name="input_region"></a> [region](#input\_region) | Do we really want the region setting here? | `string` | `"eu-west-1"` | no |
+| <a name="input_node_groups"></a> [node\_groups](#input\_node\_groups) | n/a | <pre>list(object({<br>    name           = optional(string, "default")<br>    instance_types = optional(list(string), ["t3.large"])<br>    capacity_type  = optional(string, "on_demand")<br>    min_size       = optional(number, 3)<br>    max_size       = optional(number, 5)<br>    desired_size   = optional(number, 3)<br>  }))</pre> | <pre>[<br>  {<br>    "capacity_type": "on_demand",<br>    "desired_size": 3,<br>    "instance_types": [<br>      "t3.large"<br>    ],<br>    "max_size": 5,<br>    "min_size": 3,<br>    "name": "default"<br>  }<br>]</pre> | no |
+| <a name="input_region"></a> [region](#input\_region) | Specifies the regions | `string` | `"eu-west-1"` | no |
+| <a name="input_ssh_public_key"></a> [ssh\_public\_key](#input\_ssh\_public\_key) | (Optional) SSH public key to access worker nodes. | `string` | `""` | no |
 
 ## Outputs
 
@@ -83,6 +80,8 @@
 | <a name="output_cluster_identity_providers"></a> [cluster\_identity\_providers](#output\_cluster\_identity\_providers) | Map of attribute maps for all EKS identity providers enabled |
 | <a name="output_cluster_name"></a> [cluster\_name](#output\_cluster\_name) | The name of the EKS cluster |
 | <a name="output_cluster_oidc_issuer_url"></a> [cluster\_oidc\_issuer\_url](#output\_cluster\_oidc\_issuer\_url) | The URL on the EKS cluster for the OpenID Connect identity provider |
+| <a name="output_cluster_oidc_provider"></a> [cluster\_oidc\_provider](#output\_cluster\_oidc\_provider) | The OpenID Connect identity provider (issuer URL without leading `https://`) |
+| <a name="output_cluster_oidc_provider_arn"></a> [cluster\_oidc\_provider\_arn](#output\_cluster\_oidc\_provider\_arn) | The ARN of the OIDC Provider if `enable_irsa = true` |
 | <a name="output_cluster_platform_version"></a> [cluster\_platform\_version](#output\_cluster\_platform\_version) | Platform version for the cluster |
 | <a name="output_cluster_primary_security_group_id"></a> [cluster\_primary\_security\_group\_id](#output\_cluster\_primary\_security\_group\_id) | Cluster security group that was created by Amazon EKS for the cluster. Managed node groups use this security group for control-plane-to-data-plane communication. Referred to as 'Cluster security group' in the EKS console |
 | <a name="output_cluster_security_group_arn"></a> [cluster\_security\_group\_arn](#output\_cluster\_security\_group\_arn) | Amazon Resource Name (ARN) of the cluster security group |
@@ -95,8 +94,7 @@
 | <a name="output_eks_managed_node_groups_autoscaling_group_names"></a> [eks\_managed\_node\_groups\_autoscaling\_group\_names](#output\_eks\_managed\_node\_groups\_autoscaling\_group\_names) | List of the autoscaling group names created by EKS managed node groups |
 | <a name="output_external_dns_irsa_role"></a> [external\_dns\_irsa\_role](#output\_external\_dns\_irsa\_role) | External DNS IAM Role ARN |
 | <a name="output_iac_pr_automation_irsa_role"></a> [iac\_pr\_automation\_irsa\_role](#output\_iac\_pr\_automation\_irsa\_role) | IaC PR automation IAM Role ARN |
-| <a name="output_iam_cd_role"></a> [iam\_cd\_role](#output\_iam\_cd\_role) | Cloud Native CD IAM role ARN |
-| <a name="output_iam_ci_role"></a> [iam\_ci\_role](#output\_iam\_ci\_role) | Cloud Native CI IAM role ARN |
+| <a name="output_iam_ci_irsa_role"></a> [iam\_ci\_irsa\_role](#output\_iam\_ci\_irsa\_role) | Cloud Native CI IAM role ARN |
 | <a name="output_igw_arn"></a> [igw\_arn](#output\_igw\_arn) | IGW ARN Generated by VPC module |
 | <a name="output_igw_id"></a> [igw\_id](#output\_igw\_id) | IGW ID Generated by VPC module |
 | <a name="output_kms_key_arn"></a> [kms\_key\_arn](#output\_kms\_key\_arn) | The Amazon Resource Name (ARN) of the key |
@@ -105,13 +103,10 @@
 | <a name="output_network_id"></a> [network\_id](#output\_network\_id) | module.vpc.vpc\_id |
 | <a name="output_node_security_group_arn"></a> [node\_security\_group\_arn](#output\_node\_security\_group\_arn) | Amazon Resource Name (ARN) of the node shared security group |
 | <a name="output_node_security_group_id"></a> [node\_security\_group\_id](#output\_node\_security\_group\_id) | ID of the node shared security group |
-| <a name="output_oidc_provider"></a> [oidc\_provider](#output\_oidc\_provider) | The OpenID Connect identity provider (issuer URL without leading `https://`) |
-| <a name="output_oidc_provider_arn"></a> [oidc\_provider\_arn](#output\_oidc\_provider\_arn) | The ARN of the OIDC Provider if `enable_irsa = true` |
 | <a name="output_private_subnet_id"></a> [private\_subnet\_id](#output\_private\_subnet\_id) | private\_subnet\_id |
 | <a name="output_public_subnet_id"></a> [public\_subnet\_id](#output\_public\_subnet\_id) | public\_subnet\_id |
-| <a name="output_registry_irsa_role"></a> [registry\_irsa\_role](#output\_registry\_irsa\_role) | Image registry Role ARN |
 | <a name="output_secret_manager_irsa_role"></a> [secret\_manager\_irsa\_role](#output\_secret\_manager\_irsa\_role) | AWS Secretsmanager IAM Role ARN |
-| <a name="output_secret_manager_unseal_kms_key"></a> [secret\_manager\_unseal\_kms\_key](#output\_secret\_manager\_unseal\_kms\_key) | The globally unique identifier for the secret manager key |
+| <a name="output_secret_manager_unseal_key"></a> [secret\_manager\_unseal\_key](#output\_secret\_manager\_unseal\_key) | The globally unique identifier for the secret manager key |
 | <a name="output_self_managed_node_groups"></a> [self\_managed\_node\_groups](#output\_self\_managed\_node\_groups) | Map of attribute maps for all self managed node groups created |
 | <a name="output_self_managed_node_groups_autoscaling_group_names"></a> [self\_managed\_node\_groups\_autoscaling\_group\_names](#output\_self\_managed\_node\_groups\_autoscaling\_group\_names) | List of the autoscaling group names created by self-managed node groups |
 | <a name="output_vpc_cni_irsa"></a> [vpc\_cni\_irsa](#output\_vpc\_cni\_irsa) | vpc\_cni role ARN |

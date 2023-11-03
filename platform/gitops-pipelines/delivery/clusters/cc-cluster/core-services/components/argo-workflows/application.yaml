@@ -27,7 +27,7 @@ spec:
             create: true
             name: argo-server
             annotations:
-              <K8S_ROLE_MAPPING>: '<CI_IAM_ROLE_RN>'
+              <K8S_ROLE_MAPPING>: "<CI_IAM_ROLE_RN>"
           extraArgs:
           - --secure
           - --auth-mode=sso
