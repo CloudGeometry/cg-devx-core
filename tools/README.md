@@ -10,7 +10,7 @@ All subsequent commands should be executed from the same machine, as they will r
 Required installations:
 
 - **python 3.10 + pip**
-- **[poetry](https://python-poetry.org/)**
+- **[poetry](https://python-poetry.org/)** 1.6.*
 
 If you don't have poetry installed, please follow official installation
 instructions [here](https://python-poetry.org/docs/#installation).

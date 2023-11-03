@@ -1,4 +1,3 @@
-import logging
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
@@ -6,11 +5,15 @@ from typing import Dict, List, Optional, Tuple
 from awscli.customizations.eks.get_token import STSClientFactory, TokenGenerator, TOKEN_EXPIRATION_MINS
 from botocore.exceptions import ClientError
 
+from common.logging_config import logger
 from services.cloud.aws.aws_session_manager import AwsSessionManager
 from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
 
 class AwsSdk:
+    RETRY_COUNT = 100
+    RETRY_SLEEP = 10  # in seconds
+
     def __init__(self, region, profile, key, secret):
         self._account_id = None
         self._session_manager = AwsSessionManager()
@@ -37,7 +40,7 @@ class AwsSdk:
             return user["User"]["Arn"]
 
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             raise e
 
     def blocked(self, actions: List[str],
@@ -84,7 +87,7 @@ class AwsSdk:
         return sorted([result['EvalActionName'] for result in results
                        if result['EvalDecision'] != "allowed"])
 
-    def create_bucket(self, bucket_name, region=None):
+    def create_bucket(self, bucket_name, region=None) -> str:
         """Create an S3 bucket in a specified region
 
         If a region is not specified, the bucket is created in the S3 default region.
@@ -104,9 +107,9 @@ class AwsSdk:
             bucket = s3_client.create_bucket(Bucket=bucket_name,
                                              CreateBucketConfiguration=location)
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             return False
-        return bucket_name, region
+        return bucket_name
 
     def get_name_servers(self, domain_name: str) -> Tuple[List[str], str, bool]:
         r53_client = self._session_manager.session.client('route53')
@@ -131,7 +134,7 @@ class AwsSdk:
 
         return ns, zone_id, is_private
 
-    def set_hosted_zone_liveness(self, hosted_zone_name, hosted_zone_id, name_servers):
+    def set_hosted_zone_liveness(self, hosted_zone_name: str, hosted_zone_id: str, name_servers: List[str]):
 
         route53_record_name = f'cgdevx-liveness.{hosted_zone_name}'
         route53_record_value = "domain record propagated"
@@ -162,19 +165,16 @@ class AwsSdk:
 
             r = r53_client.change_resource_record_sets(HostedZoneId=hosted_zone_id, ChangeBatch=batch)
 
-        # check if record is updated
-        loop_count = 100
-        while loop_count > 0:
-            time.sleep(10)
-            # ["https://" + str(s).rstrip('.') for s in name_servers][0]
-            existing_txt = get_domain_txt_records_dot(route53_record_name)
+        for _ in range(self.RETRY_COUNT):
+            time.sleep(self.RETRY_SLEEP)
+            existing_txt = get_domain_txt_records_dot(route53_record_name, name_servers=name_servers)
 
             if set(existing_txt).issubset(set([f'"{route53_record_value}"'])):
-                break
+                return True
 
-            loop_count -= 1
+            logger.info(f"Waiting for {route53_record_value} to propagate. Retrying...")
 
-        return True
+        return False
 
     def get_token(self, cluster_name: str, role_arn: str = None) -> dict:
         # hack to get botcore session and properly initialise client factory
@@ -226,6 +226,6 @@ class AwsSdk:
 
             s3_client.delete_bucket(Bucket=bucket_name)
         except ClientError as e:
-            logging.error(e)
+            logger.error(e)
             return False
         return True

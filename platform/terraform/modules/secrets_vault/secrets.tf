@@ -43,7 +43,6 @@ resource "vault_generic_secret" "ci_secrets" {
   depends_on = [vault_mount.secret]
 }
 
-
 resource "vault_generic_secret" "atlantis_secrets" {
   path = "secret/atlantis/envs-secrets"
 
@@ -64,7 +63,8 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url,
       TF_VAR_vcs_token                    = var.vcs_token,
-
+      TF_VAR_cluster_endpoint             = var.cluster_endpoint
+      # ----
       TF_VAR_hosted_zone_name             = "<DOMAIN_NAME>",
       TF_VAR_vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key,
       TF_VAR_vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key,
@@ -82,11 +82,10 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_vault_token = var.vault_token,
       VAULT_ADDR         = "http://vault.vault.svc.cluster.local:8200",
       VAULT_TOKEN        = var.vault_token,
-      # ----
-
+      # code quality specific section
       TF_VAR_code_quality_oidc_client_id     = module.harbor.vault_oidc_client_id,
       TF_VAR_code_quality_oidc_client_secret = module.harbor.vault_oidc_client_secret,
-      TF_VAR_code_quality_admin_password     = random_password.sonarqube_password.result,
+      TF_VAR_code_quality_admin_password     = random_password.sonarqube_password.result, 
     }
   )
 

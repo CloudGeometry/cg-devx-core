@@ -16,7 +16,7 @@ spec:
           create: true
           name: cert-manager
           annotations:
-           <K8S_ROLE_MAPPING>: '<CERT_MANAGER_IAM_ROLE_RN>'
+           <K8S_ROLE_MAPPING>: "<CERT_MANAGER_IAM_ROLE_RN>"
         installCRDs: true
     chart: cert-manager
   destination:
@@ -28,3 +28,9 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "control-plane")
+        - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby")

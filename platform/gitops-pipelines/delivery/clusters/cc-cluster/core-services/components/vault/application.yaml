@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://helm.releases.hashicorp.com
-    targetRevision: 0.25.0
+    targetRevision: 0.26.1
     helm:
       parameters:
         - name: server.route.host
@@ -18,13 +18,15 @@ spec:
           value: vault.<DOMAIN_NAME>
       values: |-
         server:
-          image:
-            tag: '1.14'
+          annotations:
+            # <SIDECAR_ANNOTATION>
+          extraLabels:
+            # <ADDITIONAL_LABELS>
           serviceAccount:
             create: true
             name: vault
             annotations:
-              <K8S_ROLE_MAPPING>: '<SECRET_MANAGER_IAM_ROLE_RN>'
+              <K8S_ROLE_MAPPING>: "<SECRET_MANAGER_IAM_ROLE_RN>"
           affinity: ""
           ha:
             enabled: true

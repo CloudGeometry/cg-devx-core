@@ -30,12 +30,10 @@ Templating variables generated during setup process
 
 IAM roles for core components created during the setup process
 
-- `CD_IAM_ROLE_RN` Continuous Delivery (ArgoCD) IAM role for a K8s service account
 - `CERT_MANAGER_IAM_ROLE_RN` - Certificate Manager IAM role for a K8s service account
 - `CI_IAM_ROLE_RN` - Continuous Integration (Argo Workflow / Git* runners) IAM role for K8s service account
 - `EXTERNAL_DNS_IAM_ROLE_RN` - External DNS IAM role for a K8s service account
 - `IAC_PR_AUTOMATION_IAM_ROLE_RN` - IaC PR automation IAM role for a K8s service account
-- `REGISTRY_IAM_ROLE_RN` - Registry (Harbor) IAM role for a K8s service account
 - `SECRET_MANAGER_IAM_ROLE_RN` - Secrets Manager (Vault) IAM role for a K8s service account
 
 ### Ingress
@@ -109,7 +107,6 @@ OIDC provider configuration Note!: URL does not contain protocol prefix
 - `CC_CLUSTER_CA_CERT_DATA` - K8s cluster Certificate Authority certificate data
 - `CC_CLUSTER_CA_CERT_PATH` - K8s cluster Certificate Authority certificate path
 - `CC_CLUSTER_ENDPOINT` - Primary K8s cluster admin API endpoint
-- `CC_CLUSTER_OIDC_PROVIDER` - Primary K8s cluster OIDC provider endpoint
 - `CLUSTER_SSH_PRIVATE_KEY` - K8s cluster SSH private key
 - `CLUSTER_SSH_PRIVATE_KEY_PATH` - K8s cluster SSH private key path
 - `CLUSTER_SSH_PUBLIC_KEY_PATH` - K8s cluster SSH public key path

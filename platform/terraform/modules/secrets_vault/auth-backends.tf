@@ -3,9 +3,6 @@ data "aws_eks_cluster" "cluster" {
   name = var.cluster_name
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-  name = var.cluster_name
-}
 ###AWS specific data sources end
 
 resource "vault_auth_backend" "k8s" {
@@ -15,9 +12,7 @@ resource "vault_auth_backend" "k8s" {
 
 resource "vault_kubernetes_auth_backend_config" "k8s" {
   backend         = vault_auth_backend.k8s.path
-  kubernetes_host = data.aws_eks_cluster.cluster.endpoint
-##uncomment this string only for local dev server vault installation
-#  kubernetes_ca_cert     = "-----BEGIN CERTIFICATE-----\nexample\n-----END CERTIFICATE-----"
+  kubernetes_host = var.cluster_endpoint
 }
 
 resource "vault_kubernetes_auth_backend_role" "k8s_atlantis" {
@@ -36,7 +31,7 @@ resource "vault_kubernetes_auth_backend_role" "k8s_external_secrets" {
   bound_service_account_namespaces = ["external-secrets-operator"]
   token_ttl                        = 86400
   #is it necessary to have admin for external secrets?
-  token_policies = ["admin", "default"]
+  token_policies                   = ["admin", "default"]
 }
 
 resource "vault_auth_backend" "userpass" {
