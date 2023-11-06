@@ -142,7 +142,7 @@ def setup(
         p.internals["GIT_USER_NAME"] = git_user_name
         p.parameters["<GIT_USER_NAME>"] = git_user_name
         p.internals["GIT_USER_EMAIL"] = git_user_email
-        p.parameters["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
+        p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
 
         dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")
@@ -217,31 +217,31 @@ def setup(
         tf_backend_storage = cloud_man.create_iac_state_storage(p.get_input_param(GITOPS_REPOSITORY_NAME))
         p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_storage
 
-        p.parameters["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
-                                                                                         "vcs")
-        p.parameters["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
-                                                                                             "hosting_provider")
-        p.parameters["# <TF_SECRETS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
-                                                                                             "secrets")
-        p.parameters["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
-                                                                                           "users")
-        p.parameters["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
-                                                                                              "registry")
+        p.fragments["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                        "vcs")
+        p.fragments["# <TF_HOSTING_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                            "hosting_provider")
+        p.fragments["# <TF_SECRETS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                            "secrets")
+        p.fragments["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                          "users")
+        p.fragments["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                             "registry")
 
-        p.parameters["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
+        p.fragments["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
-        p.parameters["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
-        p.parameters["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
-        p.parameters["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
+        p.fragments["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
+        p.fragments["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
+        p.fragments["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
 
         # dns zone info for external dns
         dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
         p.internals["DNS_ZONE_NAME"] = dns_zone_name
         p.internals["DNS_ZONE_IS_PRIVATE"] = is_dns_zone_private
 
-        p.parameters["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(
+        p.fragments["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(
             location=dns_zone_name, is_private=is_dns_zone_private)
 
         click.echo("Creating tf backend storage. Done!")
@@ -260,7 +260,7 @@ def setup(
         tm.check_repository_existence()
         tm.clone()
         tm.build_repo_from_template()
-        tm.parametrise_tf(p.parameters)
+        tm.parametrise_tf(p)
 
         p.set_checkpoint("repo-prep")
         p.save_checkpoint()
@@ -344,8 +344,8 @@ def setup(
         sec_man_key = hp_out["secret_manager_seal_key"]
         p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
         # TODO: find a better way to pass cloud provider specific params
-        p.parameters["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_seal_snippet(sec_man_key,
-                                                                                name=p.parameters[
+        p.fragments["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_seal_snippet(sec_man_key,
+                                                                               name=p.parameters[
                                                                                     "<PRIMARY_CLUSTER_NAME>"])
 
         # unset envs as no longer needed
@@ -380,8 +380,8 @@ def setup(
         click.echo("Skipped K8s provisioning.")
 
     if not p.has_checkpoint("gitops-vcs"):
-        tm.parametrise_registry(p.parameters)
-        tm.parametrise_gitops_readme(p.parameters)
+        tm.parametrise_registry(p)
+        tm.parametrise_gitops_readme(p)
 
         click.echo("Pushing GitOps code...")
 

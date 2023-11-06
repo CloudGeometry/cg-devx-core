@@ -10,6 +10,7 @@ from git import Repo, RemoteProgress, GitError, Actor
 
 from common.const.common_path import LOCAL_TF_FOLDER, LOCAL_GITOPS_FOLDER
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
+from common.state_store import StateStore
 
 
 class GitOpsTemplateManager:
@@ -66,7 +67,8 @@ class GitOpsTemplateManager:
         except GitError as e:
             raise e
 
-    def upload(self, path: str, key_path: str, git_user_name: str, git_user_email: str):
+    @staticmethod
+    def upload(path: str, key_path: str, git_user_name: str, git_user_email: str):
 
         if not os.path.exists(LOCAL_GITOPS_FOLDER):
             raise Exception("GitOps repo does not exist")
@@ -89,7 +91,8 @@ class GitOpsTemplateManager:
         except GitError as e:
             raise e
 
-    def build_repo_from_template(self):
+    @staticmethod
+    def build_repo_from_template():
         temp_folder = LOCAL_GITOPS_FOLDER / ".tmp"
 
         os.makedirs(LOCAL_GITOPS_FOLDER, exist_ok=True)
@@ -126,26 +129,26 @@ class GitOpsTemplateManager:
         shutil.rmtree(temp_folder)
         return
 
-    def parametrise_tf(self, params: dict):
+    def parametrise_tf(self, state: StateStore):
+        self.__file_replace(state, LOCAL_TF_FOLDER)
 
-        self.__file_replace(params, LOCAL_TF_FOLDER)
-
-    def parametrise_registry(self, params: dict):
+    def parametrise_registry(self, state: StateStore):
         pipelines_folder = LOCAL_GITOPS_FOLDER / "gitops-pipelines"
 
-        self.__file_replace(params, pipelines_folder)
+        self.__file_replace(state, pipelines_folder)
 
-    def parametrise_gitops_readme(self, params: dict):
+    @staticmethod
+    def parametrise_gitops_readme(state: StateStore):
         for src_file in LOCAL_GITOPS_FOLDER.glob('*.md'):
             with open(src_file, "r") as file:
                 data = file.read()
-                for k, v in params.items():
+                for k, v in state.parameters.items():
                     data = data.replace(k, v)
             with open(src_file, "w") as file:
                 file.write(data)
 
     @staticmethod
-    def __file_replace(params, folder):
+    def __file_replace(state: StateStore, folder):
         try:
             for root, dirs, files in os.walk(folder):
                 for name in files:
@@ -153,7 +156,9 @@ class GitOpsTemplateManager:
                         file_path = os.path.join(root, name)
                         with open(file_path, "r") as file:
                             data = file.read()
-                            for k, v in params.items():
+                            for k, v in state.fragments.items():
+                                data = data.replace(k, v)
+                            for k, v in state.parameters.items():
                                 data = data.replace(k, v)
                         with open(file_path, "w") as file:
                             file.write(data)
@@ -163,5 +168,5 @@ class GitOpsTemplateManager:
 
 class ProgressPrinter(RemoteProgress):
     def update(self, op_code, cur_count, max_count=None, message=""):
-        # TODO: forward to CLI (Click) progress bar
+        # TODO: forward to CLI progress bar
         pass
