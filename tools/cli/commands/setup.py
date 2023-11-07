@@ -2,6 +2,7 @@ import re
 import webbrowser
 
 import click
+import hvac
 import portforward
 import yaml
 
@@ -9,7 +10,7 @@ from common.command_utils import init_cloud_provider, init_git_provider, prepare
     unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
-from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION
+from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVIDER, CLOUD_ACCOUNT_ACCESS_KEY, \
@@ -346,7 +347,7 @@ def setup(
         # TODO: find a better way to pass cloud provider specific params
         p.fragments["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_seal_snippet(sec_man_key,
                                                                                name=p.parameters[
-                                                                                    "<PRIMARY_CLUSTER_NAME>"])
+                                                                                   "<PRIMARY_CLUSTER_NAME>"])
 
         # unset envs as no longer needed
         unset_envs(hp_tf_env_vars)
@@ -772,24 +773,34 @@ def setup(
 
 
 def show_credentials(p):
-    click.secho('ATTENTION', blink=True, bold=True)
-    click.secho("Below are the credentials to your platform services. Please store them securely.", bg="green")
+    user_name = PLATFORM_USER_NAME
+    vault_client = hvac.Client(url=f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
+                               token=p.internals["VAULT_ROOT_TOKEN"])
+    res = vault_client.secrets.kv.v2.read_secret(path=f"/{user_name}", mount_point='users/')
+    if "data" in res:
+        user_pass = res["data"]["data"]["initial-password"]
 
-    click.secho("Secrets manager", bg="green")
-    click.secho(f'URL: https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', bg="green")
-    click.secho(f'Root login token: {p.internals["VAULT_ROOT_TOKEN"]}', bg="green")
+    click.secho('ATTENTION', blink=True, bold=True, bg="red", fg="black")
+    click.secho("Below are the credentials to your platform services. Please store them securely.", bg="green",
+                fg="blue")
+
+    click.secho("Secrets manager", bg="green", fg="blue")
+    click.secho(f'URL: https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', bg="green", fg="blue")
+    click.secho(f'Root login token: {p.internals["VAULT_ROOT_TOKEN"]}', bg="green", fg="blue")
+    click.secho(f'CGDevX admin user login: {user_name} password: {user_pass}', bg="green", fg="blue")
     webbrowser.open(f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', autoraise=False)
 
-    click.secho("Continuous Delivery system", bg="green")
-    click.secho(f'URL: https://{p.parameters["<CD_INGRESS_URL>"]}', bg="green")
-    click.secho(f'Admin login: {p.internals["ARGOCD_USER"]} password: {p.internals["ARGOCD_PASSWORD"]}', bg="green")
+    click.secho("Continuous Delivery system", bg="green", fg="blue")
+    click.secho(f'URL: https://{p.parameters["<CD_INGRESS_URL>"]}', bg="green", fg="blue")
+    click.secho(f'Admin login: {p.internals["ARGOCD_USER"]} password: {p.internals["ARGOCD_PASSWORD"]}', bg="green",
+                fg="blue")
     webbrowser.open(f'https://{p.parameters["<CD_INGRESS_URL>"]}', autoraise=False)
 
-    click.secho(f'Kubeconfig file: {p.internals["KCTL_CONFIG_PATH"]}', bg="green")
+    click.secho(f'Kubeconfig file: {p.internals["KCTL_CONFIG_PATH"]}', bg="green", fg="blue")
 
     click.secho(
         f'Links to all core platform services could be found in your GitOps repo readme file at: {p.parameters["<GIT_REPOSITORY_URL>"]}',
-        bg="green")
+        bg="green", fg="blue")
     webbrowser.open(f'{p.parameters["<GIT_REPOSITORY_URL>"]}', autoraise=False)
 
     return
