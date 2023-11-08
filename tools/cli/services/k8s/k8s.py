@@ -238,7 +238,13 @@ class KubeClient:
             raise e
 
     @exponential_backoff_decorator()
-    def get_custom_object(self, namespace: str, name: str, group: str, version: str, plurals: str):
+    def get_certificate(self, namespace: str, name: str):
+        """
+        Reads a cert-manager certificate.
+        """
+        return self._get_custom_object(namespace, name, "cert-manager.io", "v1", "certificates")
+
+    def _get_custom_object(self, namespace: str, name: str, group: str, version: str, plurals: str):
         """
         Reads a custom object.
         """
@@ -406,6 +412,9 @@ class KubeClient:
 
         except ApiException as e:
             raise e
+
+    def wait_for_certificate(self, cert_obj, timeout: int = 300):
+        return self.wait_for_custom_object(cert_obj, "cert-manager.io", "v1", "certificates", timeout=timeout)
 
     def wait_for_custom_object(self, cust_object, group: str, version: str, plurals: str, timeout: int = 300):
         object_name = cust_object["metadata"]["name"]

@@ -58,10 +58,12 @@ def destroy(verbosity: str):
         tf_wrapper.init()
         tf_wrapper.destroy()
 
+        click.echo("Destroying VCS. Done!")
+
     # ArgoCD section
     # wait till resources are de-provisioned by ArgoCD before destroying K8s cluster
     if p.has_checkpoint("k8s-delivery"):
-        click.echo("Removing ArgoCD configuration...")
+        click.echo("Deleting ArgoCD configuration...")
 
         # remove apps with dependencies on external resources
         kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
@@ -81,16 +83,20 @@ def destroy(verbosity: str):
 
         try:
             with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                     config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
+                                     config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
+                                     log_level=portforward.LogLevel.ERROR):
 
                 argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
                 delete_application(registry_app_name, argocd_token)
 
             # need to wait here
+            # need to wait here
             wait(300)
         except Exception as e:
             # suppress exception and continue without deleting ArgoCD app
             pass
+
+        click.echo("Deleting ArgoCD configuration. Done!")
 
     # K8s Cluster section
     if p.has_checkpoint("k8s-tf"):
@@ -100,6 +106,8 @@ def destroy(verbosity: str):
         tf_wrapper.init()
         tf_wrapper.destroy({"ssh_public_key": p.parameters.get("<CC_CLUSTER_SSH_PUBLIC_KEY>", "")})
 
+        click.echo("Destroying K8s cluster. Done!")
+
     # unset envs as no longer needed
     unset_envs(tf_env_vars)
 
@@ -108,4 +116,7 @@ def destroy(verbosity: str):
 
     # delete local data folder
     shutil.rmtree(LOCAL_FOLDER)
+
+    click.echo("Done!")
+
     return
