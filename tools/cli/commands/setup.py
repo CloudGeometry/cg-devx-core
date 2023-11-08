@@ -12,7 +12,7 @@ from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTIN
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
-    ATLANTIS_NAMESPACE, VAULT_NAMESPACE
+    ATLANTIS_NAMESPACE, VAULT_NAMESPACE, HARBOR_NAMESPACE, SONARQUBE_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVIDER, CLOUD_ACCOUNT_ACCESS_KEY, \
     CLOUD_ACCOUNT_ACCESS_SECRET, CLOUD_REGION, PRIMARY_CLUSTER_NAME, DNS_REGISTRAR, DNS_REGISTRAR_ACCESS_TOKEN, \
     DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, DOMAIN_NAME, GIT_PROVIDER, GIT_ORGANIZATION_NAME, \
@@ -520,11 +520,10 @@ def setup(
         p.internals["ARGOCD_USER"] = "admin"
         p.internals["ARGOCD_PASSWORD"] = argo_pas
 
-        wait(30)
-
         # get argocd auth token
         with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3):
+                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
+                                 log_level=portforward.LogLevel.ERROR):
             argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
             p.internals["ARGOCD_TOKEN"] = argocd_token
 
@@ -574,7 +573,8 @@ def setup(
         # https://discuss.hashicorp.com/t/cant-init-1-13-2-with-awskms/54000
         # Workaround init using kubectl
         # with portforward.forward(VAULT_NAMESPACE, "vault-0", 8200, 8200,
-        #                          config_path=p.internals["KCTL_CONFIG_PATH"]):
+        #                          config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
+        #                          log_level=portforward.LogLevel.ERROR:
         #
         #     vault_client = hvac.Client(url='http://127.0.0.1:8200')
         #     if not vault_client.sys.is_initialized():
@@ -614,7 +614,7 @@ def setup(
         p.set_checkpoint("secrets-management")
         p.save_checkpoint()
 
-        click.echo("Vault initialization. Done!")
+        click.echo("Secrets Manager initialization. Done!")
 
         wait(15)
     else:
@@ -626,9 +626,8 @@ def setup(
         ingress = kube_client.get_ingress(VAULT_NAMESPACE, "vault")
         kube_client.wait_for_ingress(ingress)
 
-        tls_cert = kube_client.get_custom_object(VAULT_NAMESPACE, "vault-tls",
-                                                 "cert-manager.io", "v1", "certificates")
-        kube_client.wait_for_custom_object(tls_cert, "cert-manager.io", "v1", "certificates")
+        tls_cert = kube_client.get_certificate(VAULT_NAMESPACE, "vault-tls")
+        kube_client.wait_for_certificate(tls_cert)
 
         # run security manager tf to create secrets and roles
         sec_man_tf_env_vars = {
@@ -663,21 +662,6 @@ def setup(
         # prepare registry machine user
         robo_user_name = "robot@main-robot"
         p.internals["REGISTRY_ROBO_USER"] = robo_user_name
-
-        # TODO: figure out if we need it
-        # harbor auth for argo workflow
-        # robo_auth = f'{robo_user_name}:{p.internals["REGISTRY_ROBO_USER_PASSWORD"]}'
-        # p.internals["REGISTRY_ROBO_USER_AUTH"] = base64.b64encode(robo_auth.encode("utf-8")).decode("utf-8")
-        # harbor_reg_url = p.parameters["<REGISTRY_REGISTRY_URL>"]
-        # registry_auth_method = {"username": p.internals["REGISTRY_ROBO_USER"],
-        #                         "password": p.internals["REGISTRY_ROBO_USER_PASSWORD"],
-        #                         "auth": p.internals["REGISTRY_ROBO_USER_AUTH"]
-        #                         }
-        # registry_secret = {
-        #     "config.json": json.dumps({"auths": {harbor_reg_url: {"auth": registry_auth_method}}})
-        # }
-        # kube_client.create_plain_secret(ARGO_WORKFLOW_NAMESPACE, "docker-config", registry_secret)
-        # end
 
         # unset envs as no longer needed
         unset_envs(sec_man_tf_env_vars)
@@ -717,21 +701,31 @@ def setup(
         p.set_checkpoint("users-tf")
         p.save_checkpoint()
         click.echo("Users provisioning. Done!")
-
     else:
         click.echo("Skipped provisioning Users.")
 
     if not p.has_checkpoint("core-services-tf"):
         click.echo("Configuring core services...")
 
-        wait(30)
+        # wait for harbor readiness
+        harbor_dep = kube_client.get_deployment(HARBOR_NAMESPACE, "harbor-core")
+        kube_client.wait_for_deployment(harbor_dep)
 
-        ingress = kube_client.get_ingress(ATLANTIS_NAMESPACE, "atlantis")
-        kube_client.wait_for_ingress(ingress)
+        harbor_ingress = kube_client.get_ingress(HARBOR_NAMESPACE, "harbor-ingress")
+        kube_client.wait_for_ingress(harbor_ingress)
 
-        tls_cert = kube_client.get_custom_object(ATLANTIS_NAMESPACE, "atlantis-tls",
-                                                 "cert-manager.io", "v1", "certificates")
-        kube_client.wait_for_custom_object(tls_cert, "cert-manager.io", "v1", "certificates")
+        harbor_tls_cert = kube_client.get_certificate(HARBOR_NAMESPACE, "harbor-tls")
+        kube_client.wait_for_certificate(harbor_tls_cert)
+
+        # wait for sonarqube readiness
+        sonar_ss = kube_client.get_stateful_set_objects(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
+        kube_client.wait_for_stateful_set(sonar_ss)
+
+        sonar_ingress = kube_client.get_ingress(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
+        kube_client.wait_for_ingress(sonar_ingress)
+
+        sonar_tls_cert = kube_client.get_certificate(SONARQUBE_NAMESPACE, "sonarqube-tls")
+        kube_client.wait_for_certificate(sonar_tls_cert)
 
         p.internals["REGISTRY_USERNAME"] = "admin"
         # run security manager tf to create secrets and roles
@@ -755,7 +749,7 @@ def setup(
             "code_quality_oidc_client_secret": p.internals["CODE_QUALITY_OIDC_CLIENT_SECRET"],
             "code_quality_admin_password": p.internals["CODE_QUALITY_PASSWORD"]
         })
-        registry_out = tf_wrapper.output()
+        core_services_out = tf_wrapper.output()
 
         # unset envs as no longer needed
         unset_envs(core_services_tf_env_vars)
