@@ -29,9 +29,9 @@ variable "last_name" {
 }
 
 variable "github_team_slugs" {
-  type = list(string)
+  type        = list(string)
   description = "the github team slugs to place the user"
-  default = []
+  default     = []
 }
 
 variable "acl_policies" {

@@ -78,7 +78,7 @@ module "iac_pr_automation_irsa_role" {
     }
   }
   role_policy_arns = {
-    policy              = aws_iam_policy.iac_pr_automation_policy.arn
+    policy               = aws_iam_policy.iac_pr_automation_policy.arn
     administrator_access = "arn:aws:iam::aws:policy/AdministratorAccess"
   }
 

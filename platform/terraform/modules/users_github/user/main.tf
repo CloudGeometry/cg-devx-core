@@ -23,7 +23,7 @@ resource "random_password" "password" {
 resource "vault_generic_endpoint" "user" {
   path                 = "auth/userpass/users/${var.username}"
   ignore_absent_fields = true
-  disable_read = true # check is it necessary
+  disable_read         = true # check is it necessary
 
   data_json = jsonencode(
     {
@@ -49,5 +49,5 @@ resource "github_team_membership" "team_membership" {
 
   team_id  = each.value
   username = var.github_username
-  role = "member"
+  role     = "member"
 }

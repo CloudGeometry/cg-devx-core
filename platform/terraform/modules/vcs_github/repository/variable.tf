@@ -54,14 +54,14 @@ variable "atlantis_enabled" {
 }
 
 variable "atlantis_url" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "atlantis_repo_webhook_secret" {
-  type = string
-  default = ""
-  sensitive   = true
+  type      = string
+  default   = ""
+  sensitive = true
 }
 
 

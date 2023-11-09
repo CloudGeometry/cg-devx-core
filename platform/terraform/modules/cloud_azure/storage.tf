@@ -14,13 +14,13 @@ resource "azurerm_storage_account" "storage_account" {
   account_replication_type      = "LRS"
   tags                          = local.tags
   public_network_access_enabled = true
-  min_tls_version = "TLS1_2"
+  min_tls_version               = "TLS1_2"
 
   network_rules {
-    bypass         = ["AzureServices"]
-    default_action = "Deny"
+    bypass                     = ["AzureServices"]
+    default_action             = "Deny"
     virtual_network_subnet_ids = [azurerm_subnet.private_subnet.id]
-    ip_rules = [chomp(data.http.runner_ip_address.body)]
+    ip_rules                   = [chomp(data.http.runner_ip_address.body)]
   }
 
   identity {

@@ -1,10 +1,10 @@
 variable "workload_name" {
   description = "workload name"
-  type = string
+  type        = string
 }
 
 variable "description" {
   description = "workload description"
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }

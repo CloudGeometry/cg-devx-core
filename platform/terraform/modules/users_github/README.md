@@ -4,8 +4,9 @@ This configuration module is designed to hide the complexity associated with use
 
 CGDevX is designed to use this module internally, but you can use it directly to a Hashicorp Vault server.
 
+Set the `VAULT_ADDR`, `VAULT_TOKEN`, `GITHUB_OWNER`, and `GITHUB_TOKEN` environment variables as shown in an example
+below:
 
-Set the `VAULT_ADDR`, `VAULT_TOKEN`, `GITHUB_OWNER`, and `GITHUB_TOKEN` environment variables as shown in an example below:
 ```
 export VAULT_ADDR="https://vault.vault.svc.cluster.local:8200"
 export VAULT_TOKEN="REPLACE_ME_WITH_VAULT_TOKEN"

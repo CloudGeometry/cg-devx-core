@@ -4,7 +4,7 @@ terraform {
     vault = {
       source = "hashicorp/vault"
     }
-}
+  }
 }
 
 resource "vault_identity_oidc_assignment" "app" {
@@ -16,7 +16,7 @@ resource "vault_identity_oidc_client" "app" {
   name          = var.app_name
   key           = var.oidc_provider_key_name
   redirect_uris = var.redirect_uris
-  assignments = [
+  assignments   = [
     vault_identity_oidc_assignment.app.name,
   ]
   id_token_ttl     = 2400
