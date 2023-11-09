@@ -40,9 +40,9 @@ provider "restapi" {
 }
 
 locals {
-  oidc_endpoint     = "https://<OIDC_PROVIDER_URL>"
-  code_quality_url  = "https://<CODE_QUALITY_INGRESS_URL>"
-  workloads = {
+  oidc_endpoint    = "https://<OIDC_PROVIDER_URL>"
+  code_quality_url = "https://<CODE_QUALITY_INGRESS_URL>"
+  workloads        = {
     # "workload-demo" = {
     # },
   }

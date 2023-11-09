@@ -9,12 +9,12 @@ locals {
   azs                 = slice(data.aws_availability_zones.available.names, 0, min(var.az_count, length(data.aws_availability_zones.available.names)))
   cluster_node_lables = var.cluster_node_labels
   node_group_type     = var.node_group_type
-  tags = {
+  tags                = {
     cgx_name = local.name
   }
   node_labels_substr      = join(",", formatlist("%s=%s", keys(var.cluster_node_labels), values(var.cluster_node_labels)))
   default_node_group_name = "${local.name}-node-group"
-  eks_node_groups = [
+  eks_node_groups         = [
     for node_group in var.node_groups :
     {
       name           = node_group.name == "" ? local.default_node_group_name : node_group.name
@@ -23,11 +23,10 @@ locals {
       desired_size   = node_group.desired_size
       instance_types = node_group.instance_types
       capacity_type  = upper(node_group.capacity_type)
-      labels = merge(
+      labels         = merge(
         { "node.kubernetes.io/lifecycle" = "${node_group.capacity_type}" },
         var.cluster_node_labels
       )
-
 
 
     }
@@ -43,19 +42,21 @@ locals {
       override_instance_types = node_group.instance_types
       instance_type           = node_group.instance_types[0]
       instance_types          = node_group.instance_types
-      instance_market_options = ((upper(node_group.capacity_type) == "spot") && (local.node_group_type == "SELF")) ? { market_type = "spot" } : {}
+      instance_market_options = ((upper(node_group.capacity_type) == "spot") && (local.node_group_type == "SELF")) ? {
+        market_type = "spot"
+      } : {}
       capacity_type           = upper(node_group.capacity_type)
-      bootstrap_extra_args = join(",", [
+      bootstrap_extra_args    = join(",", [
         "--kubelet-extra-args '--node-labels=node.kubernetes.io/lifecycle=${node_group.capacity_type}",
-        local.node_labels_substr
-        ,
+        local.node_labels_substr,
         "'"
-        ]
+      ]
       )
 
     }
   ]
-} #end of locals
+}
+#end of locals
 
 
 ################################################################################

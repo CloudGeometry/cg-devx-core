@@ -1,7 +1,7 @@
 variable "atlantis_repo_webhook_secret" {
-  type    = string
-  default = ""
-  sensitive   = true
+  type      = string
+  default   = ""
+  sensitive = true
 }
 
 variable "atlantis_url" {
@@ -21,7 +21,7 @@ variable "vcs_bot_ssh_public_key" {
 
 variable "workload_repos" {
   description = "workloads repos configuration"
-  type = map(object({
+  type        = map(object({
     description                  = optional(string, "")
     visibility                   = optional(string, "private")
     auto_init                    = optional(bool, false)
@@ -34,6 +34,6 @@ variable "workload_repos" {
     atlantis_enabled             = optional(bool, false)
     atlantis_url                 = optional(string, "")
     atlantis_repo_webhook_secret = optional(string, "")
-    }))
+  }))
   default = {}
 }

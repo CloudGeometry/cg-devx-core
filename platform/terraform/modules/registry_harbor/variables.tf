@@ -16,8 +16,8 @@ variable "registry_main_robot_password" {
 
 variable "workloads" {
   description = "workloads harbor configuration"
-  type = map(object({
-    description  = optional(string, "")
-    }))
+  type        = map(object({
+    description = optional(string, "")
+  }))
   default = {}
 }

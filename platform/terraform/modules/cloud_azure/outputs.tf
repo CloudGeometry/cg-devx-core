@@ -36,7 +36,7 @@ output "secret_manager_irsa_role" {
 output "cluster_endpoint" {
   value       = azurerm_kubernetes_cluster.aks_cluster.kube_admin_config.0.host
   description = "K8s cluster admin API endpoint"
-  sensitive = true
+  sensitive   = true
 }
 output "cluster_certificate_authority_data" {
   value       = azurerm_kubernetes_cluster.aks_cluster.kube_admin_config.0.cluster_ca_certificate

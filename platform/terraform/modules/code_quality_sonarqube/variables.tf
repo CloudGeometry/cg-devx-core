@@ -7,12 +7,12 @@ variable "oidc_client_id" {
 }
 
 variable "oidc_client_secret" {
-  type = string
+  type      = string
   sensitive = true
 }
 
 variable "code_quality_admin_password" {
-  type = string
+  type      = string
   sensitive = true
 }
 
@@ -22,8 +22,8 @@ variable "code_quality_url" {
 
 variable "workloads" {
   description = "workloads harbor configuration"
-  type = map(object({
-    description  = optional(string, "")
-    }))
+  type        = map(object({
+    description = optional(string, "")
+  }))
   default = {}
 }

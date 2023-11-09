@@ -18,10 +18,10 @@ provider "vault" {
 # <TF_HOSTING_PROVIDER>
 
 locals {
-  cluster_name     = "<PRIMARY_CLUSTER_NAME>"
-  provisioned_by   = "cgdevx"
+  cluster_name   = "<PRIMARY_CLUSTER_NAME>"
+  provisioned_by = "cgdevx"
   ### Workload groups definition bellow
-  workloads        = {
+  workloads      = {
     # "workload-demo" = {
     # },
   }
