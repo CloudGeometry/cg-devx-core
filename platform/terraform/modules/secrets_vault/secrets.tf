@@ -55,7 +55,7 @@ resource "vault_generic_secret" "atlantis_secrets" {
       # github specific section
       ATLANTIS_GH_HOSTNAME                = "github.com",
       ATLANTIS_GH_TOKEN                   = var.vcs_token,
-      ATLANTIS_GH_USER                    = "<GIT_USER_NAME>",
+      ATLANTIS_GH_USER                    = "<GIT_USER_LOGIN>",
       ATLANTIS_GH_WEBHOOK_SECRET          = var.atlantis_repo_webhook_secret,
       GITHUB_OWNER                        = "<GIT_ORGANIZATION_NAME>",
       GITHUB_TOKEN                        = var.vcs_token,

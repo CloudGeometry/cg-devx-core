@@ -12,7 +12,7 @@ provider "vault" {
 
 locals {
   gitops_repo_name = "<GITOPS_REPOSITORY_NAME>"
-  vcs_bot_username = "<GIT_USER_NAME>"
+  vcs_bot_username = "<GIT_USER_LOGIN>"
   bot_email        = "<OWNER_EMAIL>"
   users = {
     ### Primary bot user
