@@ -1,6 +1,9 @@
 resource "random_password" "robot_password" {
   length  = 12
   special = false
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
 }
 
 resource "harbor_robot_account" "workload_robot" {
