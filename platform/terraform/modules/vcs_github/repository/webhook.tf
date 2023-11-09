@@ -1,5 +1,5 @@
 resource "github_repository_webhook" "gitops_atlantis_webhook" {
-  count = var.atlantis_enabled ? 1 : 0
+  count      = var.atlantis_enabled ? 1 : 0
   repository = github_repository.repo.name
 
   configuration {

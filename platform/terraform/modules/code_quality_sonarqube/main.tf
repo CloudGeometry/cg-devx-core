@@ -10,9 +10,9 @@ terraform {
 }
 
 resource "sonarqube_project" "main" {
-    name       = "main"
-    project    = "main"
-    visibility = "private"
+  name       = "main"
+  project    = "main"
+  visibility = "private"
 }
 
 resource "sonarqube_setting" "server_base_url" {

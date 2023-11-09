@@ -28,7 +28,7 @@ resource "azurerm_subnet" "private_subnet" {
   address_prefixes                              = [cidrsubnet(var.cluster_network_cidr, 4, 1)]
   private_endpoint_network_policies_enabled     = false
   private_link_service_network_policies_enabled = true
-  service_endpoints = ["Microsoft.KeyVault", "Microsoft.Storage"]
+  service_endpoints                             = ["Microsoft.KeyVault", "Microsoft.Storage"]
 }
 
 resource "azurerm_subnet" "internal_subnet" {

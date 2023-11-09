@@ -14,7 +14,7 @@ locals {
   gitops_repo_name = "<GITOPS_REPOSITORY_NAME>"
   vcs_bot_username = "<GIT_USER_NAME>"
   bot_email        = "<OWNER_EMAIL>"
-  users = {
+  users            = {
     ### Primary bot user
     "cgdevx-bot" = {
       vcs_username         = local.vcs_bot_username
@@ -39,6 +39,6 @@ locals {
 }
 
 module "users" {
-  source      = "../modules/users_<GIT_PROVIDER>"
-  users       = local.users
+  source = "../modules/users_<GIT_PROVIDER>"
+  users  = local.users
 }

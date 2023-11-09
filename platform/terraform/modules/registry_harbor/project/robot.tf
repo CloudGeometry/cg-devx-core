@@ -8,7 +8,7 @@ resource "harbor_robot_account" "workload_robot" {
   description = "${var.project_name} workload project level robot account"
   level       = "project"
   secret      = resource.random_password.robot_password.result
-#need to define project robot permissions
+  #need to define project robot permissions
   permissions {
     access {
       action   = "pull"
@@ -28,6 +28,6 @@ resource "harbor_robot_account" "workload_robot" {
 }
 
 output "robot_user_pass" {
-  value = resource.random_password.robot_password.result
+  value     = resource.random_password.robot_password.result
   sensitive = true
 }

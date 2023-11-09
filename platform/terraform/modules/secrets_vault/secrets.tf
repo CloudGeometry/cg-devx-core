@@ -1,8 +1,8 @@
 locals {
-  b64_docker_auth = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
-  harbor_admin_user  = "admin"
-  grafana_admin_user = "admin"
-  atlantis_admin_user = "admin"
+  b64_docker_auth      = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
+  harbor_admin_user    = "admin"
+  grafana_admin_user   = "admin"
+  atlantis_admin_user  = "admin"
   sonarqube_admin_user = "admin"
 }
 
@@ -78,10 +78,10 @@ resource "vault_generic_secret" "atlantis_secrets" {
       # ----
 
       # vault specific section
-      TF_VAR_vault_addr  = "http://vault.vault.svc.cluster.local:8200",
-      TF_VAR_vault_token = var.vault_token,
-      VAULT_ADDR         = "http://vault.vault.svc.cluster.local:8200",
-      VAULT_TOKEN        = var.vault_token,
+      TF_VAR_vault_addr                      = "http://vault.vault.svc.cluster.local:8200",
+      TF_VAR_vault_token                     = var.vault_token,
+      VAULT_ADDR                             = "http://vault.vault.svc.cluster.local:8200",
+      VAULT_TOKEN                            = var.vault_token,
       # code quality specific section
       TF_VAR_code_quality_oidc_client_id     = module.harbor.vault_oidc_client_id,
       TF_VAR_code_quality_oidc_client_secret = module.harbor.vault_oidc_client_secret,

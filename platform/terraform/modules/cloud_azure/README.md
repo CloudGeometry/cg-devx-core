@@ -17,12 +17,13 @@ This configuration is capable of running on a new Azure subscription and uses a 
   *[az tool](https://learn.microsoft.com/en-us/azure/developer/terraform/get-started-cloud-shell-bash?tabs=bash#authenticate-to-azure-via-a-microsoft-account)
   **
 
-- *
-  *[Azure service principal](https://learn.microsoft.com/en-us/azure/developer/terraform/get-started-cloud-shell-bash?tabs=bash#create-a-service-principal)
-  **
-  We can use a different authentication method for terraforms, but the Principal service is considered the most optimal.
-  Service Principal is created with Contributor rights for the entire subscription.
-  (Optional) Add the User Access Administrator role for the service principal.
+-
+    *
+*[Azure service principal](https://learn.microsoft.com/en-us/azure/developer/terraform/get-started-cloud-shell-bash?tabs=bash#create-a-service-principal)
+**
+We can use a different authentication method for terraforms, but the Principal service is considered the most optimal.
+Service Principal is created with Contributor rights for the entire subscription.
+(Optional) Add the User Access Administrator role for the service principal.
 
 To successfully connect to the cluster, you need to install the **kubelogin** tool. You can use *
 *[THIS](https://azure.github.io/kubelogin/install.html)**) guide to install.
@@ -61,7 +62,9 @@ After that, your kubeconfig will be updated automatically.
 ## AKS RBAC
 
 To provide access to certain roles and access to resources for System Accounts of the AKS cluster, we use
+
 *
+
 *[workload identities](https://learn.microsoft.com/en-us/azure/active-directory/workload-identities/workload-identities-overview)
 **.
 Short manual you can find *
