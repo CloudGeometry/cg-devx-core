@@ -55,7 +55,8 @@ Ingress URLs for core components. Note!: URL does not contain protocol prefix
 - `GIT_REPOSITORY_GIT_URL` - Platform GitOps repository Git URL
 - `GIT_REPOSITORY_ROOT` - Git organisation root
 - `GIT_REPOSITORY_URL` - Platform GitOps repository Http URL
-- `GIT_USER_NAME` - Git machine username used by Platform
+- `GIT_USER_NAME` - Git machine user name used by Platform
+- `GIT_USER_LOGIN` - Git machine user login used by Platform
 - `IAC_PR_AUTOMATION_WEBHOOK_SECRET` - IaC PR automation (Atlantis) webhook secret
 - `IAC_PR_AUTOMATION_WEBHOOK_URL` - IaC PR automation (Atlantis) webhook
 - `VCS_BOT_SSH_PUBLIC_KEY` - Git machine user SSH public key

@@ -55,7 +55,7 @@ resource "vault_generic_secret" "atlantis_secrets" {
       # github specific section
       ATLANTIS_GH_HOSTNAME                = "github.com",
       ATLANTIS_GH_TOKEN                   = var.vcs_token,
-      ATLANTIS_GH_USER                    = "<GIT_USER_NAME>",
+      ATLANTIS_GH_USER                    = "<GIT_USER_LOGIN>",
       ATLANTIS_GH_WEBHOOK_SECRET          = var.atlantis_repo_webhook_secret,
       GITHUB_OWNER                        = "<GIT_ORGANIZATION_NAME>",
       GITHUB_TOKEN                        = var.vcs_token,
@@ -96,6 +96,9 @@ resource "random_password" "grafana_password" {
   length           = 22
   special          = true
   override_special = "!#$"
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
 }
 
 resource "vault_generic_secret" "grafana_secrets" {
@@ -116,6 +119,9 @@ resource "random_password" "atlantis_password" {
   length           = 22
   special          = true
   override_special = "!#$"
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
 }
 
 resource "vault_generic_secret" "atlantis_auth_secrets" {
@@ -135,6 +141,9 @@ resource "vault_generic_secret" "atlantis_auth_secrets" {
 resource "random_password" "harbor_password" {
   length  = 22
   special = false
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
 }
 
 resource "vault_generic_secret" "harbor_admin_secret" {
@@ -153,6 +162,9 @@ resource "vault_generic_secret" "harbor_admin_secret" {
 resource "random_password" "harbor_main_robot_password" {
   length  = 22
   special = false
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
 }
 
 resource "vault_generic_secret" "harbor_main_robot_secret" {
@@ -172,6 +184,9 @@ resource "vault_generic_secret" "harbor_main_robot_secret" {
 resource "random_password" "sonarqube_password" {
   length  = 22
   special = false
+  min_lower = 1
+  min_upper = 1
+  min_numeric = 1
 }
 
 resource "vault_generic_secret" "sonarqube_admin_secret" {

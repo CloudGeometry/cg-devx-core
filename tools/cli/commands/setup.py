@@ -118,7 +118,8 @@ def setup(
         })
 
     # validate parameters
-    p.validate_input_params(validator=setup_param_validator)
+    if not p.validate_input_params(validator=setup_param_validator):
+       return
 
     # save checkpoint
     p.save_checkpoint()
@@ -140,6 +141,7 @@ def setup(
 
         git_user_login, git_user_name, git_user_email = git_man.get_current_user_info()
         p.internals["GIT_USER_LOGIN"] = git_user_login
+        p.parameters["<GIT_USER_LOGIN>"] = git_user_login
         p.internals["GIT_USER_NAME"] = git_user_name
         p.parameters["<GIT_USER_NAME>"] = git_user_name
         p.internals["GIT_USER_EMAIL"] = git_user_email
@@ -616,7 +618,7 @@ def setup(
 
         click.echo("Secrets Manager initialization. Done!")
 
-        wait(15)
+        wait(30)
     else:
         click.echo("Skipped Secrets Manager initialization.")
 
@@ -706,27 +708,34 @@ def setup(
 
     if not p.has_checkpoint("core-services-tf"):
         click.echo("Configuring core services...")
-
+        
+        wait(10)
         # wait for harbor readiness
         harbor_dep = kube_client.get_deployment(HARBOR_NAMESPACE, "harbor-core")
         kube_client.wait_for_deployment(harbor_dep)
 
+        wait(10)
         harbor_ingress = kube_client.get_ingress(HARBOR_NAMESPACE, "harbor-ingress")
         kube_client.wait_for_ingress(harbor_ingress)
 
+        wait(10)
         harbor_tls_cert = kube_client.get_certificate(HARBOR_NAMESPACE, "harbor-tls")
         kube_client.wait_for_certificate(harbor_tls_cert)
 
+        wait(10)
         # wait for sonarqube readiness
         sonar_ss = kube_client.get_stateful_set_objects(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
         kube_client.wait_for_stateful_set(sonar_ss)
 
+        wait(10)
         sonar_ingress = kube_client.get_ingress(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
         kube_client.wait_for_ingress(sonar_ingress)
 
+        wait(10)
         sonar_tls_cert = kube_client.get_certificate(SONARQUBE_NAMESPACE, "sonarqube-tls")
         kube_client.wait_for_certificate(sonar_tls_cert)
 
+        wait(30)
         p.internals["REGISTRY_USERNAME"] = "admin"
         # run security manager tf to create secrets and roles
         core_services_tf_env_vars = {
