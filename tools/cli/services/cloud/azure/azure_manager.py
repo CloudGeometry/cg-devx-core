@@ -1,6 +1,7 @@
 import textwrap
 from typing import Optional
 
+from common.tracing_decorator import trace
 from common.utils.generators import random_string_generator
 from common.utils.os_utils import detect_command_presence
 from services.cloud.azure.azure_sdk import AzureSdk
@@ -23,6 +24,7 @@ class AzureManager(CloudProviderManager):
     def region(self):
         return self.__azure_sdk.location
 
+    @trace()
     def destroy_iac_state_storage(self, bucket: str) -> bool:
         """
         Destroy the cloud-native Terraform remote state storage.
@@ -41,6 +43,7 @@ class AzureManager(CloudProviderManager):
         self.iac_backend_storage_container_name = bucket
         return self.__azure_sdk.destroy_resource_group(self._generate_resource_group_name())
 
+    @trace()
     def create_iac_backend_snippet(self, location: str, service: str, **kwargs) -> str:
         """
         Generate the Terraform configuration for the Azure backend.
@@ -64,6 +67,7 @@ class AzureManager(CloudProviderManager):
               key                  = "terraform/{service}/terraform.tfstate"
             }}''')
 
+    @trace()
     def create_hosting_provider_snippet(self):
         # TODO: consider replacing with file template
         return textwrap.dedent('''\
@@ -71,6 +75,7 @@ class AzureManager(CloudProviderManager):
            features {}
          }''')
 
+    @trace()
     def create_seal_snippet(self, key_id: str, **kwargs) -> str:
         if kwargs and "name" in kwargs:
             name = kwargs["name"]
@@ -82,19 +87,24 @@ class AzureManager(CloudProviderManager):
                   key_name       = "{key_id}"
                 }}'''.format(key_id=key_id, name=name)
 
+    @trace()
     def create_k8s_cluster_role_mapping_snippet(self) -> str:
         return "azure.workload.identity/client-id"
 
+    @trace()
     def get_k8s_auth_command(self) -> tuple[str, [str]]:
         raise NotImplementedError()
 
+    @trace()
     def get_k8s_token(self, cluster_name: str) -> str:
         raise NotImplementedError()
 
+    @trace()
     def detect_cli_presence(self) -> bool:
         """Check whether dependencies are on PATH and marked as executable."""
         return detect_command_presence(CLI) & detect_command_presence(K8s)
 
+    @trace()
     def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
         """
         Creates cloud native terraform remote state storage
@@ -105,6 +115,7 @@ class AzureManager(CloudProviderManager):
                                                self._generate_storage_account_name(),
                                                self._generate_resource_group_name())
 
+    @trace()
     def evaluate_permissions(self) -> bool:
         """
         Check if provided credentials have required permissions
@@ -152,15 +163,19 @@ class AzureManager(CloudProviderManager):
         """
         return f"{self.iac_backend_storage_container_name[:20]}-rg"
 
+    @trace()
     def create_ingress_annotations(self) -> str:
         return 'service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: "/healthz"'
 
+    @trace()
     def create_additional_labels(self) -> str:
         return 'azure.workload.identity/use: "true"'
 
+    @trace()
     def create_sidecar_annotation(self) -> str:
         return 'azure.workload.identity/inject-proxy-sidecar: "true"'
 
+    @trace()
     def create_external_secrets_config(self, **kwargs) -> str:
         if kwargs and "location" in kwargs:
             location = kwargs["location"]

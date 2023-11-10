@@ -4,6 +4,7 @@ import os
 from python_terraform import Terraform, IsNotFlagged
 
 from common.const.common_path import LOCAL_TF_TOOL
+from common.tracing_decorator import trace
 
 
 class TfWrapper:
@@ -16,9 +17,11 @@ class TfWrapper:
         else:
             raise Exception("No tf executable found")
 
+    @trace()
     def change_working_dir(self, working_dir: str):
         self._tf.working_dir = working_dir
 
+    @trace()
     def version(self):
         return_code, stdout, stderr = self._tf.version("-json")
         output = json.loads(stdout)
@@ -26,6 +29,7 @@ class TfWrapper:
             raise Exception("tf executable failure", return_code, stderr)
         return output["terraform_version"]
 
+    @trace()
     def init(self):
         return_code, stdout, stderr = self._tf.init()
 
@@ -34,6 +38,7 @@ class TfWrapper:
 
         return True
 
+    @trace()
     def apply(self, variables: dict = None):
         self._tf.variables = variables
 
@@ -45,6 +50,7 @@ class TfWrapper:
 
         return True
 
+    @trace()
     def output(self):
         output = {}
         tf_output = self._tf.output()
@@ -52,6 +58,7 @@ class TfWrapper:
             output[k] = v["value"]
         return output
 
+    @trace()
     def destroy(self, variables: dict = None):
         self._tf.variables = variables
 

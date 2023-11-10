@@ -10,6 +10,7 @@ from common.const.parameter_names import CLOUD_PROVIDER, GIT_PROVIDER, DNS_REGIS
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
+from common.tracing_decorator import trace
 
 
 class StateStore:
@@ -70,6 +71,7 @@ class StateStore:
         return self.__store[STATE_INPUT_PARAMS]
 
     @classmethod
+    @trace()
     def validate_input_params(cls, validator):
         return validator(cls)
 

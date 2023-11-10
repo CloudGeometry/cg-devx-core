@@ -23,6 +23,7 @@ from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
 from common.logging_config import configure_logging
 from common.state_store import StateStore
+from common.tracing_decorator import trace
 from common.utils.generators import random_string_generator
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
@@ -119,7 +120,7 @@ def setup(
 
     # validate parameters
     if not p.validate_input_params(validator=setup_param_validator):
-       return
+        return
 
     # save checkpoint
     p.save_checkpoint()
@@ -708,7 +709,7 @@ def setup(
 
     if not p.has_checkpoint("core-services-tf"):
         click.echo("Configuring core services...")
-        
+
         wait(10)
         # wait for harbor readiness
         harbor_dep = kube_client.get_deployment(HARBOR_NAMESPACE, "harbor-core")
@@ -775,6 +776,7 @@ def setup(
     return True
 
 
+@trace()
 def show_credentials(p):
     user_name = PLATFORM_USER_NAME
     vault_client = hvac.Client(url=f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
@@ -809,6 +811,7 @@ def show_credentials(p):
     return
 
 
+@trace()
 def prepare_parameters(p):
     # TODO: move to appropriate place
     p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL).lower()
@@ -853,6 +856,7 @@ def prepare_parameters(p):
     return p
 
 
+@trace()
 def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
     if not manager.detect_cli_presence():
         raise click.ClickException("Cloud CLI is missing")
@@ -860,6 +864,7 @@ def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
         raise click.ClickException("Insufficient IAM permission")
 
 
+@trace()
 def git_provider_check(manager: GitProviderManager, p: StateStore) -> None:
     if not manager.evaluate_permissions():
         raise click.ClickException("Insufficient Git token permissions")
@@ -874,6 +879,7 @@ def dns_provider_check(manager: DNSManager, p: StateStore) -> None:
         raise click.ClickException("Could not verify domain ownership")
 
 
+@trace()
 def setup_param_validator(params: StateStore) -> bool:
     if params.dns_registrar is None:
         if params.cloud_provider == CloudProviders.AWS:

@@ -6,7 +6,7 @@ import dns.rdatatype
 import dns.resolver
 import httpx
 
-from common.retry_decorator import exponential_backoff_decorator
+from common.retry_decorator import exponential_backoff
 
 
 class DNSManager(ABC):
@@ -50,7 +50,7 @@ def get_domain_ns_records(domain_name: str, name_servers=None):
     return [ns.to_text() for ns in answers]
 
 
-@exponential_backoff_decorator()
+@exponential_backoff()
 def get_domain_txt_records_dot(domain_name: str, name_servers=None):
     if name_servers is None:
         name_servers = ["8.8.8.8"]
