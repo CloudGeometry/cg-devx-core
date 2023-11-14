@@ -274,10 +274,6 @@ def setup(
         click.echo("Skipped GitOps code prep.")
 
     # VCS provisioning
-
-    # use to enable tf debug
-    # "TF_LOG": "DEBUG", "TF_LOG_PATH": "/Users/a1m/.cgdevx/gitops/terraform/vcs/terraform.log",
-
     cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
 
     # VCS section
@@ -402,22 +398,14 @@ def setup(
         click.echo("Skipped GitOps repo initialization.")
 
     # k8s client
-    if p.cloud_provider == CloudProviders.AWS:
-        # default token life-time is 14m
-        # to be safe should refresh token each time
-        k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
-        kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"],
-                                 api_key=k8s_token,
-                                 endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
-    else:
-        kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
-
     kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
-    cd_man = DeliveryServiceManager(kube_client)
+    kube_client = init_k8s_client(cloud_man, p)
 
     # install ArgoCD
     if not p.has_checkpoint("k8s-delivery"):
         click.echo("Installing ArgoCD...")
+
+        cd_man = DeliveryServiceManager(kube_client)
 
         argocd_bootstrap_name = "argocd-bootstrap"
         argocd_core_project_name = "core"
@@ -551,6 +539,10 @@ def setup(
     else:
         click.echo("Skipped ArgoCD installation.")
 
+    # default AWS EKS auth token life-time is 14m
+    # to be safe should refresh token
+    kube_client = init_k8s_client(cloud_man, p)
+
     # initialize and unseal vault
     if not p.has_checkpoint("secrets-management"):
         click.echo("Initializing Secrets Manager...")
@@ -622,6 +614,10 @@ def setup(
         wait(30)
     else:
         click.echo("Skipped Secrets Manager initialization.")
+
+    # default AWS EKS auth token life-time is 14m
+    # to be safe should refresh token
+    kube_client = init_k8s_client(cloud_man, p)
 
     if not p.has_checkpoint("secrets-management-tf"):
         click.echo("Setting Secrets...")
@@ -707,6 +703,9 @@ def setup(
     else:
         click.echo("Skipped provisioning Users.")
 
+    # default AWS EKS auth token life-time is 14m
+    # to be safe should refresh token
+    kube_client = init_k8s_client(cloud_man, p)
     if not p.has_checkpoint("core-services-tf"):
         click.echo("Configuring core services...")
 
@@ -774,6 +773,18 @@ def setup(
     show_credentials(p)
 
     return True
+
+
+@trace()
+def init_k8s_client(cloud_man, p):
+    if p.cloud_provider == CloudProviders.AWS:
+        k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
+        kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"],
+                                 api_key=k8s_token,
+                                 endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
+    else:
+        kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
+    return kube_client
 
 
 @trace()
