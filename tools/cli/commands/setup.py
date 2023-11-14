@@ -119,7 +119,7 @@ def setup(
 
     # validate parameters
     if not p.validate_input_params(validator=setup_param_validator):
-       return
+        return
 
     # save checkpoint
     p.save_checkpoint()
@@ -708,7 +708,7 @@ def setup(
 
     if not p.has_checkpoint("core-services-tf"):
         click.echo("Configuring core services...")
-        
+
         wait(10)
         # wait for harbor readiness
         harbor_dep = kube_client.get_deployment(HARBOR_NAMESPACE, "harbor-core")
@@ -769,6 +769,10 @@ def setup(
 
     else:
         click.echo("Skipped core services configuration.")
+
+    # restrict access to IaC remote state store
+    cloud_man.protect_iac_state_storage(p.internals["TF_BACKEND_STORAGE_NAME"],
+                                        p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"])
 
     show_credentials(p)
 

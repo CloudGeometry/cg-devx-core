@@ -33,6 +33,13 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
+    def protect_iac_state_storage(self, name: str, identity: str):
+        """
+        Restrict access to cloud native terraform remote state storage
+        """
+        pass
+
+    @abstractmethod
     def destroy_iac_state_storage(self, bucket: str):
         """
         Destroy cloud native terraform remote state storage
