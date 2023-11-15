@@ -3,6 +3,7 @@ import subprocess
 import yaml
 
 from common.const.common_path import LOCAL_KCTL_TOOL
+from common.tracing_decorator import trace
 
 
 class KctlWrapper:
@@ -41,10 +42,12 @@ class KctlWrapper:
             raise Exception(stderr)
         return stdout.decode("utf-8")
 
+    @trace()
     def run(self, command: str, *args, **kwargs):
         command = self.__base_command(command, *args, **kwargs)
         return self.__run_command(command, *args, **kwargs)
 
+    @trace()
     def exec(self, pod: str, cmd: str, container: str = None, namespace: str = None, flags: [str] = None):
         # kubectl exec POD [-c CONTAINER] [-i] [-t] [flags] [-- COMMAND [args...]]
         command = self.__base_command(base_command="exec", resource=pod, namespace=namespace, container=container)

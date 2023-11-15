@@ -4,6 +4,7 @@ from urllib.error import HTTPError
 import requests
 
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
+from common.tracing_decorator import trace
 from services.vcs.git_provider_manager import GitProviderManager
 
 
@@ -18,6 +19,7 @@ class GitHubProviderManager(GitProviderManager):
             "delete_repo", "repo"
         }
 
+    @trace()
     def check_repository_existence(self, name: str = "GitOps"):
         """
         Check if repository exists
@@ -37,6 +39,7 @@ class GitHubProviderManager(GitProviderManager):
         except HTTPError as e:
             raise e
 
+    @trace()
     def evaluate_permissions(self):
         """
         Check if provided credentials have required permissions
@@ -57,6 +60,7 @@ class GitHubProviderManager(GitProviderManager):
         except HTTPError as e:
             return False
 
+    @trace()
     def get_current_user_info(self):
         """
         Get authenticated user info
@@ -84,5 +88,6 @@ class GitHubProviderManager(GitProviderManager):
         except HTTPError as e:
             raise e
 
+    @trace()
     def create_tf_module_snippet(self):
         return 'provider "github" {}'

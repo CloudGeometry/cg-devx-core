@@ -5,6 +5,7 @@ import requests
 from requests.exceptions import HTTPError
 
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
+from common.tracing_decorator import trace
 from services.vcs.git_provider_manager import GitProviderManager
 
 
@@ -34,6 +35,7 @@ class GitLabProviderManager(GitProviderManager):
             'Accept': 'application/json'
         }
 
+    @trace()
     def check_repository_existence(self, name: str = "GitOps") -> bool:
         """
         Check if a given repository exists within the specified GitLab group.
@@ -103,6 +105,7 @@ class GitLabProviderManager(GitProviderManager):
         except requests.RequestException:
             return None
 
+    @trace()
     def evaluate_permissions(self) -> bool:
         """
         Check if provided credentials have the required permissions on GitLab for the specified group.
@@ -133,6 +136,7 @@ class GitLabProviderManager(GitProviderManager):
             # This will handle cases where keys are missing from dicts, or None values are used inappropriately
             return False
 
+    @trace()
     def get_current_user_info(self) -> Tuple[str, str, str]:
         """
         Retrieve authenticated user's information from GitLab.
@@ -154,6 +158,7 @@ class GitLabProviderManager(GitProviderManager):
         except HTTPError as e:
             raise e
 
+    @trace()
     def create_tf_module_snippet(self) -> str:
         """
         Generate a Terraform module snippet for the GitLab provider.

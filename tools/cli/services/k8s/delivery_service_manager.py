@@ -6,11 +6,11 @@ from requests import HTTPError
 
 from common.const.const import ARGOCD_REGISTRY_APP_PATH, GITOPS_REPOSITORY_URL
 from common.const.namespaces import ARGOCD_NAMESPACE
-from common.retry_decorator import exponential_backoff_decorator
+from common.retry_decorator import exponential_backoff
 from services.k8s.k8s import KubeClient
 
 
-@exponential_backoff_decorator(base_delay=5)
+@exponential_backoff(base_delay=5)
 def get_argocd_token(user, password):
     try:
         response = requests.post("https://localhost:8080/api/v1/session",
@@ -27,7 +27,7 @@ def get_argocd_token(user, password):
         raise e
 
 
-@exponential_backoff_decorator(base_delay=5)
+@exponential_backoff(base_delay=5)
 def delete_application(app_name, token):
     try:
         response = requests.delete(f"https://localhost:8080/api/v1/applications/{app_name}?cascade=true",
