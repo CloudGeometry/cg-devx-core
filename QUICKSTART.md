@@ -1,22 +1,49 @@
 # Quickstart guide
 
+## Supported Platforms
+
+### Operating Systems
+
+- Linux - Supported
+- Mac (ARM) - Supported
+- Mac (Intel) - Supported
+- Windows - Will be added to a future release
+
+### Git Providers
+
+- GitHub - Supported
+- GitLab - Experimental*
+- Bitbucket - Will be added to a future release
+
+### Cloud Providers
+
+- AWS - Supported
+- Azure - Experimental*
+- GCP -  Will be added to a future release
+
+\* Experimental functions are provided for you to try, but are not documented or supported, and are likely to be buggy, or to change after release.
+
 ## Prerequisites
+
+Before you begin the installation process, ensure you have the following prerequisites covered:
 
 ### GitHub
 
-You should have a
+You should have:
 
-1. Organization. If you don't have one, please
-   follow [this](https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch)
-   guide.
-2. Account for a machine user used by platform. You could create one
-   following [the guide](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account)
-3. Personal access token for an account created in a previous step. Please follow the steps as
-   described [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
+1. A user account for the Git platform you're working with. This account will be used to create and manage repositories,
+   make commits, manage users, and perform other tasks, such as executing Terraform scripts. For Github, you can create one
+   following [this guide](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account).
+3. A Github Organization. Organizations are used to group repositories, and CGDevX will create a new repo within a specific
+   organization so that it's easy to find and manage later should you decide to stop using CGDevX. you don't have one,
+   please follow [this guide](https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch) to create one. The user from step 1 should be part of this organization.
+5. A personal access token for the account from step 1. This token will enable CGDevX to take action on the user's behalf,
+   creating and managing repos, and so on. To get a personal access token, also known as a "developer token", please follow
+   the steps as described in [this guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
 
-   GitHub token will be used to authenticate with the GitHub API and perform various actions such as creating, and
-   deleting repository, groups, and other users. The Following set of scopes will be used to provision the CG DevX
-   (creating and updating GitHub repositories, updating repository webhook URL, etc.):
+   The GitHub token will be used to authenticate with the GitHub API and perform various actions such as creating and
+   deleting repositories, groups, and other users. To provide permission for these actions, make sure you seelct the
+   following set of scopes:
 
     - [x] **repo** Full control of private repositories
         - [x] **repo:status** Access commit status
@@ -47,33 +74,24 @@ You should have a
         - [x] **write:ssh_signing_key** Write public user SSH signing keys
         - [x] **read:ssh_signing_key** Read public user SSH signing keys
 
-### AWS
+### AWS deployment
 
-You should have a
+Before deploying to AWS, ensure that you have:
 
-1. AWS account with billing enabled
-2. Public hosted zone with DNS routing. You could follow the
-   guide [here](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html)
-3. User account with AdministratorAccess and
-   obtain [security credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds.html#access-keys-and-secret-access-keys)
-4. AWS CLI
+1. An AWS account with billing enabled. (Remember, deploying clusters will incur charges. Make sure to destroy
+   resources when you're finished with them!)
+3. A public hosted zone with DNS routing. To set this up, you can follow [this guide](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/AboutHZWorkingWith.html).
+4. A user account with `AdministratorAccess`. We recommend that rather than using your root account, you set up a
+   new IAM user, then grant it AdministratorAccess. You can use [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started.html) 
+   to set up an IAM account, and [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html) to grant it 
+   `AdministratorAccess`.
+5. The security credentials for this account, which enables CGDevX to use it. Use 
+   [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds.html#access-keys-and-secret-access-keys) to
+   get your access keys.
+6. The AWS CLI installed and configured to use this user. You can use [this guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) to install the CLI.
 
 ## Installation process
 
-Follow [CLI tool readme](tools/README.md) to launch CG DevX CLI and use [commands](tools/cli/commands/README.md).
-
-## Platform support
-
-Currently, CG DevX CLI works only on Linux and Mac (both ARM and Intel). Windows support may be added in the future.
-
-### Git provider support
-
-- GitHub - supported
-- GitLab - work in progress
-- Bitbucket - TBD
-
-### Cloud Provider
-
-- AWS - supported
-- Azure - work in progress
-- GCP - TBD
+Once you have the prerequisites installed and configured, you are ready to install the CGDevX CLI.
+Follow the instructions in the [CLI tool readme](tools/README.md). Once installed, you can find the
+CLI commands [here](tools/cli/commands/README.md).
