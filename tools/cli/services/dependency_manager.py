@@ -11,6 +11,7 @@ from python_terraform import *
 
 from common.const.common_path import LOCAL_TOOLS_FOLDER, LOCAL_TF_TOOL, LOCAL_KCTL_TOOL
 from common.const.const import KUBECTL_VERSION, TERRAFORM_VERSION
+from common.tracing_decorator import trace
 from services.tf_wrapper import TfWrapper
 
 
@@ -84,6 +85,7 @@ class DependencyManager:
                 return False
 
     @staticmethod
+    @trace()
     def check_tf():
         if os.path.exists(LOCAL_TF_TOOL):
             tf = TfWrapper()
@@ -93,6 +95,7 @@ class DependencyManager:
         return False
 
     @staticmethod
+    @trace()
     def check_kubectl():
         # TODO: extract and check kubectl version
         if os.path.exists(LOCAL_KCTL_TOOL):
@@ -100,6 +103,7 @@ class DependencyManager:
         else:
             return False
 
+    @trace()
     def install_tf(self):
         tmp_folder = self._prepare_temp_folder()
 
@@ -143,6 +147,7 @@ class DependencyManager:
                         break
         return checksum
 
+    @trace()
     def install_kubectl(self):
         tmp_folder = self._prepare_temp_folder()
         download_url = None

@@ -6,8 +6,8 @@ import hvac
 import portforward
 import yaml
 
-from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, set_envs, \
-    unset_envs, wait
+from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
+    set_envs, unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME
@@ -23,6 +23,7 @@ from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
 from common.logging_config import configure_logging
 from common.state_store import StateStore
+from common.tracing_decorator import trace
 from common.utils.generators import random_string_generator
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
@@ -119,7 +120,7 @@ def setup(
 
     # validate parameters
     if not p.validate_input_params(validator=setup_param_validator):
-       return
+        return
 
     # save checkpoint
     p.save_checkpoint()
@@ -131,7 +132,7 @@ def setup(
     git_man = init_git_provider(p)
 
     if not p.has_checkpoint("preflight"):
-        click.echo("Executing pre-flight checks...")
+        click.echo("1/12: Executing pre-flight checks...")
 
         cloud_provider_check(cloud_man, p)
         click.echo("Cloud provider pre-flight check. Done!")
@@ -152,16 +153,16 @@ def setup(
 
         p.set_checkpoint("preflight")
         p.save_checkpoint()
-        click.echo("Pre-flight checks. Done!")
+        click.echo("1/12: Pre-flight checks. Done!")
 
     # end preflight check section
     else:
-        click.echo("Skipped pre-flight checks.")
+        click.echo("1/12: Skipped pre-flight checks.")
 
     dep_man: DependencyManager = DependencyManager()
 
     if not p.has_checkpoint("dependencies"):
-        click.echo("Dependencies check...")
+        click.echo("2/12: Dependencies check...")
 
         # terraform
         if dep_man.check_tf():
@@ -179,11 +180,11 @@ def setup(
             dep_man.install_kubectl()
             click.echo("kubectl is installed.")
 
-        click.echo("Dependencies check. Done!")
+        click.echo("2/12: Dependencies check. Done!")
         p.set_checkpoint("dependencies")
         p.save_checkpoint()
     else:
-        click.echo("Skipped dependencies check.")
+        click.echo("2/12: Skipped dependencies check.")
 
     # promote input params
     prepare_parameters(p)
@@ -194,7 +195,7 @@ def setup(
                                p.get_input_param(GIT_ACCESS_TOKEN))
 
     if not p.has_checkpoint("one-time-setup"):
-        click.echo("Setting initial parameters...")
+        click.echo("3/12: Setting initial parameters...")
 
         # create ssh keys
         click.echo("Generating ssh keys...")
@@ -251,14 +252,14 @@ def setup(
 
         p.set_checkpoint("one-time-setup")
         p.save_checkpoint()
-        click.echo("Setting initial parameters. Done!")
+        click.echo("3/12: Setting initial parameters. Done!")
 
     # end preflight check section
     else:
-        click.echo("Skipped setting initial parameters.")
+        click.echo("3/12: Skipped setting initial parameters.")
 
     if not p.has_checkpoint("repo-prep"):
-        click.echo("Preparing your GitOps code...")
+        click.echo("4/12: Preparing your GitOps code...")
 
         tm.check_repository_existence()
         tm.clone()
@@ -268,20 +269,16 @@ def setup(
         p.set_checkpoint("repo-prep")
         p.save_checkpoint()
 
-        click.echo("Preparing your GitOps code. Done!")
+        click.echo("4/12: Preparing your GitOps code. Done!")
     else:
-        click.echo("Skipped GitOps code prep.")
+        click.echo("4/12: Skipped GitOps code prep.")
 
     # VCS provisioning
-
-    # use to enable tf debug
-    # "TF_LOG": "DEBUG", "TF_LOG_PATH": "/Users/a1m/.cgdevx/gitops/terraform/vcs/terraform.log",
-
     cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
 
     # VCS section
     if not p.has_checkpoint("vcs-tf"):
-        click.echo("Provisioning VCS...")
+        click.echo("5/12: Provisioning VCS...")
         # vcs env vars
         vcs_tf_env_vars = {
             **cloud_provider_auth_env_vars,
@@ -308,13 +305,13 @@ def setup(
         p.set_checkpoint("vcs-tf")
         p.save_checkpoint()
 
-        click.echo("Provisioning VCS. Done!")
+        click.echo("5/12: Provisioning VCS. Done!")
     else:
-        click.echo("Skipped VCS provisioning.")
+        click.echo("5/12: Skipped VCS provisioning.")
 
     # K8s Cluster section
     if not p.has_checkpoint("k8s-tf"):
-        click.echo("Provisioning K8s cluster...")
+        click.echo("6/12: Provisioning K8s cluster...")
 
         # run hosting provider tf to create K8s cluster
         hp_tf_env_vars = {
@@ -378,15 +375,15 @@ def setup(
         p.set_checkpoint("k8s-tf")
         p.save_checkpoint()
 
-        click.echo("Provisioning K8s cluster. Done!")
+        click.echo("6/12: Provisioning K8s cluster. Done!")
     else:
-        click.echo("Skipped K8s provisioning.")
+        click.echo("6/12: Skipped K8s provisioning.")
 
     if not p.has_checkpoint("gitops-vcs"):
+        click.echo("7/12: Pushing GitOps code...")
+
         tm.parametrise_registry(p)
         tm.parametrise_gitops_readme(p)
-
-        click.echo("Pushing GitOps code...")
 
         tm.upload(p.parameters["<GIT_REPOSITORY_GIT_URL>"],
                   p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
@@ -396,27 +393,17 @@ def setup(
         p.set_checkpoint("gitops-vcs")
         p.save_checkpoint()
 
-        click.echo("Pushing GitOps code. Done!")
+        click.echo("7/12: Pushing GitOps code. Done!")
     else:
-        click.echo("Skipped GitOps repo initialization.")
-
-    # k8s client
-    if p.cloud_provider == CloudProviders.AWS:
-        # default token life-time is 14m
-        # to be safe should refresh token each time
-        k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
-        kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"],
-                                 api_key=k8s_token,
-                                 endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
-    else:
-        kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
-
-    kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
-    cd_man = DeliveryServiceManager(kube_client)
+        click.echo("7/12: Skipped GitOps repo initialization.")
 
     # install ArgoCD
     if not p.has_checkpoint("k8s-delivery"):
-        click.echo("Installing ArgoCD...")
+        click.echo("8/12: Installing ArgoCD...")
+
+        kube_client = init_k8s_client(cloud_man, p)
+
+        cd_man = DeliveryServiceManager(kube_client)
 
         argocd_bootstrap_name = "argocd-bootstrap"
         argocd_core_project_name = "core"
@@ -546,16 +533,20 @@ def setup(
         p.set_checkpoint("k8s-delivery")
         p.save_checkpoint()
 
-        click.echo("Installing ArgoCD. Done!")
+        click.echo("8/12: Installing ArgoCD. Done!")
     else:
-        click.echo("Skipped ArgoCD installation.")
+        click.echo("8/12: Skipped ArgoCD installation.")
 
     # initialize and unseal vault
     if not p.has_checkpoint("secrets-management"):
-        click.echo("Initializing Secrets Manager...")
+        click.echo("9/12: Initializing Secrets Manager...")
 
         # need to wait here as vault is not available just after argo app deployment
         wait(30)
+
+        # default AWS EKS auth token life-time is 14m
+        # to be safe should refresh token before proceeding
+        kube_client = init_k8s_client(cloud_man, p)
 
         # wait for cert manager as it's created just before vault
         cert_manager = kube_client.get_deployment("cert-manager", "cert-manager")
@@ -593,6 +584,9 @@ def setup(
         #         kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
 
         wait(30)
+
+        # use k8s console client
+        kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
         try:
             out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
         except Exception as e:
@@ -616,14 +610,18 @@ def setup(
         p.set_checkpoint("secrets-management")
         p.save_checkpoint()
 
-        click.echo("Secrets Manager initialization. Done!")
+        click.echo("9/12: Secrets Manager initialization. Done!")
 
         wait(30)
     else:
-        click.echo("Skipped Secrets Manager initialization.")
+        click.echo("9/12: Skipped Secrets Manager initialization.")
 
     if not p.has_checkpoint("secrets-management-tf"):
-        click.echo("Setting Secrets...")
+        click.echo("10/12: Setting Secrets...")
+
+        # default AWS EKS auth token life-time is 14m
+        # to be safe should refresh token before proceeding
+        kube_client = init_k8s_client(cloud_man, p)
 
         ingress = kube_client.get_ingress(VAULT_NAMESPACE, "vault")
         kube_client.wait_for_ingress(ingress)
@@ -672,13 +670,13 @@ def setup(
 
         p.set_checkpoint("secrets-management-tf")
         p.save_checkpoint()
-        click.echo("Secrets set. Done!")
+        click.echo("10/12: Secrets set. Done!")
 
     else:
-        click.echo("Skipped setting Secrets.")
+        click.echo("10/12: Skipped setting Secrets.")
 
     if not p.has_checkpoint("users-tf"):
-        click.echo("Provisioning Users...")
+        click.echo("11/12: Provisioning Users...")
 
         # run security manager tf to create secrets and roles
         user_man_tf_env_vars = {
@@ -702,14 +700,17 @@ def setup(
 
         p.set_checkpoint("users-tf")
         p.save_checkpoint()
-        click.echo("Users provisioning. Done!")
+        click.echo("11/12: Users provisioning. Done!")
     else:
-        click.echo("Skipped provisioning Users.")
+        click.echo("11/12: Skipped provisioning Users.")
 
     if not p.has_checkpoint("core-services-tf"):
-        click.echo("Configuring core services...")
-        
-        wait(10)
+        click.echo("12/12: Configuring core services...")
+
+        # default AWS EKS auth token life-time is 14m
+        # to be safe should refresh token before proceeding
+        kube_client = init_k8s_client(cloud_man, p)
+
         # wait for harbor readiness
         harbor_dep = kube_client.get_deployment(HARBOR_NAMESPACE, "harbor-core")
         kube_client.wait_for_deployment(harbor_dep)
@@ -765,16 +766,29 @@ def setup(
 
         p.set_checkpoint("core-services-tf")
         p.save_checkpoint()
-        click.echo("Configuring core services. Done!")
+        click.echo("12/12: Configuring core services. Done!")
 
     else:
-        click.echo("Skipped core services configuration.")
+        click.echo("12/12: Skipped core services configuration.")
 
     show_credentials(p)
 
     return True
 
 
+@trace()
+def init_k8s_client(cloud_man, p):
+    if p.cloud_provider == CloudProviders.AWS:
+        k8s_token = cloud_man.get_k8s_token(p.parameters["<PRIMARY_CLUSTER_NAME>"])
+        kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"],
+                                 api_key=k8s_token,
+                                 endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
+    else:
+        kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
+    return kube_client
+
+
+@trace()
 def show_credentials(p):
     user_name = PLATFORM_USER_NAME
     vault_client = hvac.Client(url=f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
@@ -791,13 +805,11 @@ def show_credentials(p):
     click.secho(f'URL: https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', bg="green", fg="blue")
     click.secho(f'Root login token: {p.internals["VAULT_ROOT_TOKEN"]}', bg="green", fg="blue")
     click.secho(f'CGDevX admin user login: {user_name} password: {user_pass}', bg="green", fg="blue")
-    webbrowser.open(f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', autoraise=False)
 
     click.secho("Continuous Delivery system", bg="green", fg="blue")
     click.secho(f'URL: https://{p.parameters["<CD_INGRESS_URL>"]}', bg="green", fg="blue")
     click.secho(f'Admin login: {p.internals["ARGOCD_USER"]} password: {p.internals["ARGOCD_PASSWORD"]}', bg="green",
                 fg="blue")
-    webbrowser.open(f'https://{p.parameters["<CD_INGRESS_URL>"]}', autoraise=False)
 
     click.secho(f'Kubeconfig file: {p.internals["KCTL_CONFIG_PATH"]}', bg="green", fg="blue")
 
@@ -809,6 +821,7 @@ def show_credentials(p):
     return
 
 
+@trace()
 def prepare_parameters(p):
     # TODO: move to appropriate place
     p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL).lower()
@@ -853,6 +866,7 @@ def prepare_parameters(p):
     return p
 
 
+@trace()
 def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
     if not manager.detect_cli_presence():
         raise click.ClickException("Cloud CLI is missing")
@@ -860,6 +874,7 @@ def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
         raise click.ClickException("Insufficient IAM permission")
 
 
+@trace()
 def git_provider_check(manager: GitProviderManager, p: StateStore) -> None:
     if not manager.evaluate_permissions():
         raise click.ClickException("Insufficient Git token permissions")
@@ -874,6 +889,7 @@ def dns_provider_check(manager: DNSManager, p: StateStore) -> None:
         raise click.ClickException("Could not verify domain ownership")
 
 
+@trace()
 def setup_param_validator(params: StateStore) -> bool:
     if params.dns_registrar is None:
         if params.cloud_provider == CloudProviders.AWS:
