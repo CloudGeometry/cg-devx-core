@@ -12,7 +12,7 @@
 ### Git Providers
 
 - GitHub - Supported
-- GitLab - Experimental*
+- GitLab - Will be added to a future release
 - Bitbucket - Will be added to a future release
 
 ### Cloud Providers
