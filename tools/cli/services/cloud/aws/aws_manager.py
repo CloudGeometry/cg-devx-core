@@ -36,15 +36,26 @@ class AWSManager(CloudProviderManager):
         if kwargs and "region" in kwargs:
             region = kwargs["region"]
         tf_backend_storage_name = f'{name}-{random_string_generator()}'.lower()
+
         self.__aws_sdk.create_bucket(tf_backend_storage_name, region)
+        self.__aws_sdk.enable_bucket_versioning(tf_backend_storage_name, region)
+
         return tf_backend_storage_name
 
     @trace()
-    def destroy_iac_state_storage(self, bucket: str) -> bool:
+    def protect_iac_state_storage(self, name: str, identity: str, **kwargs: dict):
+        region = self.region
+        if kwargs and "region" in kwargs:
+            region = kwargs["region"]
+
+        self.__aws_sdk.set_bucket_policy(name, identity, region)
+
+    @trace()
+    def destroy_iac_state_storage(self, name: str) -> bool:
         """
         Destroy cloud native terraform remote state storage
         """
-        return self.__aws_sdk.delete_bucket(bucket)
+        return self.__aws_sdk.delete_bucket(name)
 
     @trace()
     def create_iac_backend_snippet(self, location: str, service: str, **kwargs: dict) -> str:

@@ -1,7 +1,9 @@
+import json
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
+import boto3
 from awscli.customizations.eks.get_token import STSClientFactory, TokenGenerator, TOKEN_EXPIRATION_MINS
 from botocore.exceptions import ClientError
 
@@ -110,6 +112,45 @@ class AwsSdk:
             logger.error(e)
             return False
         return bucket_name
+
+    def enable_bucket_versioning(self, bucket_name, region=None):
+        if region is None:
+            region = self.region
+
+        resource = boto3.resource("s3", region_name=region)
+        versioning = resource.BucketVersioning(bucket_name)
+        versioning.enable()
+
+    def set_bucket_policy(self, bucket_name: str, identity: str, region: str = None):
+        if region is None:
+            region = self.region
+
+        bucket_policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "RestrictS3Access",
+                    "Principal": {
+                        "AWS": [
+                            self.current_user_arn(),
+                            identity
+                        ]
+                    },
+                    "Effect": "Allow",
+                    "Action": ["s3:*"],
+                    "Resource": [f"arn:aws:s3:::{bucket_name}"]
+                }
+            ]
+        }
+
+        policy_string = json.dumps(bucket_policy)
+
+        s3_client = self._session_manager.session.client('s3', region_name=region)
+
+        s3_client.put_bucket_policy(
+            Bucket=bucket_name,
+            Policy=policy_string
+        )
 
     def get_name_servers(self, domain_name: str) -> Tuple[List[str], str, bool]:
         r53_client = self._session_manager.session.client('route53')

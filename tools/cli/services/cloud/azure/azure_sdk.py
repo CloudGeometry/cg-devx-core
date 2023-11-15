@@ -1,4 +1,5 @@
 import time
+import uuid
 from typing import List, Tuple, Optional
 
 from azure.core.exceptions import ResourceNotFoundError, HttpResponseError, AzureError, ResourceExistsError
@@ -376,6 +377,37 @@ class AzureSdk:
 
         except ResourceExistsError:
             logger.warning(f"Storage name {storage_account_name} is already in use. Try another name.")
+
+    def set_storage_account_versioning(self, storage_account_name: str, resource_group_name: str) -> None:
+        """
+        Set a storage account data protection options.
+        """
+        try:
+            self.storage_mgmt_client.blob_services.set_service_properties(resource_group_name, storage_account_name,
+                                                                          {
+                                                                              "is_versioning_enabled": True,
+                                                                              "delete_retention_policy": {
+                                                                                  "additional_properties": {},
+                                                                                  "enabled": True,
+                                                                                  "days": 7,
+                                                                                  "allow_permanent_delete": False
+                                                                              }
+                                                                          })
+        except Exception as e:
+            logger.warning(f"Error while setting blob storage versioning {e}")
+
+        logger.info(f"Set storage account {storage_account_name} data versioning options")
+
+    def set_storage_access(self, identity: str, storage_account_name: str, resource_group_name: str):
+        scope = f"subscriptions/{self.subscription_id}/resourcegroups/{resource_group_name}/providers/Microsoft.Storage/storageAccounts/{storage_account_name}"
+        response = self.authorization_client.role_assignments.create(scope,
+                                                                     uuid.uuid4(),
+                                                                     {
+                                                                         # Storage Blob Data Owner
+                                                                         "role_definition_id": "/providers/Microsoft.Authorization/roleDefinitions/b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
+                                                                         "principal_id": identity
+                                                                     })
+        return response
 
     def create_blob_container(self, storage_account_name: str, container_name: str) -> None:
         """Create a blob container in the specified storage account.

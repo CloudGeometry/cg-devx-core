@@ -771,6 +771,10 @@ def setup(
     else:
         click.echo("12/12: Skipped core services configuration.")
 
+    # restrict access to IaC remote state store
+    cloud_man.protect_iac_state_storage(p.internals["TF_BACKEND_STORAGE_NAME"],
+                                        p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"])
+
     show_credentials(p)
 
     return True

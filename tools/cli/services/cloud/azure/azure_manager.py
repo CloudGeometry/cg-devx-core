@@ -25,6 +25,16 @@ class AzureManager(CloudProviderManager):
         return self.__azure_sdk.location
 
     @trace()
+    def protect_iac_state_storage(self, name: str, identity: str):
+        """
+        Restrict access to cloud native terraform remote state storage
+        """
+        self.iac_backend_storage_container_name = name
+        resource_group_name = self._generate_resource_group_name()
+        storage_account_name = self._generate_storage_account_name()
+        self.__azure_sdk.set_storage_access(identity, storage_account_name, resource_group_name)
+
+    @trace()
     def destroy_iac_state_storage(self, bucket: str) -> bool:
         """
         Destroy the cloud-native Terraform remote state storage.
@@ -111,9 +121,15 @@ class AzureManager(CloudProviderManager):
         :return: Resource identifier
         """
         self.iac_backend_storage_container_name = f"{name}-{random_string_generator()}".lower()
-        return self.__azure_sdk.create_storage(self.iac_backend_storage_container_name,
-                                               self._generate_storage_account_name(),
-                                               self._generate_resource_group_name())
+
+        resource_group_name = self._generate_resource_group_name()
+        storage_account_name = self._generate_storage_account_name()
+        storage = self.__azure_sdk.create_storage(self.iac_backend_storage_container_name,
+                                                  storage_account_name,
+                                                  resource_group_name)
+        self.__azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
+
+        return storage
 
     @trace()
     def evaluate_permissions(self) -> bool:
