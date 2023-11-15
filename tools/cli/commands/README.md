@@ -26,28 +26,29 @@ checkpoints) and could be re-run
 
 Arguments:
 
-| Name (short, full)             | Type      | Description                       |
-|--------------------------------|-----------|-----------------------------------|
-| -e, --email                    | TEXT      | Email address used for alerts     |
-| -c, --cloud-provider           | [aws]     | Cloud provider type               |
-| -cp, --cloud-profile           | TEXT      | Cloud account profile             |
-| -cc, --cloud-account-key       | TEXT      | Cloud account access key          |
-| -cs, --cloud-account-secret    | TEXT      | Cloud account access secret       |
-| -r, --cloud-region             | TEXT      | Cloud regions                     |
-| -n, --cluster-name             | TEXT      | Cluster name                      |
-| -d, --dns-registrar            | [route53] | DNS registrar                     |
-| -dt, --dns-registrar-token     | TEXT      | DNS registrar token               |
-| -dk, --dns-registrar-key       | TEXT      | DNS registrar key                 |
-| -ds, --dns-registrar-secret    | TEXT      | DNS registrar secret              |
-| -dn, --domain-name             | TEXT      | Domain-name used by K8s cluster   |
-| -g, --git-provider             | [github]  | Git provider                      |
-| -go, --git-org                 | TEXT      | Git organization name             |
-| -gt, --git-access-token        | TEXT      | Git access token                  |
-| -grn, --gitops-repo-name       | TEXT      | GitOps repository name            |
-| -gtu, --gitops-template-url    | TEXT      | GitOps repository template url    |
-| -gtb, --gitops-template-branch | TEXT      | GitOps repository template branch |
-| -dw, --setup-demo-workload     | Flag      | Setup demo workload               |
-| -f, --config-file              | FILENAME  | Load parameters from file         |
+| Name (short, full)             | Type                                    | Description                                       |
+|--------------------------------|-----------------------------------------|---------------------------------------------------|
+| -e, --email                    | TEXT                                    | Email address used for alerts                     |
+| -c, --cloud-provider           | [aws]                                   | Cloud provider type                               |
+| -cp, --cloud-profile           | TEXT                                    | Cloud account profile                             |
+| -cc, --cloud-account-key       | TEXT                                    | Cloud account access key                          |
+| -cs, --cloud-account-secret    | TEXT                                    | Cloud account access secret                       |
+| -r, --cloud-region             | TEXT                                    | Cloud regions                                     |
+| -n, --cluster-name             | TEXT                                    | Cluster name                                      |
+| -d, --dns-registrar            | [route53]                               | DNS registrar                                     |
+| -dt, --dns-registrar-token     | TEXT                                    | DNS registrar token                               |
+| -dk, --dns-registrar-key       | TEXT                                    | DNS registrar key                                 |
+| -ds, --dns-registrar-secret    | TEXT                                    | DNS registrar secret                              |
+| -dn, --domain-name             | TEXT                                    | Domain-name used by K8s cluster                   |
+| -g, --git-provider             | [github]                                | Git provider                                      |
+| -go, --git-org                 | TEXT                                    | Git organization name                             |
+| -gt, --git-access-token        | TEXT                                    | Git access token                                  |
+| -grn, --gitops-repo-name       | TEXT                                    | GitOps repository name                            |
+| -gtu, --gitops-template-url    | TEXT                                    | GitOps repository template url                    |
+| -gtb, --gitops-template-branch | TEXT                                    | GitOps repository template branch                 |
+| -dw, --setup-demo-workload     | Flag                                    | Setup demo workload                               |
+| -f, --config-file              | FILENAME                                | Load parameters from file                         |
+| --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
 
 `parameters.yaml` file example
 
@@ -90,9 +91,9 @@ cgdevxcli setup -f path/to/your/parameters.yaml
 
 ### Troubleshooting
 
-Installation of a reference architecture is a complex process depending on multiple factors, eg cloud resource
-availability, connection speed, image registry rate limits, etc. While we do our best to handle most common problems,
-the setup process could still fail.
+Installation of a reference architecture is a complex process depending on multiple factors, e.g., cloud resource
+availability, connection speed, image registry rate limits, etc. While we do our best to handle the most common problems
+and provide uninterrupted experience, the setup process could still fail.
 If you have connectivity or resource availability errors, please try restarting the
 setup.
 It should resume from the step when it failed previously.
