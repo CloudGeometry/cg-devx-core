@@ -1,3 +1,8 @@
+[//]: # (![GitHub]&#40;https://img.shields.io/github/license/CloudGeometry/cg-devx-core&#41;)
+[//]: # ([![Contributor Covenant]&#40;https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg&#41;]&#40;code_of_conduct.md&#41;)
+
+> **WORK IN PROGRESS**: Repository is under active development, breaking changes are expected.
+
 # Welcome to CG DevX
 
 Here, at CloudGeometry, we use CG DevX as a Reference Architecture for simplifying the creation and management of DevOps
