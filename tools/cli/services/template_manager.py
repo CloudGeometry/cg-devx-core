@@ -11,6 +11,7 @@ from git import Repo, RemoteProgress, GitError, Actor
 from common.const.common_path import LOCAL_TF_FOLDER, LOCAL_GITOPS_FOLDER
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
 from common.state_store import StateStore
+from common.tracing_decorator import trace
 
 
 class GitOpsTemplateManager:
@@ -30,6 +31,7 @@ class GitOpsTemplateManager:
         # TODO: DEBUG, remove
         self.__token = token
 
+    @trace()
     def check_repository_existence(self):
         """
         Check if the repository exists
@@ -50,6 +52,7 @@ class GitOpsTemplateManager:
         except HTTPError as e:
             raise e
 
+    @trace()
     def clone(self):
         temp_folder = LOCAL_GITOPS_FOLDER / ".tmp"
 
@@ -68,6 +71,7 @@ class GitOpsTemplateManager:
             raise e
 
     @staticmethod
+    @trace()
     def upload(path: str, key_path: str, git_user_name: str, git_user_email: str):
 
         if not os.path.exists(LOCAL_GITOPS_FOLDER):
@@ -92,6 +96,7 @@ class GitOpsTemplateManager:
             raise e
 
     @staticmethod
+    @trace()
     def build_repo_from_template():
         temp_folder = LOCAL_GITOPS_FOLDER / ".tmp"
 
@@ -129,15 +134,18 @@ class GitOpsTemplateManager:
         shutil.rmtree(temp_folder)
         return
 
+    @trace()
     def parametrise_tf(self, state: StateStore):
         self.__file_replace(state, LOCAL_TF_FOLDER)
 
+    @trace()
     def parametrise_registry(self, state: StateStore):
         pipelines_folder = LOCAL_GITOPS_FOLDER / "gitops-pipelines"
 
         self.__file_replace(state, pipelines_folder)
 
     @staticmethod
+    @trace()
     def parametrise_gitops_readme(state: StateStore):
         for src_file in LOCAL_GITOPS_FOLDER.glob('*.md'):
             with open(src_file, "r") as file:
@@ -167,6 +175,7 @@ class GitOpsTemplateManager:
 
 
 class ProgressPrinter(RemoteProgress):
+    @trace()
     def update(self, op_code, cur_count, max_count=None, message=""):
         # TODO: forward to CLI progress bar
         pass

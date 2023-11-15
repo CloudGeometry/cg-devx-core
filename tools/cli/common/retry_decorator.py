@@ -3,7 +3,7 @@ import time
 from common.logging_config import logger
 
 
-def exponential_backoff_decorator(max_retries: int = 5, base_delay: float = 15):
+def exponential_backoff(max_retries: int = 5, base_delay: float = 15):
     def decorator(func):
         def wrapper(*args, **kwargs):
             retries = 0

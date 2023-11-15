@@ -2,8 +2,10 @@ import pkg_resources
 import yaml
 
 from common.const.common_path import LOCAL_FOLDER
+from common.tracing_decorator import trace
 
 
+@trace()
 def create_k8s_config(command: str, command_args: [], cloud_provider_auth_env_vars: dict, kubeconfig_params: dict,
                       kubeconfig_name: str = "kubeconfig") -> str:
     template_file_path = pkg_resources.resource_filename('services.k8s', "kubeconfig.yaml")
@@ -24,6 +26,7 @@ def create_k8s_config(command: str, command_args: [], cloud_provider_auth_env_va
     return write_k8s_config(data, kubeconfig_name)
 
 
+@trace()
 def write_k8s_config(data, kubeconfig_name: str = "kubeconfig") -> str:
     kubeconfig_path = LOCAL_FOLDER / kubeconfig_name
     with open(kubeconfig_path, "w") as file:

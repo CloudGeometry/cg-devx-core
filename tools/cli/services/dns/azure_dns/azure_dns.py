@@ -1,3 +1,4 @@
+from common.tracing_decorator import trace
 from services.cloud.azure.azure_sdk import AzureSdk
 from services.dns.dns_provider_manager import DNSManager, get_domain_ns_records
 
@@ -10,6 +11,7 @@ class AzureDNSManager(DNSManager):
     def __init__(self, subscription_id: str):
         self.__azure_sdk = AzureSdk(subscription_id=subscription_id)
 
+    @trace()
     def evaluate_domain_ownership(self, domain_name: str) -> bool:
         """
         Check if domain is owned by user and create liveness check record
@@ -27,10 +29,12 @@ class AzureDNSManager(DNSManager):
             name_servers=name_servers
         )
 
+    @trace()
     def get_domain_zone(self, domain_name: str) -> tuple[str, bool]:
         name_servers, is_private, resource_group_name = self.__azure_sdk.get_name_servers(domain_name)
         return resource_group_name, is_private
 
+    @trace()
     def evaluate_permissions(self):
         """
         Check if provided credentials have required permissions

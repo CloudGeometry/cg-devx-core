@@ -7,12 +7,14 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from common.const.common_path import LOCAL_FOLDER
+from common.tracing_decorator import trace
 
 
 class KeyManager:
     """Cryptographic key management wrapper to standardise key management."""
 
     @staticmethod
+    @trace()
     def create_rsa_keys(key_name: str = "cgdevx_rsa"):
         """
         Create keypair
@@ -28,6 +30,7 @@ class KeyManager:
         return KeyManager._process_key(key, key_name)
 
     @staticmethod
+    @trace()
     def create_ed_keys(key_name: str = "cgdevx_ed"):
         """
         Create keypair

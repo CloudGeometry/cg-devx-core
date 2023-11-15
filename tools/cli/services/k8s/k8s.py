@@ -4,7 +4,8 @@ from kubernetes import client, watch, config
 from kubernetes.client import ApiException
 
 from common.const.common_path import LOCAL_FOLDER
-from common.retry_decorator import exponential_backoff_decorator
+from common.retry_decorator import exponential_backoff
+from common.tracing_decorator import trace
 
 
 def write_ca_cert(ca_cert_data):
@@ -28,6 +29,7 @@ class KubeClient:
         if "endpoint" in kwargs:
             self._configuration.host = kwargs["endpoint"]
 
+    @trace()
     def create_namespace(self, name: str):
         """
         Creates a namespace.
@@ -46,6 +48,7 @@ class KubeClient:
         res = api_v1_instance.create_namespace(body=body)
         return res
 
+    @trace()
     def create_service_account(self, namespace: str, sa_name: str):
         """
         Creates a service account.
@@ -64,6 +67,7 @@ class KubeClient:
         res = api_v1_instance.create_namespaced_service_account(namespace=namespace, body=body)
         return res
 
+    @trace()
     def create_cluster_role(self, namespace: str, name: str):
         """
         Creates a cluster role.
@@ -84,6 +88,7 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role(body=body)
         return res
 
+    @trace()
     def create_cluster_role_binding(self, namespace: str, name: str, role_name: str):
         """
         Creates a ClusterRoleBinding
@@ -106,6 +111,7 @@ class KubeClient:
         res = rbac_v1_instance.create_cluster_role_binding(body=body)
         return res
 
+    @trace()
     def create_custom_object(self, namespace: str, custom_obj: dict, group: str, version: str, plural: str):
         """
         Creates a custom object.
@@ -122,6 +128,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def patch_custom_object(self, namespace: str, name: str, patch, group: str, version: str, plural: str):
         """
         Patch custom object.
@@ -141,6 +148,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def remove_custom_object(self, namespace: str, name: str, group: str, version: str, plurals: str):
         """
         Remove custom object.
@@ -155,6 +163,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def create_job(self, namespace: str, job_name: str, body):
         """
         Creates Job.
@@ -185,7 +194,8 @@ class KubeClient:
         res = batch_v1_instance.create_namespaced_job(namespace=namespace, body=body)
         return res
 
-    @exponential_backoff_decorator()
+    @exponential_backoff()
+    @trace()
     def get_deployment(self, namespace: str, deployment_name: str):
         """
         Reads a Deployment.
@@ -198,7 +208,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff_decorator()
+    @exponential_backoff()
+    @trace()
     def get_pod(self, namespace: str, pod_name: str):
         """
         Reads a Deployment.
@@ -211,7 +222,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff_decorator()
+    @exponential_backoff()
+    @trace()
     def get_stateful_set_objects(self, namespace: str, name: str):
         """
         Reads a StatefulSet.
@@ -224,7 +236,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff_decorator()
+    @exponential_backoff()
+    @trace()
     def get_ingress(self, namespace: str, name: str):
         """
         Reads an Ingress.
@@ -237,7 +250,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff_decorator()
+    @exponential_backoff()
+    @trace()
     def get_certificate(self, namespace: str, name: str):
         """
         Reads a cert-manager certificate.
@@ -257,6 +271,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def remove_service_account(self, namespace: str, sa_name: str):
         """
         Removes a service account.
@@ -269,6 +284,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def remove_cluster_role(self, r_name: str):
         """
         Removes a cluster role.
@@ -281,6 +297,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def remove_cluster_role_binding(self, rb_name: str):
         """
         Removes a cluster role binding.
@@ -293,6 +310,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def wait_for_deployment(self, deployment, timeout: int = 300):
         configured_replicas = deployment.spec.replicas
         name = deployment.metadata.name
@@ -317,6 +335,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def wait_for_job(self, job, timeout: int = 300):
         job_name = job.metadata.name
         namespace = job.metadata.namespace
@@ -340,6 +359,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def wait_for_pod(self, pod, timeout: int = 300):
         name = pod.metadata.name
         namespace = pod.metadata.namespace
@@ -363,6 +383,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def wait_for_stateful_set(self, stateful_set, timeout: int = 300, wait_availability: bool = True):
         replica_state = "available_replicas"
         if not wait_availability:
@@ -390,6 +411,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def wait_for_ingress(self, ingress, timeout: int = 300):
         name = ingress.metadata.name
         namespace = ingress.metadata.namespace
@@ -413,9 +435,11 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def wait_for_certificate(self, cert_obj, timeout: int = 300):
         return self.wait_for_custom_object(cert_obj, "cert-manager.io", "v1", "certificates", timeout=timeout)
 
+    @trace()
     def wait_for_custom_object(self, cust_object, group: str, version: str, plurals: str, timeout: int = 300):
         object_name = cust_object["metadata"]["name"]
         namespace = cust_object["metadata"]["namespace"]
@@ -441,6 +465,7 @@ class KubeClient:
         except ApiException as e:
             raise e
 
+    @trace()
     def create_plain_secret(self, namespace: str, name: str, data: dict, annotations: dict = None,
                             labels: dict = None):
         """
@@ -464,6 +489,7 @@ class KubeClient:
         res = api_v1_instance.create_namespaced_secret(namespace=namespace, body=body)
         return res
 
+    @trace()
     def create_secret(self, namespace: str, name: str, data: dict, annotations: dict = None, labels: dict = None):
         """
         Creates secret.
@@ -483,6 +509,7 @@ class KubeClient:
         res = api_v1_instance.create_namespaced_secret(namespace=namespace, body=body)
         return res
 
+    @trace()
     def create_configmap(self, namespace: str, name: str, data: dict, annotations: dict = None, labels: dict = None):
         """
         Creates plain text secret.
@@ -506,7 +533,8 @@ class KubeClient:
         res = api_v1_instance.create_namespaced_config_map(namespace=namespace, body=body)
         return res
 
-    @exponential_backoff_decorator()
+    @exponential_backoff()
+    @trace()
     def get_secret(self, namespace: str, name: str):
         """
         Get secret.
