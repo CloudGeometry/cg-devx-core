@@ -6,8 +6,8 @@ import hvac
 import portforward
 import yaml
 
-from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, set_envs, \
-    unset_envs, wait
+from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
+    set_envs, unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME
@@ -805,13 +805,11 @@ def show_credentials(p):
     click.secho(f'URL: https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', bg="green", fg="blue")
     click.secho(f'Root login token: {p.internals["VAULT_ROOT_TOKEN"]}', bg="green", fg="blue")
     click.secho(f'CGDevX admin user login: {user_name} password: {user_pass}', bg="green", fg="blue")
-    webbrowser.open(f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}', autoraise=False)
 
     click.secho("Continuous Delivery system", bg="green", fg="blue")
     click.secho(f'URL: https://{p.parameters["<CD_INGRESS_URL>"]}', bg="green", fg="blue")
     click.secho(f'Admin login: {p.internals["ARGOCD_USER"]} password: {p.internals["ARGOCD_PASSWORD"]}', bg="green",
                 fg="blue")
-    webbrowser.open(f'https://{p.parameters["<CD_INGRESS_URL>"]}', autoraise=False)
 
     click.secho(f'Kubeconfig file: {p.internals["KCTL_CONFIG_PATH"]}', bg="green", fg="blue")
 
