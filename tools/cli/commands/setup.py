@@ -10,7 +10,8 @@ from common.command_utils import init_cloud_provider, init_git_provider, prepare
     set_envs, unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
-from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME
+from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
+    TERRAFORM_VERSION
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE, HARBOR_NAMESPACE, SONARQUBE_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVIDER, CLOUD_ACCOUNT_ACCESS_KEY, \
@@ -382,8 +383,7 @@ def setup(
     if not p.has_checkpoint("gitops-vcs"):
         click.echo("7/12: Pushing GitOps code...")
 
-        tm.parametrise_registry(p)
-        tm.parametrise_gitops_readme(p)
+        tm.parametrise(p)
 
         tm.upload(p.parameters["<GIT_REPOSITORY_GIT_URL>"],
                   p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
@@ -839,6 +839,7 @@ def prepare_parameters(p):
     p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{org_name}'
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME).lower()
     p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
+    p.parameters["<TERRAFORM_VERSION>"] = TERRAFORM_VERSION
 
     # set IaC webhook secret
     if "<IAC_PR_AUTOMATION_WEBHOOK_SECRET>" not in p.parameters:

@@ -139,21 +139,8 @@ class GitOpsTemplateManager:
         self.__file_replace(state, LOCAL_TF_FOLDER)
 
     @trace()
-    def parametrise_registry(self, state: StateStore):
-        pipelines_folder = LOCAL_GITOPS_FOLDER / "gitops-pipelines"
-
-        self.__file_replace(state, pipelines_folder)
-
-    @staticmethod
-    @trace()
-    def parametrise_gitops_readme(state: StateStore):
-        for src_file in LOCAL_GITOPS_FOLDER.glob('*.md'):
-            with open(src_file, "r") as file:
-                data = file.read()
-                for k, v in state.parameters.items():
-                    data = data.replace(k, v)
-            with open(src_file, "w") as file:
-                file.write(data)
+    def parametrise(self, state: StateStore):
+        self.__file_replace(state, LOCAL_GITOPS_FOLDER)
 
     @staticmethod
     def __file_replace(state: StateStore, folder):
