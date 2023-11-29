@@ -140,7 +140,6 @@ class GitOpsTemplateManager:
 
     @trace()
     def parametrise(self, state: StateStore):
-        self.__file_replace(state, LOCAL_GITOPS_FOLDER / "gitops-pipelines")
         self.__file_replace(state, LOCAL_GITOPS_FOLDER)
 
     @staticmethod
