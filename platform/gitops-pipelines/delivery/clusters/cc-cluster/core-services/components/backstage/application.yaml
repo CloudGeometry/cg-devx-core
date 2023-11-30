@@ -135,12 +135,6 @@ spec:
             enabled: false
           auth:
             username: bn_backstage
-            password: ""
-            existingSecret: ""
-            secretKeys:
-              adminPasswordKey: admin-password
-              userPasswordKey: user-password
-              replicationPasswordKey: replication-password
           architecture: standalone
           storage:
             resourcePolicy: ""
