@@ -6,7 +6,6 @@ resource "github_repository" "repo" {
   auto_init              = var.auto_init
   archive_on_destroy     = var.archive_on_destroy
   has_issues             = var.has_issues
-  is_template            = var.is_template
   delete_branch_on_merge = var.delete_branch_on_merge
 
   dynamic "template" {

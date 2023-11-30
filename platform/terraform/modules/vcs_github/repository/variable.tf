@@ -27,11 +27,6 @@ variable "has_issues" {
   default = false
 }
 
-variable "is_template" {
-  type    = bool
-  default = false
-}
-
 variable "default_branch_name" {
   type    = string
   default = "main"

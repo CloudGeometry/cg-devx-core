@@ -42,15 +42,11 @@ provider "restapi" {
 locals {
   oidc_endpoint    = "https://<OIDC_PROVIDER_URL>"
   code_quality_url = "https://<CODE_QUALITY_INGRESS_URL>"
-  workloads        = {
-    # "workload-demo" = {
-    # },
-  }
 }
 
 module "registry" {
   source                       = "../modules/registry_harbor"
-  workloads                    = local.workloads
+  workloads                    = var.workloads
   oidc_endpoint                = local.oidc_endpoint
   oidc_client_id               = var.registry_oidc_client_id
   oidc_client_secret           = var.registry_oidc_client_secret
@@ -59,7 +55,7 @@ module "registry" {
 
 module "code_quality" {
   source                      = "../modules/code_quality_sonarqube"
-  workloads                   = local.workloads
+  workloads                   = var.workloads
   oidc_endpoint               = local.oidc_endpoint
   code_quality_url            = local.code_quality_url
   oidc_client_id              = var.code_quality_oidc_client_id

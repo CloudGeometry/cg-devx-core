@@ -42,3 +42,11 @@ variable "cluster_endpoint" {
   description = "(Required) K8s cluster endpoint"
   type        = string
 }
+
+variable "workloads" {
+  description = "Workloads configuration"
+  type        = map(object({
+    description = optional(string, "")
+  }))
+  default = {}
+}

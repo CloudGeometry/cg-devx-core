@@ -17,7 +17,7 @@ from common.tracing_decorator import trace
 class GitOpsTemplateManager:
     """CG DevX Git repo templates manager."""
 
-    def __init__(self, gitops_template_url: str, gitops_template_branch: str, token=None):
+    def __init__(self, gitops_template_url: str = None, gitops_template_branch: str = None, token=None):
         if gitops_template_url is None:
             self.__url = GITOPS_REPOSITORY_URL
         else:

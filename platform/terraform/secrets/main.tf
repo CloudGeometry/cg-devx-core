@@ -20,18 +20,13 @@ provider "vault" {
 locals {
   cluster_name   = "<PRIMARY_CLUSTER_NAME>"
   provisioned_by = "cgdevx"
-  ### Workload groups definition bellow
-  workloads      = {
-    # "workload-demo" = {
-    # },
-  }
 }
 
 module "secrets" {
   source = "../modules/secrets_vault"
 
   cluster_name                 = local.cluster_name
-  workloads                    = local.workloads
+  workloads                    = var.workloads
   vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
   vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key
   vcs_token                    = var.vcs_token
