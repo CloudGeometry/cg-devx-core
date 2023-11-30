@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: backstage.aws-test.cgdevx.io
+  - host: <PORTAL_INGRESS_URL>
     http:
       paths:
       - path: /oauth2
@@ -20,5 +20,5 @@ spec:
               number: 4180
   tls:
   - hosts:
-    - backstage.aws-test.cgdevx.io
+    - <PORTAL_INGRESS_URL>
     secretName: backstage-tls

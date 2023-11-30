@@ -35,10 +35,10 @@ spec:
           annotations: 
             cert-manager.io/cluster-issuer: "letsencrypt-prod"
             nginx.ingress.kubernetes.io/enable-cors: "true"
-            nginx.ingress.kubernetes.io/cors-allow-origin: "https://backstage.aws-test.cgdevx.io"
+            nginx.ingress.kubernetes.io/cors-allow-origin: "https://<PORTAL_INGRESS_URL>"
             nginx.ingress.kubernetes.io/auth-url: "https://$host/oauth2/auth"
             nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$escaped_request_uri"
-          host: "backstage.aws-test.cgdevx.io"
+          host: "<PORTAL_INGRESS_URL>"
           tls:
             enabled: true
             secretName: "backstage-tls"
@@ -72,15 +72,15 @@ spec:
           containerSecurityContext: {}
           appConfig:
             app:
-              baseUrl: https://backstage.aws-test.cgdevx.io
+              baseUrl: https://<PORTAL_INGRESS_URL>
             organization:
-              name: cgdevx
+              name: <GIT_ORGANIZATION_NAME>
             backend:
-              baseUrl: https://backstage.aws-test.cgdevx.io
+              baseUrl: https://<PORTAL_INGRESS_URL>
               listen:
                 port: 7007
               cors:
-                origin: https://backstage.aws-test.cgdevx.io
+                origin: https://<PORTAL_INGRESS_URL>
                 methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
                 credentials: true
               database:

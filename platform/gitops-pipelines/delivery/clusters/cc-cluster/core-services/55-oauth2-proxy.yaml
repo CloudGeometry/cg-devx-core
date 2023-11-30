@@ -8,7 +8,7 @@ metadata:
 spec:
   project: core
   source:
-    repoURL: git@github.com:CGDevX-Demo/cg-devx-aws-test.git
+    repoURL: <GIT_REPOSITORY_GIT_URL>
     path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/oauth2-proxy
     targetRevision: HEAD
   destination:

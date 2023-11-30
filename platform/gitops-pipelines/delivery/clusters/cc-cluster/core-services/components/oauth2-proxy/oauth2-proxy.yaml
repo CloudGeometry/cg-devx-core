@@ -19,9 +19,9 @@ spec:
       - args:
         - --provider=oidc
         - --email-domain=*
-        - --upstream="https://backstage.aws-test.cgdevx.io/oauth2/callback"
+        - --upstream="https://<PORTAL_OAUTH_CALLBACK_URL>"
         - --http-address=0.0.0.0:4180
-        - --oidc-issuer-url=https://vault.aws-test.cgdevx.io/v1/identity/oidc/provider/cgdevx
+        - --oidc-issuer-url=https://<OIDC_PROVIDER_URL>
         env:
         - name: OAUTH2_PROXY_CLIENT_ID
           valueFrom:
