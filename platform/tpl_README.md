@@ -18,8 +18,8 @@ The CG DevX services:
 | Atlantis       | atlantis   | Terraform Workflow Automation      | https://<IAC_PR_AUTOMATION_INGRESS_URL> |
 | Harbor         | harbor     | Image & Helm Chart Registry        | https://<REGISTRY_INGRESS_URL>          |
 | Grafana        | monitoring | Observability                      | https://<GRAFANA_INGRESS_URL>           |
-| SonarQube      | sonarqube  | Code Quality                       | https://<CODE_QUALITY_INGRESS_URL>         |
-
+| SonarQube      | sonarqube  | Code Quality                       | https://<CODE_QUALITY_INGRESS_URL>      |
+| Backstage      | backstage  | Portal                             | https://<PORTAL_INGRESS_URL>            |
 ---
 
 ## GitOps registry

@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth2-proxy
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '55'
+spec:
+  project: core
+  source:
+    repoURL: <GIT_REPOSITORY_GIT_URL>
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/oauth2-proxy
+    targetRevision: HEAD
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: oauth2-proxy
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        maxDuration: 15m0s
+        factor: 2

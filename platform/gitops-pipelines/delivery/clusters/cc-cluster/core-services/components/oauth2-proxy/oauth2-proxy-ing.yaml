@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  name: oauth2-proxy
+  namespace: oauth2-proxy
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: <PORTAL_INGRESS_URL>
+    http:
+      paths:
+      - path: /oauth2
+        pathType: Prefix
+        backend:
+          service:
+            name: oauth2-proxy
+            port:
+              number: 4180
+  tls:
+  - hosts:
+    - <PORTAL_INGRESS_URL>
+    secretName: backstage-tls

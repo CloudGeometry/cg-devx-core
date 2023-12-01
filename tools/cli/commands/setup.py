@@ -855,6 +855,7 @@ def prepare_parameters(p):
     p.parameters["<REGISTRY_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
     p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
     p.parameters["<CODE_QUALITY_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
+    p.parameters["<PORTAL_INGRESS_URL>"] = f'backstage.{cluster_fqdn}'
 
     # OIDC config
     sec_man_ing = f'{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}'
@@ -864,6 +865,7 @@ def prepare_parameters(p):
     p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx/userinfo'
     p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/auth/callback'
     p.parameters["<CI_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CI_INGRESS_URL>"]}/oauth2/callback'
+    p.parameters["<PORTAL_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<PORTAL_INGRESS_URL>"]}/oauth2/callback'
     p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
     p.parameters[
         "<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'

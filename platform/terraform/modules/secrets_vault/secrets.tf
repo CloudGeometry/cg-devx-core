@@ -202,3 +202,20 @@ resource "vault_generic_secret" "sonarqube_admin_secret" {
 
   depends_on = [vault_mount.secret]
 }
+
+resource "random_password" "oauth2_backstage_cookie_password" {
+  length           = 32
+  override_special = "-_"
+}
+
+resource "vault_generic_secret" "oauth2_cookie_secret" {
+  path = "secret/oauth2/cookie"
+
+  data_json = jsonencode(
+    {
+      backstage_cookie_secret        = random_password.oauth2_backstage_cookie_password.result,
+    }
+  )
+
+  depends_on = [vault_mount.secret]
+}
