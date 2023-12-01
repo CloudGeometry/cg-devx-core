@@ -3,6 +3,9 @@ terraform {
     harbor = {
       source = "goharbor/harbor"
     }
+    vault = {
+      source = "hashicorp/vault"
+    }
   }
 }
 

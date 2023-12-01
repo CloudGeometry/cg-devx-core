@@ -12,6 +12,9 @@ terraform {
     restapi = {
       source = "Mastercard/restapi"
     }
+    vault = {
+      source = "hashicorp/vault"
+    }
   }
 }
 
