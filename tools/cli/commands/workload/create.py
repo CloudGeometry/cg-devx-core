@@ -6,10 +6,10 @@ import requests
 from git import Actor, Repo
 
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
-    LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_CORE_SERVICES
-from common.state_store import StateStore
+    LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_FOLDER
 from common.logging_config import configure_logging, logger
-
+from common.state_store import StateStore
+from ghrepo import GHRepo
 
 @click.command()
 @click.option('--workload-name', '-w', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
@@ -33,7 +33,7 @@ from common.logging_config import configure_logging, logger
 def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_template_url: str, wl_template_branch: str,
            wl_gitops_template_url: str, wl_gitops_template_branch: str, verbosity: str):
     """Create workload boilerplate."""
-    click.echo("Create workload.")
+    click.echo("Create workload GitOps code.")
 
     # Set up global logger
     configure_logging(verbosity)
@@ -45,7 +45,9 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_templat
 
     # reset & update repo just in case
     repo = Repo(LOCAL_GITOPS_FOLDER)
-    main_branch = repo.active_branch.name
+    main_branch = "main"
+    current = repo.create_head(main_branch)
+    current.checkout()
     repo.git.reset("--hard")
     origin = repo.remotes.origin
     origin.pull(repo.active_branch)
@@ -90,13 +92,29 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_templat
 
     # core services
     with open(LOCAL_TF_FOLDER_CORE_SERVICES / "terraform.tfvars.json", "r") as file:
-        secrets_tf_vars = json.load(file)
+        services_tf_vars = json.load(file)
 
-    secrets_tf_vars["workloads"][wl_name] = {}
+    services_tf_vars["workloads"][wl_name] = {}
 
     with open(LOCAL_TF_FOLDER_CORE_SERVICES / "terraform.tfvars.json", "w") as file:
-        file.write(json.dumps(secrets_tf_vars, indent=2))
+        file.write(json.dumps(services_tf_vars, indent=2))
 
+    # prepare ArgoCD manifest
+    wl_gitops_repo = GHRepo(p.parameters["<GIT_ORGANIZATION_NAME>"], wl_gitops_repo_name)
+    params = {
+        "<WL_NAME>": wl_name,
+        "<WL_GITOPS_REPOSITORY_GIT_URL>": wl_gitops_repo.git_url,
+    }
+
+    with open(LOCAL_FOLDER / "/gitops-pipelines/delivery/clusters/cc-cluster/workload/workload-template.yaml",
+              "r") as file:
+        data = file.read()
+        for k, v in params.items():
+            data = data.replace(k, v)
+    with open(LOCAL_FOLDER / f"/gitops-pipelines/delivery/clusters/cc-cluster/workload/{wl_name}.yaml", "w") as file:
+        file.write(data)
+
+    # commit and prepare a PR
     ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]}'
     with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
 
@@ -118,7 +136,7 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_templat
 
     payload = {
         "title": f"introduce {wl_name}",
-        "body": "Add default secrets, user and default repository structure. ",
+        "body": "Add default secrets, user and default repository structure.",
         "head": branch_name,
         "base": main_branch
     }
