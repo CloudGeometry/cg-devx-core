@@ -117,7 +117,7 @@ class AwsSdk:
         if region is None:
             region = self.region
 
-        resource = boto3.resource("s3", region_name=region)
+        resource = self._session_manager.session.resource("s3", region_name=region)
         versioning = resource.BucketVersioning(bucket_name)
         versioning.enable()
 
