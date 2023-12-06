@@ -83,8 +83,8 @@ resource "vault_generic_secret" "atlantis_secrets" {
       VAULT_ADDR                             = "http://vault.vault.svc.cluster.local:8200",
       VAULT_TOKEN                            = var.vault_token,
       # code quality specific section
-      TF_VAR_code_quality_oidc_client_id     = module.harbor.vault_oidc_client_id,
-      TF_VAR_code_quality_oidc_client_secret = module.harbor.vault_oidc_client_secret,
+      TF_VAR_code_quality_oidc_client_id     = module.sonarqube.vault_oidc_client_id,
+      TF_VAR_code_quality_oidc_client_secret = module.sonarqube.vault_oidc_client_secret,
       TF_VAR_code_quality_admin_password     = random_password.sonarqube_password.result,
     }
   )
