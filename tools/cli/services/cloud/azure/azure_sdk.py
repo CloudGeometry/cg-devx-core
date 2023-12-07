@@ -130,7 +130,7 @@ class AzureSdk:
         Returns:
             bool: True if the liveness check passes, else False.
         """
-        record_name = f'livenesscheck.{hosted_zone_name}'
+        record_name = f'cgdevx-liveness'
 
         self._set_txt_record(resource_group_name, hosted_zone_name, record_name, self.RECORD_VALUE)
 
@@ -215,9 +215,9 @@ class AzureSdk:
         """
         for _ in range(self.RETRY_COUNT):
             time.sleep(self.RETRY_SLEEP)
-            existing_txt = get_domain_txt_records_dot(hosted_zone_name)
+            existing_txt_records = get_domain_txt_records_dot(f'{record_name}.{hosted_zone_name}')
 
-            if expected_value in existing_txt:
+            if any(expected_value in txt_record for txt_record in existing_txt_records):
                 return True
 
             logger.info(f"Waiting for {record_name} to propagate. Retrying...")
