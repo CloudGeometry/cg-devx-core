@@ -2,14 +2,15 @@ import json
 import os
 
 import click
-import requests
-from git import Actor, Repo
-
-from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
-    LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_FOLDER
-from common.logging_config import configure_logging, logger
-from common.state_store import StateStore
 from ghrepo import GHRepo
+from git import Actor
+
+from common.command_utils import str_to_kebab, update_gitops_repo, create_pr
+from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
+    LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_FOLDER, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER
+from common.logging_config import configure_logging
+from common.state_store import StateStore
+
 
 @click.command()
 @click.option('--workload-name', '-w', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
@@ -17,45 +18,23 @@ from ghrepo import GHRepo
               type=click.STRING)
 @click.option('--workload-gitops-repository-name', '-wgrn', 'wl_gitops_repo_name',
               help='Workload GitOps repository name', type=click.STRING)
-@click.option('--workload-template-url', '-wtu', 'wl_template_url', help='Workload repository template',
-              type=click.STRING)
-@click.option('--workload-template-branch', '-wtb', 'wl_template_branch', help='Workload repository template',
-              type=click.STRING)
-@click.option('--workload-gitops-template-url', '-wgu', 'wl_gitops_template_url',
-              help='Workload GitOps repository template', type=click.STRING)
-@click.option('--workload-gitops-template-branch', '-wgb', 'wl_gitops_template_branch',
-              help='Workload GitOps repository template',
-              type=click.STRING)
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     case_sensitive=False
 ), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
-def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_template_url: str, wl_template_branch: str,
-           wl_gitops_template_url: str, wl_gitops_template_branch: str, verbosity: str):
+def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity: str):
     """Create workload boilerplate."""
-    click.echo("Create workload GitOps code.")
+    click.echo("Creating workload GitOps code...")
 
     # Set up global logger
     configure_logging(verbosity)
 
+    if not os.path.exists(LOCAL_FOLDER):
+        raise click.ClickException("CG DevX metadata does not exist on this machine")
+
     p: StateStore = StateStore()
 
-    if not os.path.exists(LOCAL_GITOPS_FOLDER):
-        raise Exception("GitOps repo does not exist")
-
-    # reset & update repo just in case
-    repo = Repo(LOCAL_GITOPS_FOLDER)
-    main_branch = "main"
-    current = repo.create_head(main_branch)
-    current.checkout()
-    repo.git.reset("--hard")
-    origin = repo.remotes.origin
-    origin.pull(repo.active_branch)
-
-    # create new branch
-    branch_name = f"feature/{wl_name}-init"
-    current = repo.create_head(branch_name)
-    current.checkout()
+    wl_name = str_to_kebab(wl_name)
 
     if not wl_repo_name:
         wl_repo_name = wl_name
@@ -65,6 +44,21 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_templat
             wl_gitops_repo_name = f"{wl_repo_name}-gitops"
         else:
             wl_gitops_repo_name = f"{wl_name}-gitops"
+
+    wl_repo_name = str_to_kebab(wl_repo_name)
+    wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name)
+
+    if not os.path.exists(LOCAL_GITOPS_FOLDER):
+        raise click.ClickException("GitOps repo does not exist")
+
+    main_branch = "main"
+
+    repo = update_gitops_repo()
+
+    # create new branch
+    branch_name = f"feature/{wl_name}-init"
+    current = repo.create_head(branch_name)
+    current.checkout()
 
     # repos
     with open(LOCAL_TF_FOLDER_VCS / "terraform.tfvars.json", "r") as file:
@@ -106,12 +100,14 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_templat
         "<WL_GITOPS_REPOSITORY_GIT_URL>": wl_gitops_repo.git_url,
     }
 
-    with open(LOCAL_FOLDER / "/gitops-pipelines/delivery/clusters/cc-cluster/workload/workload-template.yaml",
-              "r") as file:
+    workload_template_file = LOCAL_CC_CLUSTER_WORKLOAD_FOLDER / "workload-template.yaml"
+    with open(workload_template_file, "r") as file:
         data = file.read()
         for k, v in params.items():
             data = data.replace(k, v)
-    with open(LOCAL_FOLDER / f"/gitops-pipelines/delivery/clusters/cc-cluster/workload/{wl_name}.yaml", "w") as file:
+
+    workload_file = LOCAL_CC_CLUSTER_WORKLOAD_FOLDER / f"{wl_name}.yaml"
+    with open(workload_file, "w") as file:
         file.write(data)
 
     # commit and prepare a PR
@@ -124,28 +120,14 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_templat
 
         repo.remotes.origin.push(repo.active_branch.name)
 
-    git_pulls_api = "https://api.github.com/repos/{0}/{1}/pulls".format(
-        p.parameters["<GIT_ORGANIZATION_NAME>"],
-        p.parameters["<GITOPS_REPOSITORY_NAME>"]
-    )
-    headers = {
-        "Authorization": "token {0}".format(p.internals["GIT_ACCESS_TOKEN"]),
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
-    }
-
-    payload = {
-        "title": f"introduce {wl_name}",
-        "body": "Add default secrets, user and default repository structure.",
-        "head": branch_name,
-        "base": main_branch
-    }
-
-    r = requests.post(
-        git_pulls_api,
-        headers=headers,
-        data=json.dumps(payload))
-
-    if not r.ok:
+    if not create_pr(p.parameters["<GIT_ORGANIZATION_NAME>"], p.parameters["<GITOPS_REPOSITORY_NAME>"],
+                     p.internals["GIT_ACCESS_TOKEN"],
+                     branch_name, main_branch,
+                     f"introduce {wl_name}",
+                     f"Add default secrets, user and default repository structure."):
         raise click.ClickException("Could not create PR")
-        logger.error("GitHub API Request Failed: {0}".format(r.text))
+
+    repo.heads.main.checkout()
+
+    click.echo("Creating workload GitOps code. Done!")
+    return True

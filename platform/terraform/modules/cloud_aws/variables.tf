@@ -30,6 +30,10 @@ variable "cluster_name" {
     condition     = (length(var.cluster_name) <= 16) && (length(var.cluster_name) >= 2)
     error_message = "Must be between 2 and 16 symbols long"
   }
+  validation {
+    condition     = can(regex("[a-z0-9]+(?:-[a-z0-9]+)*", var.cluster_name))
+    error_message = "Invalid input, string should be in kebab-case."
+  }
 }
 
 variable "cluster_version" {

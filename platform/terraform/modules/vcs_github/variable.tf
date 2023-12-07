@@ -24,6 +24,7 @@ variable "workloads" {
   type        = map(object({
     description = optional(string, "")
     repos       = map(object({
+      description            = optional(string, "")
       visibility             = optional(string, "private")
       auto_init              = optional(bool, false)
       archive_on_destroy     = optional(bool, false)

@@ -90,7 +90,6 @@ def destroy(verbosity: str):
                 delete_application(registry_app_name, argocd_token)
 
             # need to wait here
-            # need to wait here
             wait(300)
         except Exception as e:
             # suppress exception and continue without deleting ArgoCD app

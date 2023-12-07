@@ -1,12 +1,21 @@
+import json
 import os
 import time
+from re import sub
 
+import requests
+from git import Repo
+from requests import HTTPError
+
+from common.const.common_path import LOCAL_GITOPS_FOLDER
 from common.const.parameter_names import CLOUD_REGION, CLOUD_PROFILE, CLOUD_ACCOUNT_ACCESS_KEY, \
     CLOUD_ACCOUNT_ACCESS_SECRET, DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, GIT_ACCESS_TOKEN, \
     GIT_ORGANIZATION_NAME
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
+from common.logging_config import logger
+from common.retry_decorator import exponential_backoff
 from common.state_store import StateStore
 from services.cloud.aws.aws_manager import AWSManager
 from services.cloud.azure.azure_manager import AzureManager
@@ -101,3 +110,66 @@ def unset_envs(env_vars):
 
 def wait(seconds: float = 15):
     time.sleep(seconds)
+
+
+@exponential_backoff()
+def wait_http_endpoint_readiness(endpoint: str):
+    try:
+        response = requests.get(endpoint,
+                                verify=False,
+                                headers={"Content-Type": "application/json"},
+                                )
+        if response.ok:
+            return
+        else:
+            raise Exception(f"Endpoint {endpoint} not ready.")
+    except HTTPError as e:
+        return
+
+
+def str_to_kebab(string: str):
+    """
+    Convert string to kebab case
+    :param string: input string
+    :return: kebab string
+    """
+    return '-'.join(
+        sub(r"(\s|_|-)+", " ",
+            sub(r"[A-Z]{2,}(?=[A-Z][a-z]+[0-9]*|\b)|[A-Z]?[a-z]+[0-9]*|[A-Z]|[0-9]+",
+                lambda match: ' ' + match.group(0).lower(), string)).split())
+
+
+def update_gitops_repo():
+    repo = Repo(LOCAL_GITOPS_FOLDER)
+    # clean stale branches
+    repo.remotes.origin.fetch(prune=True)
+    # update repo just in case
+    repo.heads.main.checkout()
+    repo.remotes.origin.pull(repo.active_branch)
+    return repo
+
+
+def create_pr(org_name: str, repo_name: str, token: str, head_branch: str, base_branch: str, title: str,
+              body: str) -> bool:
+    git_pulls_api = f"https://api.github.com/repos/{org_name}/{repo_name}/pulls"
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    payload = {
+        "title": title,
+        "body": body,
+        "head": head_branch,
+        "base": base_branch
+    }
+    res = requests.post(
+        git_pulls_api,
+        headers=headers,
+        data=json.dumps(payload))
+
+    if not res.ok:
+        logger.error("GitHub API Request Failed: {0}".format(res.text))
+        return False
+
+    return True

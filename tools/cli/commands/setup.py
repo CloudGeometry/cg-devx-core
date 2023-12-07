@@ -7,7 +7,7 @@ import portforward
 import yaml
 
 from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
-    set_envs, unset_envs, wait
+    set_envs, unset_envs, wait, wait_http_endpoint_readiness
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME
@@ -736,14 +736,18 @@ def setup(
         sonar_tls_cert = kube_client.get_certificate(SONARQUBE_NAMESPACE, "sonarqube-tls")
         kube_client.wait_for_certificate(sonar_tls_cert)
 
-        wait(30)
+        # wait for registry API endpoint readiness
+        wait_http_endpoint_readiness(f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}')
+
         p.internals["REGISTRY_USERNAME"] = "admin"
         # run security manager tf to create secrets and roles
         core_services_tf_env_vars = {
             **{
                 "HARBOR_URL": f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}',
                 "HARBOR_USERNAME": p.internals["REGISTRY_USERNAME"],
-                "HARBOR_PASSWORD": p.internals["REGISTRY_PASSWORD"]
+                "HARBOR_PASSWORD": p.internals["REGISTRY_PASSWORD"],
+                "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
+                "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
             },
             **cloud_provider_auth_env_vars}
         # set envs as required by tf
