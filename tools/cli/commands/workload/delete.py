@@ -13,7 +13,7 @@ from common.state_store import StateStore
 
 
 @click.command()
-@click.option('--workload-name', '-w', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
+@click.option('--workload-name', '-wl', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     case_sensitive=False

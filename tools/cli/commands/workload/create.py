@@ -13,10 +13,10 @@ from common.state_store import StateStore
 
 
 @click.command()
-@click.option('--workload-name', '-w', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
-@click.option('--workload-repository-name', '-wrn', 'wl_repo_name', help='Workload repository name',
+@click.option('--workload-name', '-wl', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
+@click.option('--workload-repository-name', '-wlrn', 'wl_repo_name', help='Workload repository name',
               type=click.STRING)
-@click.option('--workload-gitops-repository-name', '-wgrn', 'wl_gitops_repo_name',
+@click.option('--workload-gitops-repository-name', '-wlgrn', 'wl_gitops_repo_name',
               help='Workload GitOps repository name', type=click.STRING)
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -97,7 +97,7 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity:
     wl_gitops_repo = GHRepo(p.parameters["<GIT_ORGANIZATION_NAME>"], wl_gitops_repo_name)
     params = {
         "<WL_NAME>": wl_name,
-        "<WL_GITOPS_REPOSITORY_GIT_URL>": wl_gitops_repo.git_url,
+        "<WL_GITOPS_REPOSITORY_GIT_URL>": wl_gitops_repo.ssh_url,
     }
 
     workload_template_file = LOCAL_CC_CLUSTER_WORKLOAD_FOLDER / "workload-template.yaml"

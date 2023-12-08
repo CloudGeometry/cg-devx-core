@@ -24,7 +24,7 @@ checkpoints) and could be re-run
 
 `setup` command could be executed using arguments, environment variables, or input file.
 
-Arguments:
+**Arguments**:
 
 | Name (short, full)             | Type                                    | Description                                       |
 |--------------------------------|-----------------------------------------|---------------------------------------------------|
@@ -49,6 +49,8 @@ Arguments:
 | -dw, --setup-demo-workload     | Flag                                    | Setup demo workload                               |
 | -f, --config-file              | FILENAME                                | Load parameters from file                         |
 | --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
+
+> **Note!**: For all names use kebab-case.
 
 `parameters.yaml` file example
 
@@ -111,6 +113,12 @@ process.
 - All local files created by CG DevX CLI
 
 **NOTE!**: this process is irreversible
+
+**Arguments**:
+
+| Name (short, full) | Type                                    | Description                                       |
+|--------------------|-----------------------------------------|---------------------------------------------------|
+| --verbosity        | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
 
 **Command snippet**
 

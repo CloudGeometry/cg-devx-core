@@ -14,21 +14,21 @@ from services.template_manager import GitOpsTemplateManager
 
 
 @click.command()
-@click.option('--workload-name', '-w', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
-@click.option('--workload-repository-name', '-wrn', 'wl_repo_name', help='Workload repository name', type=click.STRING)
-@click.option('--workload-gitops-repository-name', '-wgrn', 'wl_gitops_repo_name',
+@click.option('--workload-name', '-wl', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
+@click.option('--workload-repository-name', '-wlrn', 'wl_repo_name', help='Workload repository name', type=click.STRING)
+@click.option('--workload-gitops-repository-name', '-wlgrn', 'wl_gitops_repo_name',
               help='Workload GitOps repository name', type=click.STRING)
-@click.option('--workload-template-url', '-wtu', 'wl_template_url', help='Workload repository template',
+@click.option('--workload-template-url', '-wltu', 'wl_template_url', help='Workload repository template',
               type=click.STRING)
-@click.option('--workload-template-branch', '-wtb', 'wl_template_branch', help='Workload repository template',
+@click.option('--workload-template-branch', '-wltb', 'wl_template_branch', help='Workload repository template branch',
               type=click.STRING)
-@click.option('--workload-gitops-template-url', '-wgu', 'wl_gitops_template_url',
+@click.option('--workload-gitops-template-url', '-wlgu', 'wl_gitops_template_url',
               help='Workload GitOps repository template', type=click.STRING)
-@click.option('--workload-gitops-template-branch', '-wgb', 'wl_gitops_template_branch',
-              help='Workload GitOps repository template',
+@click.option('--workload-gitops-template-branch', '-wlgb', 'wl_gitops_template_branch',
+              help='Workload GitOps repository template branch',
               type=click.STRING)
-@click.option('--workload-service-name', '-ws', 'wl_svc_name', help='Workload service name', type=click.STRING)
-@click.option('--workload-service-port', '-wsp', 'wl_svc_port', help='Workload service port', type=click.INT)
+@click.option('--workload-service-name', '-wls', 'wl_svc_name', help='Workload service name', type=click.STRING)
+@click.option('--workload-service-port', '-wlsp', 'wl_svc_port', help='Workload service port', type=click.INT)
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     case_sensitive=False
