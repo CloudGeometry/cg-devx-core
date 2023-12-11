@@ -12,7 +12,6 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.v2021_04_01.models import SkuName, Kind
 from azure.mgmt.subscription import SubscriptionClient
 from azure.storage.blob import BlobServiceClient
-
 from common.logging_config import logger
 from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
@@ -405,7 +404,8 @@ class AzureSdk:
                                                                      {
                                                                          # Storage Blob Data Owner
                                                                          "role_definition_id": "/providers/Microsoft.Authorization/roleDefinitions/b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
-                                                                         "principal_id": identity
+                                                                         "principal_id": identity,
+                                                                         "principalType": "ServicePrincipal"
                                                                      })
         return response
 
