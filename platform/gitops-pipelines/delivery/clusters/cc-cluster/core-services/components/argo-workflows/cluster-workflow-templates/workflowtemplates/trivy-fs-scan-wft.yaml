@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: trivy-fs-scan-wft
+#TODO:
+# in the end: clean up unpacked-fs
+# script for untar and run trivy fs
+spec:
+  templates:
+  - name: trivy-fs-scan
+    container:
+        image: aquasec/trivy
+        args:
+          - fs
+          - /workdir
+          #          - /workdir/{{workflow.parameters.workload}}
+        volumeMounts:
+          - name: build
+            mountPath: /workdir
+

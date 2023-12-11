@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: git-clone-wft
+spec:
+  templates:
+  - name: git-clone
+    inputs:
+      artifacts:
+      - name: git-src
+        path: /src
+        git:
+          repo: "{{workflow.parameters.repo}}"
+              #          revision: "{{workflow.parameters.revision}}" 
+          sshPrivateKeySecret:
+             name: ci-secrets
+             key: SSH_PRIVATE_KEY
+          depth: 1
+    script:
+        image: python:latest #subj to change
+        env:
+          - name: WORKLOAD
+            value: "{{workflow.parameters.workload}}"
+        command: [sh]
+        source: |
+          pwd
+          git status && ls -lra && cat dockerfile
+          #  mkdir /build/${WORKLOAD}
+          #cp -r * /build/${WORKLOAD}
+          cp -rv src/$WORKLOAD /build/
+          cd /build/
+          pwd
+          ls -l
+          echo "I've been here"  | tee test.txt
+        volumeMounts:
+          - mountPath: "/build"
+            name: build
+ 

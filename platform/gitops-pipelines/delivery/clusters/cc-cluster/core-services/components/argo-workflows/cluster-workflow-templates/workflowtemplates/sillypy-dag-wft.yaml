@@ -1,0 +1,72 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: sillypy-dag-template
+spec:
+  arguments:
+    parameters:
+      - name: image
+        value: harbor.aws-test.cgdevx.io/sillypy/sillypy
+      - name: tag
+        value: "0.3"
+      - name: workload
+        value: sillypy
+      - name: revision
+        value: "v1.0"
+      - name: repo
+        value: git@github.com:CGDevX-Demo/workload-sillypy.git
+  volumeClaimTemplates:
+    - metadata:
+        name: build
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 4Gi
+  entrypoint: ci-sequence
+  onExit: exit-handler
+  volumes:
+    #  - name: build
+      #    persistentVolumeClaim:
+#claimName: build-volume-claim
+  - name: kaniko-secret
+    secret:
+      secretName: harbcred
+      items:
+        - key: .dockerconfigjson
+          path: config.json
+
+  templates:
+  - name: ci-sequence
+    dag:
+      tasks:
+      - name: git-clone
+        templateRef:
+          name: git-clone-wft
+          template: git-clone
+      - name: linter
+        dependencies: [git-clone]
+        templateRef:
+          name: black-wft
+          template: black
+      - name: kaniko
+        dependencies: [linter]
+        templateRef: 
+          name: kaniko-wft
+          template: kaniko
+      - name: trivy-fs-scan
+        dependencies: [kaniko]
+        templateRef:
+          name: trivy-fs-scan-wft
+          template: trivy-fs-scan
+      - name: crane
+        dependencies: [git-clone,linter,kaniko,trivy-fs-scan]
+        templateRef: 
+            name: crane-wft
+            template: crane
+  - name: exit-handler
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo  {{workflow.name}} {{workflow.status}} {{workflow.duration}}"]
+  

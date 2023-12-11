@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: tslint-wft
+spec:
+  templates:
+  - name: tslint
+    container:
+      image: registry.gitlab.com/pipeline-components/tslint:latest
+      imagePullPolicy: IfNotPresent
+      command: ["tslint", "/{{workflow.parameters.workload}}/src/**/*.ts"]
+      volumeMounts:
+        - name: build
+          mountPath: "{{workflow.parameters.workload}}"
+

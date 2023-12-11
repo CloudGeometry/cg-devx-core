@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: kaniko-wft
+spec:
+  templates:
+  - name: kaniko
+    container:
+      image: gcr.io/kaniko-project/executor
+      imagePullPolicy: IfNotPresent
+      args: ["--dockerfile=/workspace/dockerfile", "--no-push", "--tar-path=/workspace/{{workflow.parameters.workload}}.tar"]
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        - name: build
+          mountPath: /workspace
+

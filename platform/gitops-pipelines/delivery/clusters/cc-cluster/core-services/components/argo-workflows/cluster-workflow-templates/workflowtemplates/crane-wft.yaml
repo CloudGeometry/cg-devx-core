@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: crane-wft
+spec:
+  templates:
+  - name: crane
+    container:
+      image: gcr.io/go-containerregistry/crane
+      imagePullPolicy: IfNotPresent
+      args: ["push", "/workspace/{{workflow.parameters.workload}}.tar", "{{workflow.parameters.image}}:{{workflow.parameters.tag}}"]
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /home/nonroot/.docker
+        - name: build
+          mountPath: /workspace
+
