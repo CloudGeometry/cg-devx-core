@@ -1,10 +1,3 @@
-###AWS specific data sources begin
-data "aws_eks_cluster" "cluster" {
-  name = var.cluster_name
-}
-
-###AWS specific data sources end
-
 resource "vault_auth_backend" "k8s" {
   type = "kubernetes"
   path = "kubernetes/cgdevx"
