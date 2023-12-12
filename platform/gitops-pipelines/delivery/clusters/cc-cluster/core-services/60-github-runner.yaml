@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/github-runner
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/runners/github/github-runner
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc

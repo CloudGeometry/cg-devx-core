@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from common.enums.git_plans import GitSubscriptionPlans
+
 
 class GitProviderManager(ABC):
     """Git provider wrapper to standardise Git management."""
@@ -33,5 +35,21 @@ class GitProviderManager(ABC):
         """
         Get authenticated user info
         :return: Login, Name, Email
+        """
+        pass
+
+    @abstractmethod
+    def create_runner_group_snippet(self) -> str:
+        """
+        Create external CI/CD runner group snippet
+        :return: Snippet
+        """
+        pass
+
+    @abstractmethod
+    def get_organization_plan(self, organization_name: str) -> [str, GitSubscriptionPlans]:
+        """
+        Get active plan, if present
+        :return: Subscription plan
         """
         pass

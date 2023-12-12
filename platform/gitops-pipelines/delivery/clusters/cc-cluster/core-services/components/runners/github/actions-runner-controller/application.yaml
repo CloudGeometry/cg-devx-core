@@ -15,6 +15,11 @@ spec:
         labels: {}
 
         replicaCount: 1
+        
+        template:
+          spec:{
+            # <GIT_RUNNER_GROUP>
+          }
 
         webhookPort: 9443
         syncPeriod: 1m

@@ -149,6 +149,9 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         "# <K8S_ROLE_MAPPING>": cloud_man.create_k8s_cluster_role_mapping_snippet(),
         "<WL_IAM_ROLE_RN>": "[Put your workload service role mapping]",
         "# <ADDITIONAL_LABELS>": cloud_man.create_additional_labels(),
+        "# <TF_WL_SECRETS_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"], f"workloads/{wl_name}/secrets"),
+        "# <TF_WL_HOSTING_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"], f"workloads/{wl_name}/hosting_provider"),
+        "# <TF_HOSTING_PROVIDER>": cloud_man.create_hosting_provider_snippet(),
     }
 
     wl_gitops_repo_folder = temp_folder / wl_gitops_repo_name

@@ -4,6 +4,7 @@ from urllib.error import HTTPError
 import requests
 
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
+from common.enums.git_plans import GitSubscriptionPlans
 from common.tracing_decorator import trace
 from services.vcs.git_provider_manager import GitProviderManager
 
@@ -91,3 +92,38 @@ class GitHubProviderManager(GitProviderManager):
     @trace()
     def create_tf_module_snippet(self):
         return 'provider "github" {}'
+
+    @trace()
+    def create_runner_group_snippet(self) -> str:
+        return 'group: <GIT_RUNNER_GROUP_NAME>'
+
+    @trace()
+    def get_organization_plan(self, organization_name: str) -> GitSubscriptionPlans:
+        """
+        Get active plan, if present
+        :return: Plan name
+        """
+
+        headers = {
+            'Authorization': f'token {self.__token}',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+        }
+        try:
+            response = requests.get(f'https://api.github.com/orgs/{organization_name}', headers=headers)
+            if response.ok:
+                res = json.loads(response.text)
+
+                plan_name = res["plan"]["name"]
+                if plan_name == "pro":
+                    return GitSubscriptionPlans.Enterprise
+                elif plan_name == "team":
+                    return GitSubscriptionPlans.Pro
+                elif plan_name == "free":
+                    return GitSubscriptionPlans.Free
+                else:
+                    return GitSubscriptionPlans.Free
+            else:
+                raise Exception("Org not found")
+        except HTTPError as e:
+            raise e

@@ -65,7 +65,7 @@ from services.vcs.git_provider_manager import GitProviderManager
 @click.option('--gitops-template-branch', '-gtb', 'gitops_template_branch', help='GitOps repository template branch',
               default=GITOPS_REPOSITORY_BRANCH, type=click.STRING)
 @click.option('--setup-demo-workload', '-dw', 'install_demo', help='Setup demo workload', default=False,
-              flag_value='setup-demo')
+              is_flag=True)
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -147,6 +147,10 @@ def setup(
         p.parameters["<GIT_USER_NAME>"] = git_user_name
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
+
+        if git_man.get_organization_plan(p.get_input_param(GIT_ORGANIZATION_NAME)) > 1:
+            p.fragments["# <GIT_RUNNER_GROUP>"] = git_man.create_runner_group_snippet()
+            p.parameters["<GIT_RUNNER_GROUP_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
 
         dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")

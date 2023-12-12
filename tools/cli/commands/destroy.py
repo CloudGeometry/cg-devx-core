@@ -26,6 +26,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
 def destroy(verbosity: str):
     """Destroy existing CG DevX installation."""
+    click.confirm("This will destroy CG DevX installation. Please confirm to continue", abort=True)
+
     # Set up global logger
     configure_logging(verbosity)
 
