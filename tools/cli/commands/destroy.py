@@ -26,7 +26,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
 def destroy(verbosity: str):
     """Destroy existing CG DevX installation."""
-    click.confirm("This will destroy CG DevX installation. Please confirm to continue", abort=True)
 
     # Set up global logger
     configure_logging(verbosity)
@@ -35,8 +34,13 @@ def destroy(verbosity: str):
         click.echo("CG DevX installation local files not found.")
         return
 
-    click.echo("Destroying CG DevX installation...")
     p: StateStore = StateStore()
+
+    click.confirm(
+        f'This will destroy cluster "{p.parameters["<PRIMARY_CLUSTER_NAME>"]}" and local files at "{LOCAL_FOLDER}". Please confirm to continue',
+        abort=True)
+
+    click.echo("Destroying CG DevX installation...")
 
     cloud_man, dns_man = init_cloud_provider(p)
     cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
@@ -113,7 +117,8 @@ def destroy(verbosity: str):
     unset_envs(tf_env_vars)
 
     # delete IaC backend storage bucket
-    cloud_man.destroy_iac_state_storage(p.internals["TF_BACKEND_STORAGE_NAME"])
+    if not cloud_man.destroy_iac_state_storage(p.internals["TF_BACKEND_STORAGE_NAME"]):
+        click.echo(f'Failed to delete IaC state storage {p.internals["TF_BACKEND_STORAGE_NAME"]}. You should delete it manually.')
 
     # delete local data folder
     shutil.rmtree(LOCAL_FOLDER)

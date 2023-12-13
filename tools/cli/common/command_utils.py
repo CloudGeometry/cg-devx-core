@@ -150,7 +150,7 @@ def update_gitops_repo():
 
 
 def create_pr(org_name: str, repo_name: str, token: str, head_branch: str, base_branch: str, title: str,
-              body: str) -> bool:
+              body: str) -> str:
     git_pulls_api = f"https://api.github.com/repos/{org_name}/{repo_name}/pulls"
     headers = {
         "Authorization": f"token {token}",
@@ -170,6 +170,7 @@ def create_pr(org_name: str, repo_name: str, token: str, head_branch: str, base_
 
     if not res.ok:
         logger.error("GitHub API Request Failed: {0}".format(res.text))
-        return False
+        return
+    data = json.loads(res.text)
 
-    return True
+    return data["html_url"]

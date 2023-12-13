@@ -252,18 +252,16 @@ class AwsSdk:
             if region is None:
                 region = self.region
 
-            s3_client = self._session_manager.session.client('s3', region_name=region)
+            resource = self._session_manager.session.resource("s3", region_name=region)
+            s3_client = self._session_manager.session.client("s3", region_name=region)
 
-            objects = s3_client.get_paginator("list_objects_v2")
+            bucket = resource.Bucket(bucket_name)
+            bucket_versioning = resource.BucketVersioning(bucket_name)
 
-            objects_iterator = objects.paginate(Bucket=bucket_name)
-            for res in objects_iterator:
-                if 'Versions' in res:
-                    objects = [{'Key': obj['Key'], 'VersionId': obj['VersionId']} for obj in res['Versions']]
-                    s3_client.delete_objects(Bucket=bucket_name, Delete={'Objects': objects})
-                if 'Contents' in res:
-                    objects = [{'Key': obj['Key']} for obj in res['Contents']]
-                    s3_client.delete_objects(Bucket=bucket_name, Delete={'Objects': objects})
+            if bucket_versioning.status == 'Enabled':
+                bucket.object_versions.delete()
+            else:
+                bucket.objects.all().delete()
 
             s3_client.delete_bucket(Bucket=bucket_name)
         except ClientError as e:

@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import webbrowser
 
 import click
 from ghrepo import GHRepo
@@ -20,14 +21,15 @@ from services.tf_wrapper import TfWrapper
 @click.option('--workload-name', '-wl', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
 @click.option('--workload-gitops-repository-name', '-wlgrn', 'wl_gitops_repo_name',
               help='Workload GitOps repository name', type=click.STRING)
-@click.option('--destroy-resources', '-wldr', 'destroy_resources', help='Destroy workload resources', is_flag=True, default=False)
+@click.option('--destroy-resources', '-wldr', 'destroy_resources', help='Destroy workload resources', is_flag=True,
+              default=False)
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
     case_sensitive=False
 ), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
 def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verbosity: str):
     """Deletes all the workload boilerplate."""
-    click.confirm("This will delete workload. Please confirm to continue", abort=True)
+    click.confirm(f'This will delete the workload "{wl_name}". Please confirm to continue', abort=True)
 
     click.echo("Deleting workload GitOps code...")
 
@@ -162,12 +164,13 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
 
         repo.remotes.origin.push(repo.active_branch.name)
 
-    if not create_pr(p.parameters["<GIT_ORGANIZATION_NAME>"], p.parameters["<GITOPS_REPOSITORY_NAME>"],
-                     p.internals["GIT_ACCESS_TOKEN"],
-                     branch_name, main_branch,
-                     f"remove {wl_name}",
-                     f"Remove default secrets, user and repository structure."):
+    pr_url = create_pr(p.parameters["<GIT_ORGANIZATION_NAME>"], p.parameters["<GITOPS_REPOSITORY_NAME>"],
+                       p.internals["GIT_ACCESS_TOKEN"], branch_name, main_branch, f"remove {wl_name}",
+                       f"Remove default secrets, user and repository structure.")
+    if not pr_url:
         raise click.ClickException("Could not create PR")
+    else:
+        webbrowser.open(pr_url, autoraise=False)
 
     repo.heads.main.checkout()
 

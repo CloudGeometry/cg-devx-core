@@ -1,5 +1,6 @@
 import json
 import os
+import webbrowser
 
 import click
 from ghrepo import GHRepo
@@ -120,12 +121,16 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity:
 
         repo.remotes.origin.push(repo.active_branch.name)
 
-    if not create_pr(p.parameters["<GIT_ORGANIZATION_NAME>"], p.parameters["<GITOPS_REPOSITORY_NAME>"],
-                     p.internals["GIT_ACCESS_TOKEN"],
-                     branch_name, main_branch,
-                     f"introduce {wl_name}",
-                     f"Add default secrets, user and default repository structure."):
+    pr_url = create_pr(p.parameters["<GIT_ORGANIZATION_NAME>"], p.parameters["<GITOPS_REPOSITORY_NAME>"],
+                       p.internals["GIT_ACCESS_TOKEN"],
+                       branch_name, main_branch,
+                       f"introduce {wl_name}",
+                       f"Add default secrets, user and default repository structure.")
+
+    if not pr_url:
         raise click.ClickException("Could not create PR")
+    else:
+        webbrowser.open(pr_url, autoraise=False)
 
     repo.heads.main.checkout()
 
