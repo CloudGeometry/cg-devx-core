@@ -4,7 +4,7 @@ As with many practices in operations, implementing a tagging strategy is a proce
 
 Main focus of our tagging strategy is FinOps and Security, with that proposed strategy described with main focus on that two aspects.
 
-## FinOps lens
+## FinOps
 
 Map spending data to the business
 - Meaningful taxonomy of your costs
@@ -16,7 +16,7 @@ Set tag strategy and compliance
 - How to handle Untagged, Untaggable spending
 - How to handle tag compliance
 
-## Securiy lens
+## SecOps
 
 When breaches or other security problems happen, it’s important to classify the data and figure out how it affects security. Tagging opens the door to more secure operations.
 
