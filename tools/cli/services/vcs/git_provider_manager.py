@@ -47,7 +47,7 @@ class GitProviderManager(ABC):
         pass
 
     @abstractmethod
-    def get_organization_plan(self, organization_name: str) -> [str, GitSubscriptionPlans]:
+    def get_organization_plan(self, organization_name: str) -> GitSubscriptionPlans:
         """
         Get active plan, if present
         :return: Subscription plan

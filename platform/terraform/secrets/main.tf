@@ -14,9 +14,6 @@ provider "vault" {
   skip_tls_verify = "true"
 }
 
-# Cloud Provider configuration
-# <TF_HOSTING_PROVIDER>
-
 locals {
   cluster_name   = "<PRIMARY_CLUSTER_NAME>"
   provisioned_by = "cgdevx"

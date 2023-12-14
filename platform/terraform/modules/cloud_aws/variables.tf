@@ -75,9 +75,17 @@ variable "node_groups" {
 variable "cluster_node_labels" {
   type    = map(any)
   default = {
-    ProvisionedBy = "CGDevX"
+    provisioned-by = "cg-devx"
   }
   description = "(Optional) EKS node labels"
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {
+    ProvisionedBy = "CGDevX"
+  }
+  description = "(Optional) Specifies the AWS resource tags"
 }
 
 variable "alert_emails" {

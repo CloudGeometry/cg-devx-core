@@ -62,9 +62,17 @@ variable "node_groups" {
 variable "cluster_node_labels" {
   type    = map(string)
   default = {
-    ProvisionedBy = "CGDevX"
+    provisioned-by = "cg-devx"
   }
   description = "(Optional) Specifies the AKS node labels"
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {
+    ProvisionedBy = "CGDevX"
+  }
+  description = "(Optional) Specifies the Azure resource tags"
 }
 
 variable "alert_emails" {

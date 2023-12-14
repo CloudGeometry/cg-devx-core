@@ -149,8 +149,8 @@ def setup(
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
 
         git_subscription_plan = git_man.get_organization_plan(p.get_input_param(GIT_ORGANIZATION_NAME))
-        p.internals["GIT_SUBSCRIPTION_PLAN"] = git_subscription_plan
-        if git_subscription_plan > 1:
+        p.internals["GIT_SUBSCRIPTION_PLAN"] = bool(git_subscription_plan)
+        if git_subscription_plan > 0:
             p.fragments["# <GIT_RUNNER_GROUP>"] = git_man.create_runner_group_snippet()
             p.parameters["<GIT_RUNNER_GROUP_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
 

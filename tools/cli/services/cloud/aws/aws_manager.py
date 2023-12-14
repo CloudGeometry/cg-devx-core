@@ -92,10 +92,7 @@ class AWSManager(CloudProviderManager):
         return textwrap.dedent('''\
         provider "aws" {
           default_tags {
-            tags = {
-              ClusterName   = local.cluster_name
-              ProvisionedBy = "CGDevX"
-            }
+            tags = local.tags
           }
         }''')
 
