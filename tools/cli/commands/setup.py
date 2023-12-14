@@ -10,7 +10,8 @@ from common.command_utils import init_cloud_provider, init_git_provider, prepare
     set_envs, unset_envs, wait, wait_http_endpoint_readiness
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
-from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME
+from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
+    TERRAFORM_VERSION
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE, HARBOR_NAMESPACE, SONARQUBE_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVIDER, CLOUD_ACCOUNT_ACCESS_KEY, \
@@ -388,8 +389,7 @@ def setup(
     if not p.has_checkpoint("gitops-vcs"):
         click.echo("7/12: Pushing GitOps code...")
 
-        tm.parametrise_registry(p)
-        tm.parametrise_gitops_readme(p)
+        tm.parametrise(p)
 
         tm.upload(p.parameters["<GIT_REPOSITORY_GIT_URL>"],
                   p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
@@ -849,6 +849,7 @@ def prepare_parameters(p):
     p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{org_name}'
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME).lower()
     p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
+    p.parameters["<TERRAFORM_VERSION>"] = TERRAFORM_VERSION
 
     # set IaC webhook secret
     if "<IAC_PR_AUTOMATION_WEBHOOK_SECRET>" not in p.parameters:
@@ -864,6 +865,7 @@ def prepare_parameters(p):
     p.parameters["<REGISTRY_INGRESS_URL>"] = f'harbor.{cluster_fqdn}'
     p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
     p.parameters["<CODE_QUALITY_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
+    p.parameters["<PORTAL_INGRESS_URL>"] = f'backstage.{cluster_fqdn}'
 
     # OIDC config
     sec_man_ing = f'{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}'
@@ -873,6 +875,7 @@ def prepare_parameters(p):
     p.parameters["<OIDC_PROVIDER_USERINFO_URL>"] = f'{sec_man_ing}/v1/identity/oidc/provider/cgdevx/userinfo'
     p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/auth/callback'
     p.parameters["<CI_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CI_INGRESS_URL>"]}/oauth2/callback'
+    p.parameters["<PORTAL_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<PORTAL_INGRESS_URL>"]}/oauth2/callback'
     p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
     p.parameters[
         "<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'

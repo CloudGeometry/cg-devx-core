@@ -1,0 +1,163 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backstage
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "170"
+spec:
+  project: core
+  source:
+    repoURL: https://backstage.github.io/charts
+    chart: backstage
+    targetRevision: 1.6.0
+    helm:
+      values: |-
+        global:
+          imageRegistry: ""
+          imagePullSecrets: []
+        kubeVersion: ""
+        nameOverride: ""
+        fullnameOverride: ""
+        clusterDomain: cluster.local
+        commonLabels: {}
+        commonAnnotations: {}
+        extraDeploy: []
+        diagnosticMode:
+          enabled: false
+          command:
+            - sleep
+          args:
+            - infinity
+        ingress:
+          enabled: true
+          className: "nginx"
+          annotations: 
+            cert-manager.io/cluster-issuer: "letsencrypt-prod"
+            nginx.ingress.kubernetes.io/enable-cors: "true"
+            nginx.ingress.kubernetes.io/cors-allow-origin: "https://<PORTAL_INGRESS_URL>"
+            nginx.ingress.kubernetes.io/auth-url: "https://$host/oauth2/auth"
+            nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$escaped_request_uri"
+          host: "<PORTAL_INGRESS_URL>"
+          tls:
+            enabled: true
+            secretName: "backstage-tls"
+        backstage:
+          replicas: 1
+          revisionHistoryLimit: 10
+          image:
+            registry: ghcr.io
+            repository: backstage/backstage
+            tag: latest
+            pullPolicy: Always
+            pullSecrets: []
+            debug: false
+          containerPorts:
+            backend: 7007
+          command: ["node", "packages/backend"]
+          args: []
+          extraAppConfig: []
+          extraContainers: []
+          extraEnvVars: []
+          extraEnvVarsSecrets: []
+          extraVolumeMounts: []
+          extraVolumes: []
+          initContainers: []
+          installDir: /app
+          resources: {}
+          readinessProbe: {}
+          livenessProbe: {}
+          startupProbe: {}
+          podSecurityContext: {}
+          containerSecurityContext: {}
+          appConfig:
+            app:
+              baseUrl: https://<PORTAL_INGRESS_URL>
+            organization:
+              name: <GIT_ORGANIZATION_NAME>
+            backend:
+              baseUrl: https://<PORTAL_INGRESS_URL>
+              listen:
+                port: 7007
+              cors:
+                origin: https://<PORTAL_INGRESS_URL>
+                methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+                credentials: true
+              database:
+                client: pg
+                connection:
+                  host: ${BACKSTAGE_POSTGRESQL_SERVICE_HOST}
+                  port: ${BACKSTAGE_POSTGRESQL_SERVICE_PORT}
+                  user: ${POSTGRES_USER}
+                  password: ${POSTGRES_PASSWORD}  
+            techdocs:
+              builder: 'local'
+              publisher:
+                type: 'local'
+              generator:
+                runIn: local
+          nodeSelector: {}
+          tolerations: []
+          podAnnotations: {}
+          podLabels: {}
+          annotations: {}
+        service:
+          type: ClusterIP
+          ports:
+            backend: 7007
+            name: http-backend
+            targetPort: backend
+          nodePorts:
+            backend: ""
+          sessionAffinity: None
+          #
+          clusterIP: ""
+          #
+          loadBalancerIP: ""
+          #
+          loadBalancerSourceRanges: []
+          #
+          externalTrafficPolicy: Cluster
+          annotations: {}
+          extraPorts: []
+        networkPolicy:
+          enabled: false
+          ingressRules:
+            namespaceSelector: {}
+            podSelector: {}
+            customRules: []
+          egressRules:
+            denyConnectionsToExternal: false
+            customRules: []
+        postgresql:
+          enabled: true
+          persistence:
+            enabled: false
+          auth:
+            username: bn_backstage
+          architecture: standalone
+          storage:
+            resourcePolicy: ""
+        serviceAccount:
+          create: true
+          name: ""
+          labels: {}
+          annotations: {}
+          automountServiceAccountToken: true
+        metrics:
+          serviceMonitor:
+            enabled: false
+            annotations: {}
+            labels: {}
+            interval: null
+            path: /metrics
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: backstage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

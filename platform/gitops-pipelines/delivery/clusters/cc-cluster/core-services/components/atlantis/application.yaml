@@ -43,7 +43,7 @@ spec:
               hosts:
                 - <IAC_PR_AUTOMATION_INGRESS_URL>
         basicAuthSecretName: atlantis-basic-auth-secrets 
-        defaultTFVersion: 1.3.9
+        defaultTFVersion: <TERRAFORM_VERSION>
         loadEnvFromSecrets:
           - atlantis-envs-secrets
         repoConfig: |

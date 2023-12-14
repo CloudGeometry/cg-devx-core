@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring-components
+  name: backstage-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '110'
+    argocd.argoproj.io/sync-wave: '170'
 spec:
   project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/monitoring
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/backstage
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: backstage
   syncPolicy:
     automated:
       prune: true
@@ -21,8 +21,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
     retry:
-      limit: 5
+      limit: 10
       backoff:
         duration: 30s
-        maxDuration: 10m0s
+        maxDuration: 15m0s
         factor: 2
