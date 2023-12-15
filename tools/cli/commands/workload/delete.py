@@ -1,19 +1,19 @@
-import json
+import os
 import os
 import shutil
 import webbrowser
 
 import click
 from ghrepo import GHRepo
-from git import Repo, GitError, Actor
+from git import Repo, GitError
 
-from common.command_utils import str_to_kebab, update_gitops_repo, prepare_cloud_provider_auth_env_vars, set_envs, \
-    create_pr
-from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
-    LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_FOLDER, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER
+from common.command_utils import str_to_kebab, prepare_cloud_provider_auth_env_vars, set_envs, \
+    check_installation_presence, init_git_provider
+from common.const.common_path import LOCAL_FOLDER
 from common.const.parameter_names import GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
 from common.logging_config import configure_logging
 from common.state_store import StateStore
+from services.platform_gitops import PlatformGitOpsRepo
 from services.tf_wrapper import TfWrapper
 
 
@@ -36,10 +36,7 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
     # Set up global logger
     configure_logging(verbosity)
 
-    if not os.path.exists(LOCAL_FOLDER):
-        raise click.ClickException("CG DevX metadata does not exist on this machine")
-
-    p: StateStore = StateStore()
+    check_installation_presence()
 
     wl_name = str_to_kebab(wl_name)
 
@@ -48,54 +45,22 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
 
     wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name)
 
-    if not os.path.exists(LOCAL_GITOPS_FOLDER):
-        raise click.ClickException("GitOps repo does not exist")
-
+    p: StateStore = StateStore()
     main_branch = "main"
 
-    repo = update_gitops_repo()
+    git_man = init_git_provider(p)
+    gor = PlatformGitOpsRepo(git_man,
+                             author_name=p.internals["GIT_USER_NAME"],
+                             author_email=p.internals["GIT_USER_EMAIL"],
+                             key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"], )
+    # update repo just in case
+    gor.update()
 
     # create new branch
     branch_name = f"feature/{wl_name}-destroy"
-    current = repo.create_head(branch_name)
-    current.checkout()
+    gor.create_branch(branch_name)
 
-    # repos
-    with open(LOCAL_TF_FOLDER_VCS / "terraform.tfvars.json", "r") as file:
-        vcs_tf_vars = json.load(file)
-
-    if wl_name in vcs_tf_vars["workloads"]:
-        del vcs_tf_vars["workloads"][wl_name]
-
-        with open(LOCAL_TF_FOLDER_VCS / "terraform.tfvars.json", "w") as file:
-            file.write(json.dumps(vcs_tf_vars, indent=2))
-
-    # secrets
-    with open(LOCAL_TF_FOLDER_SECRETS_MANAGER / "terraform.tfvars.json", "r") as file:
-        secrets_tf_vars = json.load(file)
-
-    if wl_name in secrets_tf_vars["workloads"]:
-        del secrets_tf_vars["workloads"][wl_name]
-
-        with open(LOCAL_TF_FOLDER_SECRETS_MANAGER / "terraform.tfvars.json", "w") as file:
-            file.write(json.dumps(secrets_tf_vars, indent=2))
-
-    # core services
-    with open(LOCAL_TF_FOLDER_CORE_SERVICES / "terraform.tfvars.json", "r") as file:
-        services_tf_vars = json.load(file)
-
-    if wl_name in services_tf_vars["workloads"]:
-        del services_tf_vars["workloads"][wl_name]
-
-        with open(LOCAL_TF_FOLDER_CORE_SERVICES / "terraform.tfvars.json", "w") as file:
-            file.write(json.dumps(services_tf_vars, indent=2))
-
-    # delete ArgoCD manifest
-    wl_argo_manifest = LOCAL_CC_CLUSTER_WORKLOAD_FOLDER / f"{wl_name}.yaml"
-    if os.path.exists(wl_argo_manifest):
-        os.remove(wl_argo_manifest)
-
-    key_path = p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
+    gor.rm_workload(wl_name)
 
     # destroy resources
     if destroy_resources:
@@ -112,7 +77,7 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
                 shutil.rmtree(wl_gitops_repo_folder)
 
             os.makedirs(wl_gitops_repo_folder)
-
+            key_path = p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
             try:
                 wl_gitops_repo = Repo.clone_from(
                     GHRepo(p.parameters["<GIT_ORGANIZATION_NAME>"], wl_gitops_repo_name).ssh_url,
@@ -135,44 +100,39 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
             # set envs as required by tf
             set_envs(tf_env_vars)
 
-            click.echo("Destroying WL secrets...")
+            if os.path.exists(wl_gitops_repo_folder / "terraform"):
+                click.echo("Destroying WL secrets...")
 
-            tf_wrapper = TfWrapper(wl_gitops_repo_folder / "terraform/secrets")
-            tf_wrapper.init()
-            tf_wrapper.destroy()
+                tf_wrapper = TfWrapper(wl_gitops_repo_folder / "terraform/secrets")
+                tf_wrapper.init()
+                tf_wrapper.destroy()
 
-            click.echo("Destroying WL secrets. Done!")
+                click.echo("Destroying WL secrets. Done!")
 
-            click.echo("Destroying WL cloud resources...")
+                click.echo("Destroying WL cloud resources...")
 
-            tf_wrapper = TfWrapper(wl_gitops_repo_folder / "terraform/infrastructure")
-            tf_wrapper.init()
-            tf_wrapper.destroy()
+                tf_wrapper = TfWrapper(wl_gitops_repo_folder / "terraform/infrastructure")
+                tf_wrapper.init()
+                tf_wrapper.destroy()
 
-            click.echo("Destroying WL cloud resources. Done!")
+                click.echo("Destroying WL cloud resources. Done!")
 
             # remove temp folder
             shutil.rmtree(temp_folder)
 
     # commit and prepare a PR
-    ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {key_path}'
-    with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
+    gor.upload_changes()
 
-        repo.git.add(all=True)
-        author = Actor(name=p.internals["GIT_USER_NAME"], email=p.internals["GIT_USER_EMAIL"])
-        repo.index.commit("initial", author=author, committer=author)
-
-        repo.remotes.origin.push(repo.active_branch.name)
-
-    pr_url = create_pr(p.parameters["<GIT_ORGANIZATION_NAME>"], p.parameters["<GITOPS_REPOSITORY_NAME>"],
-                       p.internals["GIT_ACCESS_TOKEN"], branch_name, main_branch, f"remove {wl_name}",
-                       f"Remove default secrets, user and repository structure.")
-    if not pr_url:
-        raise click.ClickException("Could not create PR")
-    else:
+    try:
+        pr_url = gor.create_pr(p.parameters["<GITOPS_REPOSITORY_NAME>"],
+                               branch_name, main_branch,
+                               f"remove {wl_name}",
+                               f"Remove default secrets, user and repository structure.")
         webbrowser.open(pr_url, autoraise=False)
+    except Exception as e:
+        raise click.ClickException("Could not create PR")
 
-    repo.heads.main.checkout()
+    gor.switch_to_branch()
 
     click.echo("Deleting workload GitOps code. Done!")
     return True

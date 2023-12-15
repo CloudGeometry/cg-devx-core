@@ -149,7 +149,7 @@ def setup(
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
 
-        git_subscription_plan = git_man.get_organization_plan(p.get_input_param(GIT_ORGANIZATION_NAME))
+        git_subscription_plan = git_man.get_organization_plan()
         p.internals["GIT_SUBSCRIPTION_PLAN"] = bool(git_subscription_plan)
         if git_subscription_plan > 0:
             p.fragments["# <GIT_RUNNER_GROUP>"] = git_man.create_runner_group_snippet()

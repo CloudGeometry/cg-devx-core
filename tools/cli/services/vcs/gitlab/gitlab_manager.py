@@ -29,12 +29,16 @@ class GitLabProviderManager(GitProviderManager):
         """
         Construct and return headers for GitLab API requests.
 
-        :return: Dictionary containing necessary headers for the API call.
+        :return: Dictionary containing the necessary headers for the API call.
         """
         return {
             'Authorization': f'Bearer {self.__token}',
             'Accept': 'application/json'
         }
+
+    @property
+    def organization(self) -> str:
+        return self.__group_name
 
     @trace()
     def check_repository_existence(self, name: str = "GitOps") -> bool:
@@ -173,7 +177,7 @@ class GitLabProviderManager(GitProviderManager):
         return ''
 
     @trace()
-    def get_organization_plan(self, organization_name: str) -> GitSubscriptionPlans:
+    def get_organization_plan(self) -> GitSubscriptionPlans:
         """
         Get active plan, if present
         :return: Plan name

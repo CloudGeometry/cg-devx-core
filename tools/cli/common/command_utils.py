@@ -1,20 +1,19 @@
-import json
+import os
 import os
 import time
 from re import sub
 
+import click
 import requests
-from git import Repo
 from requests import HTTPError
 
-from common.const.common_path import LOCAL_GITOPS_FOLDER
+from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER
 from common.const.parameter_names import CLOUD_REGION, CLOUD_PROFILE, CLOUD_ACCOUNT_ACCESS_KEY, \
     CLOUD_ACCOUNT_ACCESS_SECRET, DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, GIT_ACCESS_TOKEN, \
     GIT_ORGANIZATION_NAME
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
-from common.logging_config import logger
 from common.retry_decorator import exponential_backoff
 from common.state_store import StateStore
 from services.cloud.aws.aws_manager import AWSManager
@@ -139,38 +138,9 @@ def str_to_kebab(string: str):
                 lambda match: ' ' + match.group(0).lower(), string)).split())
 
 
-def update_gitops_repo():
-    repo = Repo(LOCAL_GITOPS_FOLDER)
-    # clean stale branches
-    repo.remotes.origin.fetch(prune=True)
-    # update repo just in case
-    repo.heads.main.checkout()
-    repo.remotes.origin.pull(repo.active_branch)
-    return repo
+def check_installation_presence():
+    if not os.path.exists(LOCAL_FOLDER):
+        raise click.ClickException("CG DevX metadata does not exist on this machine")
 
-
-def create_pr(org_name: str, repo_name: str, token: str, head_branch: str, base_branch: str, title: str,
-              body: str) -> str:
-    git_pulls_api = f"https://api.github.com/repos/{org_name}/{repo_name}/pulls"
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
-    }
-    payload = {
-        "title": title,
-        "body": body,
-        "head": head_branch,
-        "base": base_branch
-    }
-    res = requests.post(
-        git_pulls_api,
-        headers=headers,
-        data=json.dumps(payload))
-
-    if not res.ok:
-        logger.error("GitHub API Request Failed: {0}".format(res.text))
-        return
-    data = json.loads(res.text)
-
-    return data["html_url"]
+    if not os.path.exists(LOCAL_GITOPS_FOLDER):
+        raise click.ClickException("GitOps repo does not exist")

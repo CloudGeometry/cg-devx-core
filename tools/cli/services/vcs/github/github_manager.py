@@ -20,17 +20,17 @@ class GitHubProviderManager(GitProviderManager):
             "delete_repo", "repo"
         }
 
+    @property
+    def organization(self) -> str:
+        return self.__org_name
+
     @trace()
     def check_repository_existence(self, name: str = "GitOps"):
         """
-        Check if repository exists
+        Check if the repository exists
         :return: True or False
         """
-        headers = {
-            'Authorization': f'token {self.__token}',
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-        }
+        headers = self._generate_headers()
         try:
             response = requests.get(f'https://api.github.com/repos/{self.__org_name}/{name}', headers=headers)
             if response.status_code == requests.codes["not_found"]:
@@ -46,11 +46,7 @@ class GitHubProviderManager(GitProviderManager):
         Check if provided credentials have required permissions
         :return: True or False
         """
-        headers = {
-            'Authorization': f'token {self.__token}',
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-        }
+        headers = self._generate_headers()
         try:
             response = requests.head('https://api.github.com', headers=headers)
             if "x-oauth-scopes" not in response.headers:
@@ -67,11 +63,7 @@ class GitHubProviderManager(GitProviderManager):
         Get authenticated user info
         :return: Login, Name, Email
         """
-        headers = {
-            'Authorization': f'token {self.__token}',
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-        }
+        headers = self._generate_headers()
         try:
             response = requests.get('https://api.github.com/user', headers=headers)
             res = json.loads(response.text)
@@ -98,19 +90,14 @@ class GitHubProviderManager(GitProviderManager):
         return 'group: <GIT_RUNNER_GROUP_NAME>'
 
     @trace()
-    def get_organization_plan(self, organization_name: str) -> GitSubscriptionPlans:
+    def get_organization_plan(self) -> GitSubscriptionPlans:
         """
         Get active plan, if present
         :return: Plan name
         """
-
-        headers = {
-            'Authorization': f'token {self.__token}',
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-        }
+        headers = self._generate_headers()
         try:
-            response = requests.get(f'https://api.github.com/orgs/{organization_name}', headers=headers)
+            response = requests.get(f'https://api.github.com/orgs/{self.__org_name}', headers=headers)
             if response.ok:
                 res = json.loads(response.text)
 
@@ -127,3 +114,36 @@ class GitHubProviderManager(GitProviderManager):
                 raise Exception("Org not found")
         except HTTPError as e:
             raise e
+
+    @trace()
+    def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
+        git_pulls_api = f"https://api.github.com/repos/{self.__org_name}/{repo_name}/pulls"
+        headers = self._generate_headers()
+        payload = {
+            "title": title,
+            "body": body,
+            "head": head_branch,
+            "base": base_branch
+        }
+        try:
+            res = requests.post(
+                git_pulls_api,
+                headers=headers,
+                data=json.dumps(payload))
+
+            if not res.ok:
+                raise Exception("GitHub API Request Failed: {0}".format(res.text))
+
+            data = json.loads(res.text)
+
+            return data["html_url"]
+        except HTTPError as e:
+            raise e
+
+    def _generate_headers(self):
+        headers = {
+            "Authorization": f"token {self.__token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28"
+        }
+        return headers

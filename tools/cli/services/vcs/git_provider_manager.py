@@ -5,11 +5,14 @@ from common.enums.git_plans import GitSubscriptionPlans
 
 class GitProviderManager(ABC):
     """Git provider wrapper to standardise Git management."""
+    @property
+    def organization(self) -> str:
+        pass
 
     @abstractmethod
     def check_repository_existence(self, name: str = "GitOps"):
         """
-        Check if repository exists
+        Check if the repository exists
         :return: True or False
         """
         pass
@@ -47,9 +50,17 @@ class GitProviderManager(ABC):
         pass
 
     @abstractmethod
-    def get_organization_plan(self, organization_name: str) -> GitSubscriptionPlans:
+    def get_organization_plan(self) -> GitSubscriptionPlans:
         """
         Get active plan, if present
         :return: Subscription plan
+        """
+        pass
+
+    @abstractmethod
+    def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
+        """
+        Create a pull request
+        :return: Pull request URL
         """
         pass
