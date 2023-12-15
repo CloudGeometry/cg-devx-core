@@ -2,46 +2,47 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: <WL_NAME>
+  name: '<WL_NAME>'
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   sourceRepos:
     - <WL_GITOPS_REPOSITORY_GIT_URL>
   destinations:
-    - namespace: wl-<WL_NAME>-*
+    - namespace: 'wl-<WL_NAME>-*'
       server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
   roles:
-  # A role which provides read-only access to all applications in the project
-  - name: read-only
-    description: Read-only privileges to project <WL_NAME>
-    policies:
-    - p, proj:<WL_NAME>:read-only, applications, get, <WL_NAME>/*, allow
-    groups:
-    - developers
-  - name: full-access
-    description: Full privileges to project <WL_NAME> for workload admins and developers groups
-    policies:
-    - p, proj:<WL_NAME>:full-access, applications, *, <WL_NAME>/*, allow
-    groups:
-    - <WL_NAME>-admins
-    - <WL_NAME>-developers
-
+    # A role which provides read-only access to all applications in the project
+    - name: read-only
+      description: Read-only privileges to project <WL_NAME>
+      policies:
+        - p, proj:<WL_NAME>:read-only, applications, get, <WL_NAME>/*, allow
+      groups:
+        - developers
+    - name: full-access
+      description: Full privileges to project <WL_NAME> for workload admins and developers groups
+      policies:
+        - p, proj:<WL_NAME>:full-access, applications, *, <WL_NAME>/*, allow
+      groups:
+        - <WL_NAME>-admins
+        - <WL_NAME>-developers
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: <WL_NAME>-apps
+  name: '<WL_NAME>-apps'
   labels:
     argocd.argoproj.io/secret-type: repository
 type: Opaque
 stringData:
   # Project scoped
-  project: <WL_NAME>
-  name: <WL_NAME>
-  url: <WL_GITOPS_REPOSITORY_GIT_URL>
+  project: '<WL_NAME>'
+  name: '<WL_NAME>'
+  url: '<WL_GITOPS_REPOSITORY_GIT_URL>'
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -59,7 +60,7 @@ spec:
     metadata:
       name: '<WL_NAME>-{{path.basename}}'
     spec:
-      project: <WL_NAME>
+      project: '<WL_NAME>'
       source:
         repoURL: <WL_GITOPS_REPOSITORY_GIT_URL>
         targetRevision: HEAD
