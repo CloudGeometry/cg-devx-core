@@ -6,7 +6,7 @@ import hvac
 import portforward
 import yaml
 
-from common.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
+from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
     set_envs, unset_envs, wait, wait_http_endpoint_readiness
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
@@ -34,7 +34,7 @@ from services.k8s.delivery_service_manager import DeliveryServiceManager, get_ar
 from services.k8s.k8s import KubeClient, write_ca_cert
 from services.k8s.kctl_wrapper import KctlWrapper
 from services.keys.key_manager import KeyManager
-from services.template_manager import GitOpsTemplateManager
+from services.platform_template_manager import GitOpsTemplateManager
 from services.tf_wrapper import TfWrapper
 from services.vcs.git_provider_manager import GitProviderManager
 

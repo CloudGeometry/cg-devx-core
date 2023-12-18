@@ -1,5 +1,4 @@
 import os
-import os
 import shutil
 import webbrowser
 
@@ -7,14 +6,15 @@ import click
 from ghrepo import GHRepo
 from git import Repo, GitError
 
-from common.command_utils import str_to_kebab, prepare_cloud_provider_auth_env_vars, set_envs, \
+from common.utils.command_utils import str_to_kebab, prepare_cloud_provider_auth_env_vars, set_envs, \
     check_installation_presence, init_git_provider
-from common.const.common_path import LOCAL_FOLDER
+from common.const.common_path import LOCAL_FOLDER, LOCAL_WORKLOAD_TEMP_FOLDER
 from common.const.parameter_names import GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
 from common.logging_config import configure_logging
 from common.state_store import StateStore
 from services.platform_gitops import PlatformGitOpsRepo
 from services.tf_wrapper import TfWrapper
+from services.wl_gitops_template_manager import WorkloadGitOpsTemplateManager
 
 
 @click.command()
@@ -58,6 +58,8 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
 
     # create new branch
     branch_name = f"feature/{wl_name}-destroy"
+    if gor.branch_exist(branch_name):
+        raise click.ClickException("Branch already exist, please use different workload name. ")
     gor.create_branch(branch_name)
 
     gor.rm_workload(wl_name)
@@ -70,21 +72,12 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
             "This will delete all the resources defined in workload IaC. Please confirm to continue")
 
         if tf_destroy_confirmation:
-            temp_folder = LOCAL_FOLDER / ".wl_tmp"
-            wl_gitops_repo_folder = temp_folder / f"{wl_name}-gitops"
+            wl_ops_man = WorkloadGitOpsTemplateManager(
+                org_name=p.parameters["<GIT_ORGANIZATION_NAME>"],
+                repo_name=wl_gitops_repo_name,
+                key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"])
 
-            if os.path.exists(wl_gitops_repo_folder):
-                shutil.rmtree(wl_gitops_repo_folder)
-
-            os.makedirs(wl_gitops_repo_folder)
-            key_path = p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
-            try:
-                wl_gitops_repo = Repo.clone_from(
-                    GHRepo(p.parameters["<GIT_ORGANIZATION_NAME>"], wl_gitops_repo_name).ssh_url,
-                    wl_gitops_repo_folder,
-                    env={"GIT_SSH_COMMAND": f'ssh -o StrictHostKeyChecking=no -i {key_path}'})
-            except GitError as e:
-                raise click.ClickException("Failed cloning repo")
+            wl_gitops_repo_folder = wl_ops_man.clone_wl()
 
             cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
 
@@ -118,7 +111,7 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
                 click.echo("Destroying WL cloud resources. Done!")
 
             # remove temp folder
-            shutil.rmtree(temp_folder)
+            shutil.rmtree(LOCAL_WORKLOAD_TEMP_FOLDER)
 
     # commit and prepare a PR
     gor.upload_changes()

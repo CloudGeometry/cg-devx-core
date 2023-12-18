@@ -7,6 +7,7 @@ from git import Repo, Actor
 from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
     LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
+from common.tracing_decorator import trace
 from services.vcs.git_provider_manager import GitProviderManager
 
 
@@ -19,16 +20,23 @@ class PlatformGitOpsRepo:
         self._author_name = author_name
         self._author_email = author_email
 
+    @trace()
     def update(self):
         # clean stale branches
         self._repo.remotes.origin.fetch(prune=True)
         self._repo.heads.main.checkout()
         self._repo.remotes.origin.pull(self._repo.active_branch)
 
+    @trace()
+    def branch_exist(self, branch_name):
+        return branch_name in self._repo.branches
+
+    @trace()
     def create_branch(self, branch_name):
         current = self._repo.create_head(branch_name)
         current.checkout()
 
+    @trace()
     def upload_changes(self):
         ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {self._ssh_key_path}'
         with self._repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
@@ -38,16 +46,15 @@ class PlatformGitOpsRepo:
 
             self._repo.remotes.origin.push(self._repo.active_branch.name)
 
+    @trace()
     def switch_to_branch(self, branch_name: str = "main"):
         self._repo.heads[branch_name].checkout()
-        # if branch_name:
-        #     pass
-        # else:
-        #     self._repo.heads.main.checkout()
 
+    @trace()
     def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
         return self._git_man.create_pr(repo_name, head_branch, base_branch, title, body)
 
+    @trace()
     def add_workload(self, wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str):
         # repos
         self._add_wl_vars(LOCAL_TF_FOLDER_VCS, wl_name, {
@@ -81,6 +88,7 @@ class PlatformGitOpsRepo:
         with open(workload_file, "w") as file:
             file.write(data)
 
+    @trace()
     def rm_workload(self, wl_name: str):
         # repos
         self._rm_wl_vars(LOCAL_TF_FOLDER_VCS, wl_name)

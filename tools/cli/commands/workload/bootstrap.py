@@ -1,16 +1,17 @@
 import os
-import pathlib
 import shutil
 
 import click
 from ghrepo import GHRepo
 from git import Repo, GitError, Actor
 
-from common.command_utils import str_to_kebab, init_cloud_provider
-from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER
-from common.logging_config import configure_logging, logger
+from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER, LOCAL_WORKLOAD_TEMP_FOLDER
+from common.const.const import WL_REPOSITORY_URL, WL_GITOPS_REPOSITORY_URL
+from common.logging_config import configure_logging
 from common.state_store import StateStore
-from services.template_manager import GitOpsTemplateManager
+from common.utils.command_utils import str_to_kebab, init_cloud_provider
+from services.wl_gitops_template_manager import WorkloadGitOpsTemplateManager
+from services.wl_template_manager import WorkloadTemplateManager
 
 
 @click.command()
@@ -70,75 +71,61 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
     if not wl_template_branch:
         wl_template_branch = "main"
     if not wl_template_url:
-        wl_template_url = "git@github.com:CloudGeometry/cg-devx-wl-template.git"
+        wl_template_url = WL_REPOSITORY_URL
 
     if not wl_gitops_template_branch:
         wl_gitops_template_branch = "main"
     if not wl_gitops_template_url:
-        wl_gitops_template_url = "git@github.com:CloudGeometry/cg-devx-wl-gitops-template.git"
+        wl_gitops_template_url = WL_GITOPS_REPOSITORY_URL
 
     if not os.path.exists(LOCAL_GITOPS_FOLDER):
         raise click.ClickException("GitOps repo does not exist")
 
-    temp_folder = LOCAL_FOLDER / ".wl_tmp"
+    if os.path.exists(LOCAL_WORKLOAD_TEMP_FOLDER):
+        shutil.rmtree(LOCAL_WORKLOAD_TEMP_FOLDER)
 
-    if os.path.exists(temp_folder):
-        shutil.rmtree(temp_folder)
+    os.makedirs(LOCAL_WORKLOAD_TEMP_FOLDER)
 
-    os.makedirs(temp_folder)
-
-    key_path = p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
+    wl_man = WorkloadTemplateManager(
+        org_name=p.parameters["<GIT_ORGANIZATION_NAME>"],
+        repo_name=wl_repo_name,
+        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"])
 
     # workload repo
-    wl_repo_folder = temp_folder / wl_repo_name
-    os.makedirs(wl_repo_folder)
-
-    try:
-        wl_repo = Repo.clone_from(GHRepo(p.parameters["<GIT_ORGANIZATION_NAME>"], wl_repo_name).ssh_url,
-                                  wl_repo_folder,
-                                  env={"GIT_SSH_COMMAND": f'ssh -o StrictHostKeyChecking=no -i {key_path}'})
-    except GitError as e:
+    if not (wl_man.clone_wl()):
         raise click.ClickException("Failed cloning repo")
 
-    wl_template_repo_folder = temp_folder / GHRepo.parse(wl_template_url).name
-    os.makedirs(wl_template_repo_folder)
-
-    try:
-        wl_template_repo = Repo.clone_from(wl_template_url,
-                                           wl_template_repo_folder,
-                                           branch=wl_template_branch,
-                                           env={"GIT_SSH_COMMAND": f'ssh -o StrictHostKeyChecking=no -i {key_path}'})
-    except GitError as e:
+    if not (wl_man.clone_template()):
         raise click.ClickException("Failed cloning template repo")
 
-    shutil.rmtree(wl_template_repo_folder / ".git")
-    shutil.copytree(wl_template_repo_folder, wl_repo_folder, dirs_exist_ok=True)
-    shutil.rmtree(wl_template_repo_folder)
-    shutil.move(wl_repo_folder / "wl-service-name", wl_repo_folder / wl_svc_name)
+    wl_man.bootstrap([wl_svc_name])
 
     wl_repo_params = {
         "<WL_NAME>": wl_name,
         "<WL_SERVICE_NAME>": wl_svc_name,
     }
-    for root, dirs, files in os.walk(wl_repo_folder):
-        for name in files:
-            if name.endswith(".tf") or name.endswith(".yaml") or name.endswith(".yml") or name.endswith(".md"):
-                file_path = os.path.join(root, name)
-                with open(file_path, "r") as file:
-                    data = file.read()
-                    for k, v in wl_repo_params.items():
-                        data = data.replace(k, v)
-                with open(file_path, "w") as file:
-                    file.write(data)
 
-    wl_repo.git.add(all=True)
-    author = Actor(name=p.internals["GIT_USER_NAME"], email=p.internals["GIT_USER_EMAIL"])
-    wl_repo.index.commit("initial", author=author, committer=author)
+    wl_man.parametrise(wl_repo_params)
 
-    wl_repo.remotes.origin.push(wl_repo.active_branch.name)
+    wl_man.upload(name=p.internals["GIT_USER_NAME"], email=p.internals["GIT_USER_EMAIL"])
+
+    wl_man.cleanup()
 
     # wl gitops repo
     cloud_man, dns_man = init_cloud_provider(p)
+    wl_ops_man = WorkloadGitOpsTemplateManager(
+        org_name=p.parameters["<GIT_ORGANIZATION_NAME>"],
+        repo_name=wl_gitops_repo_name,
+        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"])
+
+    # workload repo
+    if not (wl_ops_man.clone_wl()):
+        raise click.ClickException("Failed cloning repo")
+
+    if not (wl_ops_man.clone_template()):
+        raise click.ClickException("Failed cloning template repo")
+
+    wl_ops_man.bootstrap()
 
     wl_gitops_repo_params = {
         "<WL_NAME>": wl_name,
@@ -149,56 +136,21 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         "# <K8S_ROLE_MAPPING>": cloud_man.create_k8s_cluster_role_mapping_snippet(),
         "<WL_IAM_ROLE_RN>": "[Put your workload service role mapping]",
         "# <ADDITIONAL_LABELS>": cloud_man.create_additional_labels(),
-        "# <TF_WL_SECRETS_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"], f"workloads/{wl_name}/secrets"),
-        "# <TF_WL_HOSTING_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"], f"workloads/{wl_name}/hosting_provider"),
+        "# <TF_WL_SECRETS_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"],
+                                                                                 f"workloads/{wl_name}/secrets"),
+        "# <TF_WL_HOSTING_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"],
+                                                                                 f"workloads/{wl_name}/hosting_provider"),
         "# <TF_HOSTING_PROVIDER>": cloud_man.create_hosting_provider_snippet(),
     }
 
-    wl_gitops_repo_folder = temp_folder / wl_gitops_repo_name
-    os.makedirs(wl_gitops_repo_folder)
+    wl_ops_man.parametrise(wl_gitops_repo_params)
 
-    try:
-        wl_gitops_repo = Repo.clone_from(GHRepo(p.parameters["<GIT_ORGANIZATION_NAME>"], wl_gitops_repo_name).ssh_url,
-                                         wl_gitops_repo_folder,
-                                         env={"GIT_SSH_COMMAND": f'ssh -o StrictHostKeyChecking=no -i {key_path}'})
-    except GitError as e:
-        raise click.ClickException("Failed cloning repo")
+    wl_ops_man.upload()
 
-    wl_gitops_template_repo_folder = temp_folder / GHRepo.parse(wl_gitops_template_url).name
-    os.makedirs(wl_gitops_template_repo_folder)
-
-    try:
-        wl_gitops_template_repo = Repo.clone_from(wl_gitops_template_url,
-                                                  wl_gitops_template_repo_folder,
-                                                  branch=wl_gitops_template_branch,
-                                                  env={
-                                                      "GIT_SSH_COMMAND": f'ssh -o StrictHostKeyChecking=no -i {key_path}'})
-    except GitError as e:
-        raise click.ClickException("Failed cloning template repo")
-
-    shutil.rmtree(wl_gitops_template_repo_folder / ".git")
-    shutil.copytree(wl_gitops_template_repo_folder, wl_gitops_repo_folder, dirs_exist_ok=True)
-    shutil.rmtree(wl_gitops_template_repo_folder)
-
-    for root, dirs, files in os.walk(wl_gitops_repo_folder):
-        for name in files:
-            if name.endswith(".tf") or name.endswith(".yaml") or name.endswith(".yml") or name.endswith(".md"):
-                file_path = os.path.join(root, name)
-                with open(file_path, "r") as file:
-                    data = file.read()
-                    for k, v in wl_gitops_repo_params.items():
-                        data = data.replace(k, v)
-                with open(file_path, "w") as file:
-                    file.write(data)
-
-    wl_gitops_repo.git.add(all=True)
-    author = Actor(name=p.internals["GIT_USER_NAME"], email=p.internals["GIT_USER_EMAIL"])
-    wl_gitops_repo.index.commit("initial", author=author, committer=author)
-
-    wl_gitops_repo.remotes.origin.push(wl_gitops_repo.active_branch.name)
+    wl_ops_man.cleanup()
 
     # remove temp folder
-    shutil.rmtree(temp_folder)
+    shutil.rmtree(LOCAL_WORKLOAD_TEMP_FOLDER)
 
     click.echo("Bootstrapping workload. Done!")
     return True

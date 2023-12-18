@@ -5,7 +5,7 @@ import click
 import portforward
 import urllib3
 
-from common.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs, wait
+from common.utils.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs, wait
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, LOCAL_FOLDER, \
     LOCAL_STATE_FILE
 from common.const.namespaces import ARGOCD_NAMESPACE

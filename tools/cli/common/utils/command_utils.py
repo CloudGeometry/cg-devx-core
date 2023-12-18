@@ -40,7 +40,7 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
 
         # check if cloud native DNS registrar is selected
         if state.dns_registrar == DnsRegistrars.Route53:
-            # Note!: Route53 is initialised with AWS Cloud Provider
+            # Note!: Route53 is initialized with AWS Cloud Provider
             if state.get_input_param(DNS_REGISTRAR_ACCESS_KEY) is None and state.get_input_param(
                     DNS_REGISTRAR_ACCESS_SECRET) is None:
                 # initialize with cloud account permissions

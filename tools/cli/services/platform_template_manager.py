@@ -19,17 +19,17 @@ class GitOpsTemplateManager:
 
     def __init__(self, gitops_template_url: str = None, gitops_template_branch: str = None, token=None):
         if gitops_template_url is None:
-            self.__url = GITOPS_REPOSITORY_URL
+            self._url = GITOPS_REPOSITORY_URL
         else:
-            self.__url = gitops_template_url
+            self._url = gitops_template_url
 
         if gitops_template_branch is None:
-            self.__branch = GITOPS_REPOSITORY_BRANCH
+            self._branch = GITOPS_REPOSITORY_BRANCH
         else:
-            self.__branch = gitops_template_branch
+            self._branch = gitops_template_branch
 
         # TODO: DEBUG, remove
-        self.__token = token
+        self._token = token
 
     @trace()
     def check_repository_existence(self):
@@ -37,13 +37,13 @@ class GitOpsTemplateManager:
         Check if the repository exists
         :return: True or False
         """
-        repo = GHRepo.parse(self.__url)
+        repo = GHRepo.parse(self._url)
         headers = {}
-        if self.__token is not None:
-            headers['Authorization'] = f'token {self.__token}'
+        if self._token is not None:
+            headers['Authorization'] = f'token {self._token}'
 
         try:
-            response = requests.get(f'{repo.api_url}/branches/{self.__branch}',
+            response = requests.get(f'{repo.api_url}/branches/{self._branch}',
                                     headers=headers)
             if response.status_code == requests.codes["not_found"]:
                 return False
@@ -66,7 +66,7 @@ class GitOpsTemplateManager:
 
         os.makedirs(temp_folder)
         try:
-            repo = Repo.clone_from(self.__url, temp_folder, progress=ProgressPrinter(), branch=self.__branch)
+            repo = Repo.clone_from(self._url, temp_folder, progress=ProgressPrinter(), branch=self._branch)
         except GitError as e:
             raise e
 
