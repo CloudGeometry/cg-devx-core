@@ -875,8 +875,6 @@ def prepare_parameters(p):
 
 @trace()
 def cloud_provider_check(manager: CloudProviderManager, p: StateStore) -> None:
-    if not manager.detect_cli_presence():
-        raise click.ClickException("Cloud CLI is missing")
     if not manager.evaluate_permissions():
         raise click.ClickException("Insufficient IAM permission")
 
