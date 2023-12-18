@@ -109,8 +109,8 @@ class AzureManager(CloudProviderManager):
     def get_k8s_token(self, cluster_name: str) -> str:
         raise NotImplementedError()
 
-    @trace()
-    def detect_cli_presence(self) -> bool:
+    @classmethod
+    def detect_cli_presence(cls) -> bool:
         """Check whether dependencies are on PATH and marked as executable."""
         return detect_command_presence(CLI) & detect_command_presence(K8s)
 

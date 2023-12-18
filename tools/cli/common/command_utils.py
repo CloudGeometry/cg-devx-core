@@ -22,9 +22,13 @@ from services.vcs.gitlab.gitlab_manager import GitLabProviderManager
 def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSManager]:
     cloud_manager: CloudProviderManager = None
     domain_manager: DNSManager = None
-    # init proper cloud provider
 
+    # init proper cloud provider
     if state.cloud_provider == CloudProviders.AWS:
+        # need to check CLI dependencies before initializing cloud providers as they depend on cli tools
+        if not AWSManager.detect_cli_presence():
+            raise click.ClickException("Cloud CLI is missing")
+
         cloud_manager: AWSManager = AWSManager(state.get_input_param(CLOUD_REGION),
                                                state.get_input_param(CLOUD_PROFILE),
                                                state.get_input_param(CLOUD_ACCOUNT_ACCESS_KEY),
@@ -32,7 +36,7 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
 
         # check if cloud native DNS registrar is selected
         if state.dns_registrar == DnsRegistrars.Route53:
-            # Note!: Route53 is initialised with AWS Cloud Provider
+            # Note!: Route53 is initialized with AWS Cloud Provider
             if state.get_input_param(DNS_REGISTRAR_ACCESS_KEY) is None and state.get_input_param(
                     DNS_REGISTRAR_ACCESS_SECRET) is None:
                 # initialize with cloud account permissions
@@ -46,6 +50,10 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
                     secret=state.get_input_param(DNS_REGISTRAR_ACCESS_SECRET))
 
     elif state.cloud_provider == CloudProviders.Azure:
+        # need to check CLI dependencies before initializing cloud providers as they depend on cli tools
+        if not AzureManager.detect_cli_presence():
+            raise click.ClickException("Cloud CLI is missing")
+
         cloud_manager: AzureManager = AzureManager(
             state.get_input_param(CLOUD_PROFILE), state.get_input_param(CLOUD_REGION)
         )
