@@ -20,6 +20,7 @@ variable "workloads" {
       has_issues             = optional(bool, false)
       default_branch_name    = optional(string, "main")
       delete_branch_on_merge = optional(bool, true)
+      branch_protection      = optional(bool, true)
       atlantis_enabled       = optional(bool, false)
     }))
   }))

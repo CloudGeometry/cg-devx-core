@@ -19,6 +19,56 @@ resource "github_repository" "repo" {
 
 }
 
+# Protect the main branch of the repository. Additionally, require 
+# only allow the engineers team merge to the branch.
+
+resource "github_branch_protection" "this" {
+  count = var.branch_protection ? 1 : 0
+  repository_id = var.repo_name
+
+  pattern          = "main"
+  enforce_admins   = true
+  allows_deletions = false
+  allows_force_pushes = false
+  required_linear_history = true
+  require_conversation_resolution = true
+
+  # required_status_checks {
+  #   strict   = false
+  # }
+
+  # required_pull_request_reviews {
+  #   dismiss_stale_reviews  = true
+  #   restrict_dismissals    = true
+  #   dismissal_restrictions = [
+  #     data.github_user.example.node_id,
+  #     github_team.example.node_id,
+  #     "/exampleuser",
+  #     "exampleorganization/exampleteam",
+  #   ]
+  # }
+
+  # push_restrictions = [
+  #   data.github_user.example.node_id,
+  #   "/exampleuser",
+  #   "exampleorganization/exampleteam",
+  #   # you can have more than one type of restriction (teams + users). If you use
+  #   # more than one type, you must use node_ids of each user and each team.
+  #   # github_team.example.node_id
+  #   # github_user.example-2.node_id
+  # ]
+
+  # force_push_bypassers = [
+  #   data.github_user.example.node_id,
+  #   "/exampleuser",
+  #   "exampleorganization/exampleteam",
+  #   # you can have more than one type of restriction (teams + users)
+  #   # github_team.example.node_id
+  #   # github_team.example-2.node_id
+  # ]
+}
+
+
 output "repo_name" {
   value = github_repository.repo.name
 }
@@ -33,4 +83,8 @@ output "repo_git_html_url" {
 
 output "repo_git_ssh_clone_url" {
   value = github_repository.repo.ssh_clone_url
+}
+
+output "repo_id" {
+  value = github_repository.repo.repo_id
 }

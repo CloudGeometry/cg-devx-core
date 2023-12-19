@@ -37,6 +37,11 @@ variable "delete_branch_on_merge" {
   default = true
 }
 
+variable "branch_protection" {
+  type    = bool
+  default = true
+}
+
 variable "template" {
   type        = map(string)
   description = "Template Repository object for Repository creation"
@@ -58,5 +63,3 @@ variable "atlantis_repo_webhook_secret" {
   default   = ""
   sensitive = true
 }
-
-
