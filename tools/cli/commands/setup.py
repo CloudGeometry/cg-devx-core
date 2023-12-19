@@ -123,9 +123,6 @@ def setup(
     if not p.validate_input_params(validator=setup_param_validator):
         raise click.ClickException("Input parameters are incorrect")
 
-    # save checkpoint
-    p.save_checkpoint()
-
     cloud_man, dns_man = init_cloud_provider(p)
 
     p.parameters["<CLOUD_REGION>"] = cloud_man.region
@@ -150,7 +147,7 @@ def setup(
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
 
         git_subscription_plan = git_man.get_organization_plan()
-        p.parameters["<GIT_SUBSCRIPTION_PLAN>"] = bool(git_subscription_plan)
+        p.parameters["<GIT_SUBSCRIPTION_PLAN>"] = str(bool(git_subscription_plan)).lower()
         if git_subscription_plan > 0:
             p.fragments["# <GIT_RUNNER_GROUP>"] = git_man.create_runner_group_snippet()
             p.parameters["<GIT_RUNNER_GROUP_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)

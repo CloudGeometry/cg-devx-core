@@ -9,7 +9,7 @@ from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER, LOCAL_WO
 from common.const.const import WL_REPOSITORY_URL, WL_GITOPS_REPOSITORY_URL
 from common.logging_config import configure_logging
 from common.state_store import StateStore
-from common.utils.command_utils import str_to_kebab, init_cloud_provider
+from common.utils.command_utils import str_to_kebab, init_cloud_provider, check_installation_presence
 from services.wl_gitops_template_manager import WorkloadGitOpsTemplateManager
 from services.wl_template_manager import WorkloadTemplateManager
 
@@ -42,8 +42,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
     # Set up global logger
     configure_logging(verbosity)
 
-    if not os.path.exists(LOCAL_FOLDER):
-        raise click.ClickException("CG DevX metadata does not exist on this machine")
+    check_installation_presence()
 
     p: StateStore = StateStore()
 
@@ -68,19 +67,6 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
     wl_repo_name = str_to_kebab(wl_repo_name)
     wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name)
 
-    if not wl_template_branch:
-        wl_template_branch = "main"
-    if not wl_template_url:
-        wl_template_url = WL_REPOSITORY_URL
-
-    if not wl_gitops_template_branch:
-        wl_gitops_template_branch = "main"
-    if not wl_gitops_template_url:
-        wl_gitops_template_url = WL_GITOPS_REPOSITORY_URL
-
-    if not os.path.exists(LOCAL_GITOPS_FOLDER):
-        raise click.ClickException("GitOps repo does not exist")
-
     if os.path.exists(LOCAL_WORKLOAD_TEMP_FOLDER):
         shutil.rmtree(LOCAL_WORKLOAD_TEMP_FOLDER)
 
@@ -89,7 +75,10 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
     wl_man = WorkloadTemplateManager(
         org_name=p.parameters["<GIT_ORGANIZATION_NAME>"],
         repo_name=wl_repo_name,
-        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"])
+        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+        template_url=wl_template_url,
+        template_branch=wl_template_branch
+    )
 
     # workload repo
     if not (wl_man.clone_wl()):
@@ -98,6 +87,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
     if not (wl_man.clone_template()):
         raise click.ClickException("Failed cloning template repo")
 
+    # make wl_svc_name multiple value param
     wl_man.bootstrap([wl_svc_name])
 
     wl_repo_params = {
@@ -116,7 +106,10 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
     wl_ops_man = WorkloadGitOpsTemplateManager(
         org_name=p.parameters["<GIT_ORGANIZATION_NAME>"],
         repo_name=wl_gitops_repo_name,
-        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"])
+        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+        template_url=wl_gitops_template_url,
+        template_branch=wl_gitops_template_branch
+    )
 
     # workload repo
     if not (wl_ops_man.clone_wl()):
@@ -145,7 +138,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
 
     wl_ops_man.parametrise(wl_gitops_repo_params)
 
-    wl_ops_man.upload()
+    wl_ops_man.upload(name=p.internals["GIT_USER_NAME"], email=p.internals["GIT_USER_EMAIL"])
 
     wl_ops_man.cleanup()
 

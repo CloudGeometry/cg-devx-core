@@ -96,3 +96,5 @@ class WorkloadGitOpsTemplateManager:
     def cleanup(self):
         if os.path.exists(self._wl_template_repo_folder):
             shutil.rmtree(self._wl_template_repo_folder)
+        if os.path.exists(self._wl_repo_folder):
+            shutil.rmtree(self._wl_repo_folder)

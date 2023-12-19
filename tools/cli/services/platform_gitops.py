@@ -67,9 +67,13 @@ class PlatformGitOpsRepo:
             }
         })
         # secrets
-        self._add_wl_vars(LOCAL_TF_FOLDER_SECRETS_MANAGER, wl_name, {})
+        self._add_wl_vars(LOCAL_TF_FOLDER_SECRETS_MANAGER, wl_name, {
+            "description": f"CG DevX {wl_name} workload definition"
+        })
         # core services
-        self._add_wl_vars(LOCAL_TF_FOLDER_CORE_SERVICES, wl_name, {})
+        self._add_wl_vars(LOCAL_TF_FOLDER_CORE_SERVICES, wl_name, {
+            "description": f"CG DevX {wl_name} workload definition"
+        })
 
         # prepare ArgoCD manifest
         wl_gitops_repo = GHRepo(self._git_man.organization, wl_gitops_repo_name)
