@@ -7,7 +7,7 @@ locals {
 
 resource "github_actions_runner_group" "this" {
   count = var.vcs_subscription_plan ? 1 : 0
-  name                    = var.vcs_owner
+  name                    = var.cluster_name
   visibility              = "selected"
   selected_repository_ids = local.self_hosted_runners_repos
 }

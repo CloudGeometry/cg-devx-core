@@ -10,6 +10,7 @@ terraform {
 locals {
   gitops_repo_name      = "<GITOPS_REPOSITORY_NAME>"
   atlantis_url          = "https://<IAC_PR_AUTOMATION_INGRESS_URL>/events"
+  cluster_name          = "<PRIMARY_CLUSTER_NAME>"
   vcs_owner             = "<GIT_ORGANIZATION_NAME>"
   vcs_subscription_plan = <GIT_SUBSCRIPTION_PLAN> # bool true(paid plans) / false (free tier)
 }
@@ -23,6 +24,7 @@ module "vcs" {
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
   workloads                    = var.workloads
+  cluster_name                 - local.cluster_name
   vcs_owner                    = local.vcs_owner
   vcs_subscription_plan        = local.vcs_subscription_plan
 }

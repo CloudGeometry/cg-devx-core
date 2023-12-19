@@ -30,6 +30,11 @@ variable "vcs_owner" {
   default = ""
 }
 
+variable "cluster_name" {
+  type    = string
+  default = ""
+}
+
 variable "workloads" {
   description = "workloads configuration"
   type        = map(object({
