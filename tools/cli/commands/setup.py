@@ -768,6 +768,9 @@ def setup(
         })
         core_services_out = tf_wrapper.output()
         p.parameters["<REGISTRY_DOCKERHUB_PROXY_PROJECT>"] = core_services_out["dockerhub_proxy_name"]
+        p.parameters["<REGISTRY_GCR_PROXY_PROJECT>"] = core_services_out["gcr_proxy_name"]
+        p.parameters["<REGISTRY_K8S_GCR_PROXY_PROJECT>"] = core_services_out["k8s_gcr_proxy_name"]
+        p.parameters["<REGISTRY_QUAY_PROXY_PROJECT>"] = core_services_out["quay_proxy_name"]
 
         # unset envs as no longer needed
         unset_envs(core_services_tf_env_vars)
