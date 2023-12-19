@@ -24,7 +24,7 @@ module "vcs" {
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
   workloads                    = var.workloads
-  cluster_name                 - local.cluster_name
+  cluster_name                 = local.cluster_name
   vcs_owner                    = local.vcs_owner
   vcs_subscription_plan        = local.vcs_subscription_plan
 }
