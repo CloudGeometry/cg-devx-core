@@ -6,8 +6,6 @@ import hvac
 import portforward
 import yaml
 
-from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
-    set_envs, unset_envs, wait, wait_http_endpoint_readiness
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
@@ -25,6 +23,8 @@ from common.enums.git_providers import GitProviders
 from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.tracing_decorator import trace
+from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
+    set_envs, unset_envs, wait, wait_http_endpoint_readiness
 from common.utils.generators import random_string_generator
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
@@ -121,7 +121,7 @@ def setup(
 
     # validate parameters
     if not p.validate_input_params(validator=setup_param_validator):
-        return
+        raise click.ClickException("Input parameters are incorrect")
 
     # save checkpoint
     p.save_checkpoint()
@@ -150,7 +150,7 @@ def setup(
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
 
         git_subscription_plan = git_man.get_organization_plan()
-        p.internals["GIT_SUBSCRIPTION_PLAN"] = bool(git_subscription_plan)
+        p.parameters["<GIT_SUBSCRIPTION_PLAN>"] = bool(git_subscription_plan)
         if git_subscription_plan > 0:
             p.fragments["# <GIT_RUNNER_GROUP>"] = git_man.create_runner_group_snippet()
             p.parameters["<GIT_RUNNER_GROUP_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
@@ -236,8 +236,8 @@ def setup(
                                                                                             "secrets")
         p.fragments["# <TF_USERS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
                                                                                           "users")
-        p.fragments["# <TF_REGISTRY_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
-                                                                                             "registry")
+        p.fragments["# <TF_CORE_SERVICES_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
+                                                                                                  "core_services")
 
         p.fragments["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
@@ -770,6 +770,7 @@ def setup(
             "code_quality_admin_password": p.internals["CODE_QUALITY_PASSWORD"]
         })
         core_services_out = tf_wrapper.output()
+        p.parameters["<REGISTRY_DOCKERHUB_PROXY_PROJECT>"] = core_services_out["dockerhub_proxy_name"]
 
         # unset envs as no longer needed
         unset_envs(core_services_tf_env_vars)
