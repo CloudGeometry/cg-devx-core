@@ -15,6 +15,7 @@ module "workload_repos" {
   has_issues                   = each.value.has_issues
   default_branch_name          = each.value.default_branch_name
   delete_branch_on_merge       = each.value.delete_branch_on_merge
+  branch_protection            = each.value.branch_protection
   atlantis_enabled             = each.value.atlantis_enabled
   atlantis_url                 = var.atlantis_url
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret

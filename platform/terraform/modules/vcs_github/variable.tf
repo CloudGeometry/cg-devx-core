@@ -19,6 +19,17 @@ variable "vcs_bot_ssh_public_key" {
   default = ""
 }
 
+variable "vcs_subscription_plan" {
+  description = "True for advanced github/gitlab plan. False for free tier"
+  type    = bool
+  default = false
+}
+
+variable "vcs_owner" {
+  type    = string
+  default = ""
+}
+
 variable "workloads" {
   description = "workloads configuration"
   type        = map(object({
@@ -31,6 +42,7 @@ variable "workloads" {
       has_issues             = optional(bool, false)
       default_branch_name    = optional(string, "main")
       delete_branch_on_merge = optional(bool, true)
+      branch_protection      = optional(bool, true)
       atlantis_enabled       = optional(bool, false)
     }))
   }))
