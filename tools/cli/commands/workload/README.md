@@ -95,7 +95,7 @@ and branches.
 Using command arguments
 
 ```bash
-cgdevxcli workload create --workload-name your-workload-name \ 
+cgdevxcli workload bootstrap --workload-name your-workload-name \ 
                           --workload-repository-name your-workload-repository-name
                           --workload-gitops-repository-name your-workload-gitops-repository-name
                           --workload-service-name your-first-service-name
