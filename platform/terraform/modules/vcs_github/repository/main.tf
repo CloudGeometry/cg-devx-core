@@ -7,6 +7,14 @@ resource "github_repository" "repo" {
   archive_on_destroy     = var.archive_on_destroy
   has_issues             = var.has_issues
   delete_branch_on_merge = var.delete_branch_on_merge
+  allow_merge_commit     = var.allow_merge_commit
+  # atlantis currently doesn't support branch protection with required linear historyw when repo settings allowed merge commits
+  # need to monitor these issues
+  # https://github.com/runatlantis/atlantis/issues/1176
+  # https://github.com/runatlantis/atlantis/pull/3211
+  # https://github.com/runatlantis/atlantis/pull/3276
+  # https://github.com/runatlantis/atlantis/pull/3321
+
 
   dynamic "template" {
     for_each = length(var.template) != 0 ? [var.template] : []

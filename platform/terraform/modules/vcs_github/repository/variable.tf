@@ -42,6 +42,11 @@ variable "branch_protection" {
   default = true
 }
 
+variable "allow_merge_commit" {
+  type    = bool
+  default = false
+}
+
 variable "template" {
   type        = map(string)
   description = "Template Repository object for Repository creation"
