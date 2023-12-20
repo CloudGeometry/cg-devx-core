@@ -117,7 +117,7 @@ Before deploying to Azure, ensure that you have:
 3. A public DNS zone hosted in Azure DNS.
    To set this up,
    you can follow [this guide](https://learn.microsoft.com/en-us/azure/dns/dns-delegate-domain-azure-dns).
-4. A user account with `Administrator` access.
+4. A user account with `Owner` access.
    You can use [this guide](https://learn.microsoft.com/en-us/azure/role-based-access-control/role-assignments-portal-subscription-admin)
    to set it up,
    or [this guide](https://learn.microsoft.com/en-us/azure/role-based-access-control/quickstart-assign-role-user-portal)
