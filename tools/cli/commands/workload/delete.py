@@ -120,7 +120,7 @@ def delete(wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, verb
         pr_url = gor.create_pr(p.parameters["<GITOPS_REPOSITORY_NAME>"],
                                branch_name, main_branch,
                                f"remove {wl_name}",
-                               f"Remove default secrets, user and repository structure.")
+                               f"Remove default secrets, groups and repository structure.")
         webbrowser.open(pr_url, autoraise=False)
     except Exception as e:
         raise click.ClickException("Could not create PR")
