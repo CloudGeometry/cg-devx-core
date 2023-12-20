@@ -68,7 +68,7 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity:
                                branch_name,
                                main_branch,
                                f"introduce {wl_name}",
-                               f"Add default secrets, user and default repository structure.")
+                               f"Add default secrets, groups and default repository structure.")
         webbrowser.open(pr_url, autoraise=False)
     except Exception as e:
         raise click.ClickException("Could not create PR")
