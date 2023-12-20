@@ -24,7 +24,7 @@ resource "github_repository" "repo" {
 
 resource "github_branch_protection" "this" {
   count = var.branch_protection ? 1 : 0
-  repository_id = var.repo_name
+  repository_id = github_repository.repo.node_id
 
   pattern          = "main"
   enforce_admins   = true

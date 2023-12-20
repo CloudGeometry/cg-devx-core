@@ -6,6 +6,7 @@ locals {
 }
 
 resource "github_actions_runner_group" "this" {
+  depends_on = [module.workload_repos]
   count = var.vcs_subscription_plan ? 1 : 0
   name                    = var.cluster_name
   visibility              = "selected"
