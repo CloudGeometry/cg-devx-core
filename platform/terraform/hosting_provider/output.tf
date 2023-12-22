@@ -25,6 +25,10 @@ output "secret_manager_role" {
   value       = module.hosting-provider.secret_manager_irsa_role
   description = "Secrets Manager IAM role for a K8s service account"
 }
+output "cluster_autoscaler_role" {
+  value       = module.hosting-provider.cluster_autoscaler_irsa_role
+  description = "Secrets Manager IAM role for a K8s service account"
+}
 
 # cluster
 output "cluster_endpoint" {
