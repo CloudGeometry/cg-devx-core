@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cluster-auroscaler-components
+  name: cluster-autoscaler-components
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: '30'
@@ -13,7 +13,7 @@ spec:
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: cluster-auroscaler
+    namespace: cluster-autoscaler
   syncPolicy:
     automated:
       prune: true
