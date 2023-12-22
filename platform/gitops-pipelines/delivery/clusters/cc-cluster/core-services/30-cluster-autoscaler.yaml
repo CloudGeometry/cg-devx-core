@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/kube-system/cluster-auroscaler
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/kube-system/cluster-autoscaler
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
