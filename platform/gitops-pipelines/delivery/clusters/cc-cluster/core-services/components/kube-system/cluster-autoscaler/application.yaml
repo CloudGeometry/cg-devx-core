@@ -149,7 +149,7 @@ spec:
           serviceAccount:
             # rbac.serviceAccount.annotations -- Additional Service Account annotations.
             annotations:
-              <K8S_ROLE_MAPPING>: “<CLUSTER_AUTOSCALER_IAM_ROLE_RN>”
+              <K8S_ROLE_MAPPING>: "<CLUSTER_AUTOSCALER_IAM_ROLE_RN>"
             # rbac.serviceAccount.create -- If `true` and `rbac.create` is also true, a Service Account will be created.
             create: true
             # rbac.serviceAccount.name -- The name of the ServiceAccount to use. If not set and create is `true`, a name is generated using the fullname template.
