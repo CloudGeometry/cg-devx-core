@@ -53,6 +53,10 @@ output "secret_manager_irsa_role" {
   description = "AWS Secretsmanager IAM Role ARN"
   value       = module.secret_manager_irsa_role.iam_role_arn
 }
+output "cluster_autoscaler_irsa_role" {
+  description = "AWS Secretsmanager IAM Role ARN"
+  value       = module.cluster_autoscaler_irsa_role.iam_role_arn
+}
 
 ################################################################################
 # Cluster
