@@ -9,6 +9,7 @@ terraform {
 resource "harbor_project" "this" {
   name   = var.project_name
   public = false
+  force_destroy = true
 }
 
 resource "harbor_immutable_tag_rule" "this" {

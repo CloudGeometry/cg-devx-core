@@ -58,6 +58,8 @@ spec:
         trivy:
           # enabled the flag to enable Trivy scanner
           enabled: true
+        updateStrategy:
+          type: Recreate
         existingSecretAdminPassword: harbor-admin
         existingSecretAdminPasswordKey: HARBOR_ADMIN_PASSWORD
   syncPolicy:

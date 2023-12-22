@@ -12,7 +12,6 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.v2021_04_01.models import SkuName, Kind
 from azure.mgmt.subscription import SubscriptionClient
 from azure.storage.blob import BlobServiceClient
-
 from common.logging_config import logger
 from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
@@ -130,7 +129,7 @@ class AzureSdk:
         Returns:
             bool: True if the liveness check passes, else False.
         """
-        record_name = f'livenesscheck.{hosted_zone_name}'
+        record_name = f'cgdevx-liveness'
 
         self._set_txt_record(resource_group_name, hosted_zone_name, record_name, self.RECORD_VALUE)
 
@@ -215,9 +214,9 @@ class AzureSdk:
         """
         for _ in range(self.RETRY_COUNT):
             time.sleep(self.RETRY_SLEEP)
-            existing_txt = get_domain_txt_records_dot(hosted_zone_name)
+            existing_txt_records = get_domain_txt_records_dot(f'{record_name}.{hosted_zone_name}')
 
-            if expected_value in existing_txt:
+            if any(expected_value in txt_record for txt_record in existing_txt_records):
                 return True
 
             logger.info(f"Waiting for {record_name} to propagate. Retrying...")
@@ -405,7 +404,8 @@ class AzureSdk:
                                                                      {
                                                                          # Storage Blob Data Owner
                                                                          "role_definition_id": "/providers/Microsoft.Authorization/roleDefinitions/b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
-                                                                         "principal_id": identity
+                                                                         "principal_id": identity,
+                                                                         "principalType": "ServicePrincipal"
                                                                      })
         return response
 
