@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: eslint-wft
+spec:
+  templates:
+  - name: eslint
+    container:
+      image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/pipeline-components/eslint:latest"
+      imagePullPolicy: IfNotPresent
+      command: ["eslint",  "$( [[ -e /build/{{workflow.parameters.wl-service-name}}/.eslintrc ]] || echo '--no-eslintrc' )", "/build/{{workflow.parameters.wl-service-name}}/src/**/*.ts"]
+      volumeMounts:
+        - name: build
+          mountPath: /build
+

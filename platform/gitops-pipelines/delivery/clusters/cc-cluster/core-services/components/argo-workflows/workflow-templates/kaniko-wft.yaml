@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: kaniko-wft
+spec:
+  templates:
+  - name: kaniko
+    container:
+      env:
+        - name: WL-SERVICE
+          value: "{{workflow.parameters.wl-service-name}}"
+      image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.gcr-proxy-prefix}}/kaniko-project/executor"
+      imagePullPolicy: IfNotPresent
+      args: ["--dockerfile=Dockerfile",
+             "--context=dir:///workspace/{{workflow.parameters.wl-service-name}}/", 
+             "--no-push", "--tar-path=/workspace/{{workflow.parameters.wl-service-name}}.tar",
+             "--registry-mirror={{workflow.parameters.registry-mirror}}",
+             "--skip-default-registry-fallback"
+        ]
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /kaniko/.docker
+        - name: build
+          mountPath: /workspace
+

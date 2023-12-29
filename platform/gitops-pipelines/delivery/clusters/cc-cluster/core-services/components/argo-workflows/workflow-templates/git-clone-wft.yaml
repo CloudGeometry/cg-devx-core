@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: git-clone-wft
+spec:
+  templates:
+  - name: git-clone
+    inputs:
+      artifacts:
+      - name: git-src
+        path: /src
+        git:
+          repo: "{{workflow.parameters.repo}}"
+          revision: "{{workflow.parameters.tag}}" 
+          sshPrivateKeySecret:
+             name: ci-secrets
+             key: SSH_PRIVATE_KEY
+          depth: 1        
+
+    script:
+        image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/alpine/git" 
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: WLSERVICE
+            value: "{{workflow.parameters.wl-service-name}}"
+          - name: MIRROR_PREFIX
+            value: "{{workflow.parameters.dockerhub-proxy-prefix}}"
+        command: [sh]
+        source: |
+          echo "WLSERVICE: $WLSERVICE"
+          cp -rv /src/$WLSERVICE  /build/
+          if [[ $MIRROR_PREFIX ]]
+          then
+            cd /build/$WLSERVICE
+            sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $MIRROR_PREFIX\/\1/;s/FROM\s+(\S+)/FROM $MIRROR_PREFIX\/library\/\1/" Dockerfile
+          fi
+          cat /src/$WLSERVICE/?ockerfile
+        volumeMounts:
+          - mountPath: "/build"
+            name: build
+            

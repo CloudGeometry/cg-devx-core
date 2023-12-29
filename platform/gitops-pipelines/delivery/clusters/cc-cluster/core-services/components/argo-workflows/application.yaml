@@ -13,6 +13,8 @@ spec:
     helm:
       values: |-
         nameOverride: argo
+        images:
+          pullPolicy: IfNotPresent
         executor:
           resources:
             requests:
@@ -27,7 +29,7 @@ spec:
             create: true
             name: argo-server
             annotations:
-              <K8S_ROLE_MAPPING>: "<CI_IAM_ROLE_RN>"
+              eks.amazonaws.com/role-arn: "arn:aws:iam::728538925474:role/cg-devx-delta-ci-role"
           extraArgs:
           - --secure
           - --auth-mode=sso
@@ -37,24 +39,24 @@ spec:
             annotations:
               cert-manager.io/cluster-issuer: "letsencrypt-prod"
             hosts:
-              - <CI_INGRESS_URL>
+              - argo.delta.cgdevx.io
             paths: 
               - /
             pathType: Prefix
             tls:
               - secretName: argo-tls
                 hosts:
-                  - <CI_INGRESS_URL>
+                  - argo.delta.cgdevx.io
           sso:
             enabled: true
-            issuer: https://<OIDC_PROVIDER_URL>
+            issuer: https://vault.delta.cgdevx.io/v1/identity/oidc/provider/cgdevx
             clientId:
               name: argo-secrets
               key: client-id
             clientSecret:
               name: argo-secrets
               key: client-secret
-            redirectUrl: https://<CI_OAUTH_CALLBACK_URL>
+            redirectUrl: https://argo.delta.cgdevx.io/oauth2/callback
             scopes:
               - email
               - openid
@@ -70,7 +72,7 @@ spec:
           archiveLogs: false
           s3:
             insecure: false
-            bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
+            bucket: cg-devx-delta-artifacts-repository-cjm7m0hm
             keyFormat: "argo-workflows/artifacts\
               /{{workflow.creationTimestamp.Y}}\
               /{{workflow.creationTimestamp.m}}\
@@ -79,7 +81,7 @@ spec:
               /{{workflow.name}}\
               /{{pod.name}}"
             endpoint: s3.amazonaws.com
-            region: <CLOUD_REGION>
+            region: eu-west-2
             useSDKCreds: true
             encryptionOptions:
               enableEncryption: false
