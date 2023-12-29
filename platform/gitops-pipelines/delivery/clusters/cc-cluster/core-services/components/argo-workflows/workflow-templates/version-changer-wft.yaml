@@ -1,0 +1,69 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: version-changer-wft
+  namespace: argo
+spec:
+  entrypoint: version-changer
+  templates:
+  - name: version-changer
+    inputs:
+      artifacts:
+      - name: git-src
+        path: /src
+        git:
+          repo: "{{workflow.parameters.repo}}"
+              #revision: "{{workflow.parameters.tag}}" 
+          sshPrivateKeySecret:
+             name: ci-secrets
+             key: SSH_PRIVATE_KEY
+          depth: 1        
+
+    script:
+        image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/alpine/git" 
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: ssh-key-vol
+          mountPath: "/etc/ssh-key"
+        env:
+          - name: WLSERVICE_LIST
+            value: "{{workflow.parameters.wl-service-list}}"
+          - name: ENV_PATH
+            value: "{{workflow.parameters.env-path}}"
+          - name: ENV_NAME
+            value: "{{workflow.parameters.env-name}}"
+          - name: NEW_TAG
+            value: "{{workflow.parameters.tag}}"
+          - name: MIRROR_PREFIX
+            value: "{{workflow.parameters.dockerhub-proxy-prefix}}"
+        command: [sh]
+        #gitops/environments/envs/dev/version.yaml
+        source: |
+          cd /src/${ENV_PATH}/${ENV_NAME}
+          ls -lr
+          if [ -e version.yaml ]
+          then
+            VERSION_YAML_CHANGED=''
+            for SVC_NAME in $WLSERVICE_LIST
+              do
+                echo $SVC_NAME
+                sed  -i -r "s/(^\s*image:.+$SVC_NAME):(.+)$/\1:$NEW_TAG\"/" version.yaml  
+              done
+            cat version.yaml
+            mkdir ~/.ssh
+            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+            cp /etc/ssh-key/SSH_PRIVATE_KEY ~/.ssh/id_rsa
+            ssh-keygen -f ~/.ssh/id_rsa -y > ~/.ssh/id_rsa.pub
+            ls -l ~/.ssh
+            git config --global user.email "commiter@example.com"
+            git config --global user.name  "CG Commiter"
+            git add . && \
+            git commit -m "Tag updated for $WLSERVICE_LIST to $NEW_TAG" \
+            && git push
+          fi           
+          if [ $? -gt 0 ]
+          then
+             echo "Please read error explanation above."
+          else
+             echo "Commit and Push successful."
+          fi
