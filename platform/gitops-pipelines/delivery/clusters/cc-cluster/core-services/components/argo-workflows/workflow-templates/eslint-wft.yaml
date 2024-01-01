@@ -5,10 +5,19 @@ metadata:
 spec:
   templates:
   - name: eslint
-    container:
-      image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/pipeline-components/eslint:latest"
+    script:
+      image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/pipelinecomponents/eslint:latest"
       imagePullPolicy: IfNotPresent
-      command: ["eslint",  "$( [[ -e /build/{{workflow.parameters.wl-service-name}}/.eslintrc ]] || echo '--no-eslintrc' )", "/build/{{workflow.parameters.wl-service-name}}/src/**/*.ts"]
+      env:
+        - name: WLSERVICE
+          value: "{{workflow.parameters.wl-service-name}}"
+      command: [sh]
+      source: |
+          echo $WLSERVICE
+          cd /build/$WLSERVICE
+          ls src/**/*.ts* > /dev/null 2>&1 || { echo "Nothing to lint, exiting"; exit 1;}
+          npm -s  --prefix /app install  eslint-config-standard-with-typescript eslint-plugin-prettier eslint-config-prettier eslint-plugin-only-warn
+          eslint --plugin only-warn 'src/**/*.ts?'
       volumeMounts:
         - name: build
           mountPath: /build
