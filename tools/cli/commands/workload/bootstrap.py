@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Dict
 
 import click
 from ghrepo import GHRepo
@@ -7,143 +8,304 @@ from git import Repo, GitError, Actor
 
 from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER, LOCAL_WORKLOAD_TEMP_FOLDER
 from common.const.const import WL_REPOSITORY_URL, WL_GITOPS_REPOSITORY_URL
-from common.logging_config import configure_logging
+from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.command_utils import str_to_kebab, init_cloud_provider, check_installation_presence
 from services.wl_gitops_template_manager import WorkloadGitOpsTemplateManager
+from services.wl_manager import WorkloadManager, WorkloadManagerError
 from services.wl_template_manager import WorkloadTemplateManager
 
 
 @click.command()
 @click.option('--workload-name', '-wl', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
-@click.option('--workload-repository-name', '-wlrn', 'wl_repo_name', help='Workload repository name', type=click.STRING)
-@click.option('--workload-gitops-repository-name', '-wlgrn', 'wl_gitops_repo_name',
-              help='Workload GitOps repository name', type=click.STRING)
-@click.option('--workload-template-url', '-wltu', 'wl_template_url', help='Workload repository template',
-              type=click.STRING)
-@click.option('--workload-template-branch', '-wltb', 'wl_template_branch', help='Workload repository template branch',
-              type=click.STRING)
-@click.option('--workload-gitops-template-url', '-wlgu', 'wl_gitops_template_url',
-              help='Workload GitOps repository template', type=click.STRING)
-@click.option('--workload-gitops-template-branch', '-wlgb', 'wl_gitops_template_branch',
-              help='Workload GitOps repository template branch',
-              type=click.STRING)
-@click.option('--workload-service-name', '-wls', 'wl_svc_name', help='Workload service name', type=click.STRING)
-@click.option('--workload-service-port', '-wlsp', 'wl_svc_port', help='Workload service port', type=click.INT)
-@click.option('--verbosity', type=click.Choice(
-    ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-    case_sensitive=False
-), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
+@click.option(
+    '--workload-repository-name',
+    '-wlrn',
+    'wl_repo_name',
+    help='Workload repository name',
+    type=click.STRING
+)
+@click.option(
+    '--workload-gitops-repository-name',
+    '-wlgrn',
+    'wl_gitops_repo_name',
+    help='Workload GitOps repository name',
+    type=click.STRING
+)
+@click.option(
+    '--workload-template-url',
+    '-wltu',
+    'wl_template_url',
+    help='Workload repository template',
+    type=click.STRING
+)
+@click.option(
+    '--workload-template-branch',
+    '-wltb',
+    'wl_template_branch',
+    help='Workload repository template branch',
+    type=click.STRING
+)
+@click.option(
+    '--workload-gitops-template-url',
+    '-wlgu',
+    'wl_gitops_template_url',
+    help='Workload GitOps repository template',
+    type=click.STRING
+)
+@click.option(
+    '--workload-gitops-template-branch',
+    '-wlgb',
+    'wl_gitops_template_branch',
+    help='Workload GitOps repository template branch',
+    type=click.STRING
+)
+@click.option(
+    '--workload-service-name',
+    '-wls',
+    'wl_svc_name',
+    help='Workload service name',
+    type=click.STRING)
+@click.option(
+    '--workload-service-port',
+    '-wlsp',
+    'wl_svc_port',
+    help='Workload service port',
+    type=click.INT,
+    default=3000
+)
+@click.option(
+    '--verbosity',
+    type=click.Choice(
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        case_sensitive=False
+    ),
+    default='CRITICAL',
+    help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)'
+)
 def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_template_url: str, wl_template_branch: str,
               wl_gitops_template_url: str, wl_gitops_template_branch: str, wl_svc_name: str, wl_svc_port: int,
               verbosity: str):
     """Bootstrap workload repository with template."""
     click.echo("Bootstrapping workload...")
-    # Set up global logger
+    state_store = StateStore()
     configure_logging(verbosity)
 
-    check_installation_presence()
+    try:
+        org_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
+        key_path = state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
+        cc_cluster_fqdn = state_store.parameters["<CC_CLUSTER_FQDN>"]
+        registry_url = state_store.parameters["<REGISTRY_REGISTRY_URL>"]
+        tf_backend_storage_name = state_store.internals["TF_BACKEND_STORAGE_NAME"]
+        click.echo("[1/10] Configuration loaded.")
+    except KeyError as e:
+        error_message = f'Configuration loading failed due to missing key: {e}. ' \
+                        'Please verify the state store configuration and ensure all required keys are present. ' \
+                        'Review the documentation for the necessary configuration keys and try again.'
+        logger.error(error_message)
+        raise click.ClickException(error_message)
 
-    p: StateStore = StateStore()
+    # Initialize cloud manager for GitOps parameters
+    cloud_man, _ = init_cloud_provider(state_store)
+    click.echo("[2/10] Cloud manager initialized for GitOps.")
 
-    wl_name = str_to_kebab(wl_name)
+    # Initialize WorkloadManager for the workload repository
+    wl_name, wl_repo_name, wl_gitops_repo_name = process_workload_names(
+        wl_name=wl_name,
+        wl_repo_name=wl_repo_name,
+        wl_gitops_repo_name=wl_gitops_repo_name
+    )
+    click.echo("[3/10] Workload names processed.")
 
-    if not wl_repo_name:
-        wl_repo_name = wl_name
+    # Prepare parameters for workload and GitOps repositories
+    wl_repo_params = _prepare_workload_params(wl_name=wl_name, wl_svc_name=wl_repo_name, wl_svc_port=wl_svc_port)
+    wl_gitops_params = _prepare_gitops_params(
+        wl_name=wl_name,
+        wl_svc_name=wl_svc_name,
+        wl_svc_port=wl_svc_port,
+        cc_cluster_fqdn=cc_cluster_fqdn,
+        registry_url=registry_url,
+        k8s_role_mapping=cloud_man.create_k8s_cluster_role_mapping_snippet(),
+        additional_labels=cloud_man.create_additional_labels(),
+        tf_secrets_backend=cloud_man.create_iac_backend_snippet(
+            location=tf_backend_storage_name,
+            service=f"workloads/{wl_name}/secrets"
+        ),
+        tf_hosting_backend=cloud_man.create_iac_backend_snippet(
+            location=tf_backend_storage_name,
+            service=f"workloads/{wl_name}/hosting_provider"
+        ),
+        hosting_provider_snippet=cloud_man.create_hosting_provider_snippet()
+    )
+    click.echo("[4/10] Parameters for workload and GitOps repositories prepared.")
 
-    if not wl_gitops_repo_name:
-        if wl_repo_name:
-            wl_gitops_repo_name = f"{wl_repo_name}-gitops"
-        else:
-            wl_gitops_repo_name = f"{wl_name}-gitops"
-
-    if not wl_svc_name:
-        wl_svc_name = "wl-service"
-
-    if not wl_svc_port:
-        wl_svc_port = 3000
-
-    wl_svc_name = str_to_kebab(wl_svc_name)
-    wl_repo_name = str_to_kebab(wl_repo_name)
-    wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name)
-
-    if os.path.exists(LOCAL_WORKLOAD_TEMP_FOLDER):
-        shutil.rmtree(LOCAL_WORKLOAD_TEMP_FOLDER)
-
-    os.makedirs(LOCAL_WORKLOAD_TEMP_FOLDER)
-
-    wl_man = WorkloadTemplateManager(
-        org_name=p.parameters["<GIT_ORGANIZATION_NAME>"],
+    # Initialize WorkloadManager for the workload repository
+    wl_manager = WorkloadManager(
+        org_name=org_name,
         repo_name=wl_repo_name,
-        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+        key_path=key_path,
         template_url=wl_template_url,
         template_branch=wl_template_branch
     )
+    click.echo("[5/10] Workload repository manager initialized.")
 
-    # workload repo
-    if not (wl_man.clone_wl()):
-        raise click.ClickException("Failed cloning repo")
+    try:
+        # Perform bootstrap steps for the workload repository
+        perform_bootstrap(
+            workload_manager=wl_manager,
+            params=wl_repo_params
+        )
+        click.echo("[6/10] Workload repository bootstrap process completed.")
+    except WorkloadManagerError as e:
+        raise click.ClickException(str(e))
 
-    if not (wl_man.clone_template()):
-        raise click.ClickException("Failed cloning template repo")
+    # Cleanup temporary folder for workload repository
+    wl_manager.cleanup()
+    click.echo("[7/10] Workload repository cleanup completed.")
 
-    # make wl_svc_name multiple value param
-    wl_man.bootstrap([wl_svc_name])
-
-    wl_repo_params = {
-        "<WL_NAME>": wl_name,
-        "<WL_SERVICE_NAME>": wl_svc_name,
-    }
-
-    wl_man.parametrise(wl_repo_params)
-
-    wl_man.upload(name=p.internals["GIT_USER_NAME"], email=p.internals["GIT_USER_EMAIL"])
-
-    wl_man.cleanup()
-
-    # wl gitops repo
-    cloud_man, dns_man = init_cloud_provider(p)
-    wl_ops_man = WorkloadGitOpsTemplateManager(
-        org_name=p.parameters["<GIT_ORGANIZATION_NAME>"],
+    # Initialize WorkloadManager for the GitOps repository
+    wl_gitops_manager = WorkloadManager(
+        org_name=org_name,
         repo_name=wl_gitops_repo_name,
-        key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+        key_path=key_path,
         template_url=wl_gitops_template_url,
         template_branch=wl_gitops_template_branch
     )
+    click.echo("[8/10] GitOps repository manager initialized.")
 
-    # workload repo
-    if not (wl_ops_man.clone_wl()):
-        raise click.ClickException("Failed cloning repo")
+    try:
+        # Perform bootstrap steps for the GitOps repositoryR
+        perform_bootstrap(
+            workload_manager=wl_gitops_manager,
+            params=wl_gitops_params
+        )
+        click.echo("[9/10] GitOps repository bootstrap process completed.")
+    except WorkloadManagerError as e:
+        raise click.ClickException(str(e))
 
-    if not (wl_ops_man.clone_template()):
-        raise click.ClickException("Failed cloning template repo")
-
-    wl_ops_man.bootstrap()
-
-    wl_gitops_repo_params = {
-        "<WL_NAME>": wl_name,
-        "<WL_SERVICE_NAME>": wl_svc_name,
-        "<WL_SERVICE_URL>": f'{wl_svc_name}.{wl_name}.{p.parameters["<CC_CLUSTER_FQDN>"]}',
-        "<WL_SERVICE_IMAGE>": f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{wl_name}/{wl_svc_name}',
-        "<WL_SERVICE_PORT>": str(wl_svc_port),
-        "# <K8S_ROLE_MAPPING>": cloud_man.create_k8s_cluster_role_mapping_snippet(),
-        "<WL_IAM_ROLE_RN>": "[Put your workload service role mapping]",
-        "# <ADDITIONAL_LABELS>": cloud_man.create_additional_labels(),
-        "# <TF_WL_SECRETS_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"],
-                                                                                 f"workloads/{wl_name}/secrets"),
-        "# <TF_WL_HOSTING_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"],
-                                                                                 f"workloads/{wl_name}/hosting_provider"),
-        "# <TF_HOSTING_PROVIDER>": cloud_man.create_hosting_provider_snippet(),
-    }
-
-    wl_ops_man.parametrise(wl_gitops_repo_params)
-
-    wl_ops_man.upload(name=p.internals["GIT_USER_NAME"], email=p.internals["GIT_USER_EMAIL"])
-
-    wl_ops_man.cleanup()
-
-    # remove temp folder
-    shutil.rmtree(LOCAL_WORKLOAD_TEMP_FOLDER)
+    # Cleanup temporary folder for GitOps repository
+    wl_gitops_manager.cleanup()
+    click.echo("[10/10] GitOps repository cleanup completed.")
 
     click.echo("Bootstrapping workload. Done!")
-    return True
+
+
+def process_workload_names(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str):
+    """
+    Process and normalize workload names to a standard format.
+
+    Args:
+        wl_name (str): Name of the workload.
+        wl_repo_name (str): Name of the workload repository.
+        wl_gitops_repo_name (str): Name of the workload GitOps repository.
+
+    Returns:
+        tuple[str, str, str]: Tuple of processed workload name, workload repository name, and GitOps repository name.
+    """
+    processed_wl_name = str_to_kebab(wl_name)
+    processed_wl_repo_name = str_to_kebab(wl_repo_name or wl_name)
+    processed_wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name or f"{wl_repo_name}-gitops")
+
+    return processed_wl_name, processed_wl_repo_name, processed_wl_gitops_repo_name
+
+
+def perform_bootstrap(
+        workload_manager: WorkloadManager,
+        params: Dict[str, str]
+):
+    """
+    Perform the bootstrap process using the WorkloadManager.
+
+    Args:
+        workload_manager (WorkloadManager): The workload manager instance.
+        params (Dict[str, str]): Dictionary containing parameters for bootstrap.
+
+    Raises:
+        WorkloadManagerError: If cloning, templating, or uploading process fails.
+    """
+    if not workload_manager.clone_wl():
+        raise WorkloadManagerError("Failed to clone workload repository")
+
+    if not workload_manager.clone_template():
+        raise WorkloadManagerError("Failed to clone template repository")
+
+    # Bootstrap workload with the given service names
+    service_names = [params.get("<WL_SERVICE_NAME>", "default-service")]
+    workload_manager.bootstrap(service_names)
+
+    workload_manager.parametrise(params)
+
+    workload_manager.upload(
+        author_name=params.get("<AUTHOR_NAME>"),
+        author_email=params.get("<AUTHOR_EMAIL>")
+    )
+
+
+def _prepare_workload_params(wl_name: str, wl_svc_name: str, wl_svc_port: str | int):
+    """
+    Prepare parameters for the workload repository bootstrap process.
+
+    Args:
+        wl_name: Workload name.
+        wl_svc_name: Workload service name.
+        wl_svc_port: Workload service port.
+
+    Returns:
+        dict: Dictionary of parameters.
+    """
+    return {
+        "<WL_NAME>": wl_name,
+        "<WL_SERVICE_NAME>": wl_svc_name,
+        "<WL_SERVICE_PORT>": str(wl_svc_port)
+    }
+
+
+def _prepare_gitops_params(
+        wl_name: str,
+        wl_svc_name: str,
+        wl_svc_port: str | int,
+        cc_cluster_fqdn: str,
+        registry_url: str,
+        k8s_role_mapping: str,
+        additional_labels: str,
+        tf_secrets_backend: str,
+        tf_hosting_backend: str,
+        hosting_provider_snippet: str
+) -> Dict[str, str]:
+    """
+    Prepare parameters for the GitOps repository bootstrap process.
+
+    Args:
+        wl_name (str): Name of the workload.
+        wl_svc_name (str): Name of the workload service.
+        wl_svc_port (int): Port number for the workload service.
+        cc_cluster_fqdn (str): Fully qualified domain name for the cluster.
+        registry_url (str): URL for the registry.
+        k8s_role_mapping (str): Kubernetes role mapping snippet.
+        additional_labels (str): Additional labels snippet.
+        tf_secrets_backend (str): Terraform secrets backend snippet.
+        tf_hosting_backend (str): Terraform hosting backend snippet.
+        hosting_provider_snippet (str): Hosting provider snippet.
+
+    Returns:
+        Dict[str, str]: A dictionary containing prepared parameters for the GitOps repository bootstrap process.
+    """
+    logger.debug(f"Preparing GitOps parameters for workload '{wl_name}' with service '{wl_svc_name}'.")
+
+    params = {
+        "<WL_NAME>": wl_name,
+        "<WL_SERVICE_NAME>": wl_svc_name,
+        "<WL_SERVICE_URL>": f'{wl_svc_name}.{wl_name}.{cc_cluster_fqdn}',
+        "<WL_SERVICE_IMAGE>": f'{registry_url}/{wl_name}/{wl_svc_name}',
+        "<WL_SERVICE_PORT>": str(wl_svc_port),
+        "<K8S_ROLE_MAPPING>": k8s_role_mapping,
+        "<WL_IAM_ROLE_RN>": "[Put your workload service role mapping]",
+        "<ADDITIONAL_LABELS>": additional_labels,
+        "<TF_WL_SECRETS_REMOTE_BACKEND>": tf_secrets_backend,
+        "<TF_WL_HOSTING_REMOTE_BACKEND>": tf_hosting_backend,
+        "<TF_HOSTING_PROVIDER>": hosting_provider_snippet,
+    }
+
+    logger.debug(f"GitOps parameters prepared: {params}")
+    return params
+
