@@ -13,7 +13,7 @@ spec:
         path: /src
         git:
           repo: "{{workflow.parameters.repo}}"
-              #revision: "{{workflow.parameters.tag}}" 
+         #revision: "{{workflow.parameters.tag}}" 
           sshPrivateKeySecret:
              name: ci-secrets
              key: SSH_PRIVATE_KEY
@@ -37,17 +37,15 @@ spec:
           - name: MIRROR_PREFIX
             value: "{{workflow.parameters.dockerhub-registry-proxy}}"
         command: [sh]
-        #gitops/environments/envs/dev/version.yaml
         source: |
           cd /src/${ENV_PATH}/${ENV_NAME}
           ls -lr
           if [ -e version.yaml ]
           then
-            VERSION_YAML_CHANGED=''
             for SVC_NAME in $WL_SERVICE_LIST
               do
                 echo $SVC_NAME
-                sed  -i -r "s/(^\s*image:.+$SVC_NAME):(.+)$/\1:$NEW_TAG\"/" version.yaml  
+                sed  -i  -r "s/(^\s*image:.+$SVC_NAME).*$/\1:$NEW_TAG\"/" version.yaml
               done
             cat version.yaml
             mkdir ~/.ssh
@@ -55,8 +53,8 @@ spec:
             cp /etc/ssh-key/SSH_PRIVATE_KEY ~/.ssh/id_rsa
             ssh-keygen -f ~/.ssh/id_rsa -y > ~/.ssh/id_rsa.pub
             ls -l ~/.ssh
-            git config --global user.email "<GIT_USER_EMAIL>"
-            git config --global user.name  "<GIT_USER_NAME>"
+            git config --global user.email "cg-devx-automation@cloudgeometry.io"
+            git config --global user.name  "cgdevx-bot"
             git add . && \
             git commit -m "Tag updated for $WL_SERVICE_LIST to $NEW_TAG" \
             && git push

@@ -24,17 +24,22 @@ spec:
           - name: WL_SERVICE
             value: "{{workflow.parameters.wl-service-name}}"
           - name: REGISTRY_MIRROR
+            value: "{{workflow.parameters.registry}}"
+          - name: DOCKERHUB_REGISTRY_PROXY
             value: "{{workflow.parameters.dockerhub-registry-proxy}}"
+
+          
         command: [sh]
         source: |
+          DOCKERHUB_PROXY_PREFIX=`basename $DOCKERHUB_REGISTRY_PROXY`
           echo "WL_SERVICE: $WL_SERVICE"
           cp -rv /src/$WL_SERVICE  /build/
           if [[ $REGISTRY_MIRROR ]]
           then
             cd /build/$WL_SERVICE
-            sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $REGISTRY_MIRROR\/\1/;s/FROM\s+(\S+)/FROM $REGISTRY_MIRROR\/library\/\1/" Dockerfile
+            sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/\1/;s/FROM\s+(\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/library\/\1/" Dockerfile
+            cat Dockerfile
           fi
-          cat /src/$WL_SERVICE/?ockerfile
         volumeMounts:
           - mountPath: "/build"
             name: build
