@@ -6,15 +6,15 @@ spec:
   templates:
   - name: eslint
     script:
-      image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/pipelinecomponents/eslint:latest"
+      image: "{{workflow.parameters.dockerhub-registry-proxy}}/pipelinecomponents/eslint:latest"
       imagePullPolicy: IfNotPresent
       env:
-        - name: WLSERVICE
+        - name: WL_SERVICE
           value: "{{workflow.parameters.wl-service-name}}"
       command: [sh]
       source: |
-          echo $WLSERVICE
-          cd /build/$WLSERVICE
+          echo $WL_SERVICE
+          cd /build/$WL_SERVICE
           ls src/**/*.ts* > /dev/null 2>&1 || { echo "Nothing to lint, exiting"; exit 1;}
           npm -s  --prefix /app install  eslint-config-standard-with-typescript eslint-plugin-prettier eslint-config-prettier eslint-plugin-only-warn
           eslint --plugin only-warn 'src/**/*.ts?'

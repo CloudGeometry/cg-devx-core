@@ -6,7 +6,7 @@ spec:
   templates:
   - name: tslint
     container:
-      image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/pipelinecomponents/tslint"
+      image: "{{workflow.parameters.dockerhub-registry-proxy}}/pipelinecomponents/tslint"
       imagePullPolicy: IfNotPresent
       command: ["tslint", "-c", "/build/{{workflow.parameters.wl-service-name}}/tslint.json", "/build/{{workflow.parameters.wl-service-name}}/src/**/*.ts"]
       volumeMounts:

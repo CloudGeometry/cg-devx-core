@@ -18,23 +18,23 @@ spec:
           depth: 1        
 
     script:
-        image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/alpine/git" 
+        image: "{{workflow.parameters.dockerhub-registry-proxy}}/alpine/git" 
         imagePullPolicy: IfNotPresent
         env:
-          - name: WLSERVICE
+          - name: WL_SERVICE
             value: "{{workflow.parameters.wl-service-name}}"
-          - name: MIRROR_PREFIX
-            value: "{{workflow.parameters.dockerhub-proxy-prefix}}"
+          - name: REGISTRY_MIRROR
+            value: "{{workflow.parameters.dockerhub-registry-proxy}}"
         command: [sh]
         source: |
-          echo "WLSERVICE: $WLSERVICE"
-          cp -rv /src/$WLSERVICE  /build/
-          if [[ $MIRROR_PREFIX ]]
+          echo "WL_SERVICE: $WL_SERVICE"
+          cp -rv /src/$WL_SERVICE  /build/
+          if [[ $REGISTRY_MIRROR ]]
           then
-            cd /build/$WLSERVICE
-            sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $MIRROR_PREFIX\/\1/;s/FROM\s+(\S+)/FROM $MIRROR_PREFIX\/library\/\1/" Dockerfile
+            cd /build/$WL_SERVICE
+            sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $REGISTRY_MIRROR\/\1/;s/FROM\s+(\S+)/FROM $REGISTRY_MIRROR\/library\/\1/" Dockerfile
           fi
-          cat /src/$WLSERVICE/?ockerfile
+          cat /src/$WL_SERVICE/?ockerfile
         volumeMounts:
           - mountPath: "/build"
             name: build

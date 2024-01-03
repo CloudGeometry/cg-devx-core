@@ -9,7 +9,7 @@ spec:
   templates:
   - name: trivy-fs-scan
     container:
-        image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.dockerhub-proxy-prefix}}/aquasec/trivy"
+        image: "{{workflow.parameters.dockerhub-registry-proxy}}/aquasec/trivy"
         imagePullPolicy: IfNotPresent
         args:
           - fs

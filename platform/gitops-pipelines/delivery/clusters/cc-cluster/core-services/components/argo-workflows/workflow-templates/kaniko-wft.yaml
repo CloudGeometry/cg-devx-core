@@ -7,14 +7,14 @@ spec:
   - name: kaniko
     container:
       env:
-        - name: WL-SERVICE
+        - name: WL_SERVICE
           value: "{{workflow.parameters.wl-service-name}}"
-      image: "{{workflow.parameters.registry-mirror}}/{{workflow.parameters.gcr-proxy-prefix}}/kaniko-project/executor"
+      image: "{{workflow.parameters.gcr-registry-proxy}}/kaniko-project/executor"
       imagePullPolicy: IfNotPresent
       args: ["--dockerfile=Dockerfile",
              "--context=dir:///workspace/{{workflow.parameters.wl-service-name}}/", 
              "--no-push", "--tar-path=/workspace/{{workflow.parameters.wl-service-name}}.tar",
-             "--registry-mirror={{workflow.parameters.registry-mirror}}",
+             "--registry-mirror={{workflow.parameters.registry}}",
              "--skip-default-registry-fallback"
         ]
       volumeMounts:

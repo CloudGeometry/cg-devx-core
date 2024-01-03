@@ -2,11 +2,8 @@ import os
 import shutil
 
 import click
-from ghrepo import GHRepo
-from git import Repo, GitError, Actor
 
-from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER, LOCAL_WORKLOAD_TEMP_FOLDER
-from common.const.const import WL_REPOSITORY_URL, WL_GITOPS_REPOSITORY_URL
+from common.const.common_path import LOCAL_WORKLOAD_TEMP_FOLDER
 from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.utils.command_utils import str_to_kebab, init_cloud_provider, check_installation_presence
@@ -93,6 +90,14 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
     wl_repo_params = {
         "<WL_NAME>": wl_name,
         "<WL_SERVICE_NAME>": wl_svc_name,
+        "<REGISTRY_REGISTRY_URL>": p.parameters["<REGISTRY_REGISTRY_URL>"],
+        "<REGISTRY_DOCKERHUB_PROXY>": p.parameters["<REGISTRY_DOCKERHUB_PROXY>"],
+        "<REGISTRY_GCR_PROXY>": p.parameters["<REGISTRY_GCR_PROXY>"],
+        "<REGISTRY_K8S_GCR_PROXY>": p.parameters["<REGISTRY_K8S_GCR_PROXY>"],
+        "<REGISTRY_QUAY_PROXY>": p.parameters["<REGISTRY_QUAY_PROXY>"],
+        "<WL_REPO_NAME>": wl_repo_name,
+        "<WL_GITOPS_REPO_NAME>": wl_gitops_repo_name,
+        "<GIT_ORGANIZATION_NAME>": p.parameters["<GIT_ORGANIZATION_NAME>"],
     }
 
     wl_man.parametrise(wl_repo_params)

@@ -6,7 +6,7 @@ module "gitops-repo" {
   atlantis_enabled             = true
   atlantis_url                 = var.atlantis_url
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
-
+  vcs_subscription_plan        = var.vcs_subscription_plan
 }
 
 output "gitops_repo_git_clone_url" {
