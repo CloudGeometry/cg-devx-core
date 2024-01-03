@@ -32,6 +32,11 @@ output "secret_manager_irsa_role" {
   description = "Secrets Manager IAM role for a K8s service account"
 }
 
+output "cluster_autoscaler_irsa_role" {
+  description = "Cluster Autoscaler IAM Role ARN"
+  value       = module.cluster_autoscaler_sa.app_client_id
+}
+
 # cluster
 output "cluster_endpoint" {
   value       = azurerm_kubernetes_cluster.aks_cluster.kube_admin_config.0.host

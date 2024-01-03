@@ -33,12 +33,12 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     # pod_subnet_id          = [] ?? do we need it
     zones                  = local.azs
     node_labels            = var.cluster_node_labels
-    enable_auto_scaling    = true
+    enable_auto_scaling    = local.enable_native_auto_scaling
     enable_host_encryption = false
     enable_node_public_ip  = false
     node_count             = local.default_node_group.desired_size
-    min_count              = local.default_node_group.min_size
-    max_count              = local.default_node_group.max_size
+    min_count              = local.enable_native_auto_scaling? local.default_node_group.min_size : null
+    max_count              = local.enable_native_auto_scaling? local.default_node_group.max_size : null
     max_pods               = local.max_pods
     tags                   = local.tags
   }
@@ -107,7 +107,6 @@ resource "azurerm_kubernetes_cluster_node_pool" "node_pool" {
   node_labels           = var.cluster_node_labels
   orchestrator_version  = var.cluster_version
   tags                  = local.tags
-  # check with serg
   enable_node_public_ip = false
   max_pods              = local.max_pods
   priority              = each.value.capacity_type
