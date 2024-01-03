@@ -127,29 +127,39 @@ class AwsSdk:
         bucket_policy = {
             "Version": "2012-10-17",
             "Statement": [
+                # non-restrictive allow-list
                 {
                     "Sid": "RestrictS3Access",
                     "Action": ["s3:*"],
                     "Effect": "Allow",
-                    "Principal": {
-                        "AWS": [
-                            self.current_user_arn(),
-                            identity
-                        ]
+                    "Principal": "*",
+                    "Condition": {
+                        "ArnLike": {
+                            "aws:PrincipalArn": [
+                                self.current_user_arn(),
+                                identity,
+                                f"arn:aws:iam::{self._account_id}:root"
+                            ]
+                        }
                     },
-                    "Resource": [f"arn:aws:s3:::{bucket_name}"],
+                    "Resource": [f"arn:aws:s3:::{bucket_name}", f"arn:aws:s3:::{bucket_name}/*"],
                 },
+                # an explicit deny. this one is self-sufficient
                 {
                     "Sid": "ExplicitlyDenyS3Actions",
                     "Action": ["s3:*"],
                     "Effect": "Deny",
-                    "NotPrincipal": {
-                        "AWS": [
-                            self.current_user_arn(),
-                            identity
-                        ]
+                    "Principal": "*",
+                    "Condition": {
+                        "ArnNotLike": {
+                            "aws:PrincipalArn": [
+                                self.current_user_arn(),
+                                identity,
+                                f"arn:aws:iam::{self._account_id}:root"
+                            ]
+                        }
                     },
-                    "Resource": [f"arn:aws:s3:::{bucket_name}"],
+                    "Resource": [f"arn:aws:s3:::{bucket_name}", f"arn:aws:s3:::{bucket_name}/*"],
                 }
             ]
         }
