@@ -152,6 +152,9 @@ def setup(
         if git_subscription_plan > 0:
             p.fragments["# <GIT_RUNNER_GROUP>"] = git_man.create_runner_group_snippet()
             p.parameters["<GIT_RUNNER_GROUP_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
+        else:
+            # match the GitHub's default runner group
+            p.parameters["<GIT_RUNNER_GROUP_NAME>"] = "Default"
 
         dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")

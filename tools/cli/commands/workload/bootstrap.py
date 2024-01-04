@@ -98,6 +98,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         "<WL_REPO_NAME>": wl_repo_name,
         "<WL_GITOPS_REPO_NAME>": wl_gitops_repo_name,
         "<GIT_ORGANIZATION_NAME>": p.parameters["<GIT_ORGANIZATION_NAME>"],
+        "<GIT_RUNNER_GROUP_NAME>": p.parameters["<GIT_RUNNER_GROUP_NAME>"],
     }
 
     wl_man.parametrise(wl_repo_params)
@@ -139,6 +140,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         "# <TF_WL_HOSTING_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"],
                                                                                  f"workloads/{wl_name}/hosting_provider"),
         "# <TF_HOSTING_PROVIDER>": cloud_man.create_hosting_provider_snippet(),
+        "<GIT_RUNNER_GROUP_NAME>": p.parameters["<GIT_RUNNER_GROUP_NAME>"],
     }
 
     wl_ops_man.parametrise(wl_gitops_repo_params)
