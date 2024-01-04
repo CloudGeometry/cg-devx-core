@@ -1,19 +1,15 @@
-import os
-import shutil
+import time
 from typing import Dict
 
 import click
-from ghrepo import GHRepo
-from git import Repo, GitError, Actor
 
-from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER, LOCAL_WORKLOAD_TEMP_FOLDER
-from common.const.const import WL_REPOSITORY_URL, WL_GITOPS_REPOSITORY_URL
+from common.const.const import WL_REPOSITORY_URL, WL_GITOPS_REPOSITORY_URL, WL_GITOPS_REPOSITORY_BRANCH, \
+    WL_REPOSITORY_BRANCH
+from common.custom_excpetions import WorkloadManagerError
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
-from common.utils.command_utils import str_to_kebab, init_cloud_provider, check_installation_presence
-from services.wl_gitops_template_manager import WorkloadGitOpsTemplateManager
-from services.wl_manager import WorkloadManager, WorkloadManagerError
-from services.wl_template_manager import WorkloadTemplateManager
+from common.utils.command_utils import str_to_kebab, init_cloud_provider
+from services.wl_template_manager import WorkloadManager
 
 
 @click.command()
@@ -37,35 +33,41 @@ from services.wl_template_manager import WorkloadTemplateManager
     '-wltu',
     'wl_template_url',
     help='Workload repository template',
-    type=click.STRING
+    type=click.STRING,
+    default=WL_REPOSITORY_URL
 )
 @click.option(
     '--workload-template-branch',
     '-wltb',
     'wl_template_branch',
     help='Workload repository template branch',
-    type=click.STRING
+    type=click.STRING,
+    default=WL_REPOSITORY_BRANCH
+
 )
 @click.option(
     '--workload-gitops-template-url',
     '-wlgu',
     'wl_gitops_template_url',
     help='Workload GitOps repository template',
-    type=click.STRING
+    type=click.STRING,
+    default=WL_GITOPS_REPOSITORY_URL
 )
 @click.option(
     '--workload-gitops-template-branch',
     '-wlgb',
     'wl_gitops_template_branch',
     help='Workload GitOps repository template branch',
-    type=click.STRING
+    type=click.STRING,
+    default=WL_GITOPS_REPOSITORY_BRANCH
 )
 @click.option(
     '--workload-service-name',
     '-wls',
     'wl_svc_name',
     help='Workload service name',
-    type=click.STRING)
+    type=click.STRING
+)
 @click.option(
     '--workload-service-port',
     '-wlsp',
@@ -83,11 +85,38 @@ from services.wl_template_manager import WorkloadTemplateManager
     default='CRITICAL',
     help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)'
 )
-def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_template_url: str, wl_template_branch: str,
-              wl_gitops_template_url: str, wl_gitops_template_branch: str, wl_svc_name: str, wl_svc_port: int,
-              verbosity: str):
-    """Bootstrap workload repository with template."""
+def bootstrap(
+        wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_template_url: str, wl_template_branch: str,
+        wl_gitops_template_url: str, wl_gitops_template_branch: str, wl_svc_name: str, wl_svc_port: int, verbosity: str
+):
+    """
+    Bootstrap a new workload environment by setting up the necessary repositories and configurations.
+
+    This command initializes and configures a workload repository and a GitOps repository based on provided templates.
+    It handles the entire setup process, including the cloning of template repositories, parameter customization,
+    and finalization of the workload setup.
+
+    Args:
+        wl_name (str): The name of the workload.
+        wl_repo_name (str): The name of the workload repository.
+        wl_gitops_repo_name (str): The name of the GitOps repository for the workload.
+        wl_template_url (str): The URL of the template for the workload repository.
+        wl_template_branch (str): The branch of the workload repository template.
+        wl_gitops_template_url (str): The URL of the template for the GitOps repository.
+        wl_gitops_template_branch (str): The branch of the GitOps repository template.
+        wl_svc_name (str): The name of the service within the workload.
+        wl_svc_port (int): The service port number for the workload service.
+        verbosity (str): The logging level for the process (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+
+    Raises:
+        ClickException: An exception is raised if there are issues in the configuration loading,
+        or if the bootstrap process for either the workload or GitOps repository fails.
+
+    Returns:
+        None: The function does not return anything but completes the bootstrap process.
+    """
     click.echo("Bootstrapping workload...")
+    func_start_time = time.time()
     state_store = StateStore()
     configure_logging(verbosity)
 
@@ -97,7 +126,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         cc_cluster_fqdn = state_store.parameters["<CC_CLUSTER_FQDN>"]
         registry_url = state_store.parameters["<REGISTRY_REGISTRY_URL>"]
         tf_backend_storage_name = state_store.internals["TF_BACKEND_STORAGE_NAME"]
-        click.echo("[1/10] Configuration loaded.")
+        click.echo("1/10: Configuration loaded.")
     except KeyError as e:
         error_message = f'Configuration loading failed due to missing key: {e}. ' \
                         'Please verify the state store configuration and ensure all required keys are present. ' \
@@ -107,7 +136,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
 
     # Initialize cloud manager for GitOps parameters
     cloud_man, _ = init_cloud_provider(state_store)
-    click.echo("[2/10] Cloud manager initialized for GitOps.")
+    click.echo("2/10: Cloud manager initialized for GitOps.")
 
     # Initialize WorkloadManager for the workload repository
     wl_name, wl_repo_name, wl_gitops_repo_name = process_workload_names(
@@ -115,7 +144,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         wl_repo_name=wl_repo_name,
         wl_gitops_repo_name=wl_gitops_repo_name
     )
-    click.echo("[3/10] Workload names processed.")
+    click.echo("3/10: Workload names processed.")
 
     # Prepare parameters for workload and GitOps repositories
     wl_repo_params = _prepare_workload_params(wl_name=wl_name, wl_svc_name=wl_repo_name, wl_svc_port=wl_svc_port)
@@ -137,7 +166,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         ),
         hosting_provider_snippet=cloud_man.create_hosting_provider_snippet()
     )
-    click.echo("[4/10] Parameters for workload and GitOps repositories prepared.")
+    click.echo("4/10: Parameters for workload and GitOps repositories prepared.")
 
     # Initialize WorkloadManager for the workload repository
     wl_manager = WorkloadManager(
@@ -147,7 +176,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         template_url=wl_template_url,
         template_branch=wl_template_branch
     )
-    click.echo("[5/10] Workload repository manager initialized.")
+    click.echo("5/10: Workload repository manager initialized.")
 
     try:
         # Perform bootstrap steps for the workload repository
@@ -155,13 +184,13 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
             workload_manager=wl_manager,
             params=wl_repo_params
         )
-        click.echo("[6/10] Workload repository bootstrap process completed.")
+        click.echo("6/10: Workload repository bootstrap process completed.")
     except WorkloadManagerError as e:
         raise click.ClickException(str(e))
 
     # Cleanup temporary folder for workload repository
     wl_manager.cleanup()
-    click.echo("[7/10] Workload repository cleanup completed.")
+    click.echo("7/10: Workload repository cleanup completed.")
 
     # Initialize WorkloadManager for the GitOps repository
     wl_gitops_manager = WorkloadManager(
@@ -171,7 +200,7 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         template_url=wl_gitops_template_url,
         template_branch=wl_gitops_template_branch
     )
-    click.echo("[8/10] GitOps repository manager initialized.")
+    click.echo("8/10: GitOps repository manager initialized.")
 
     try:
         # Perform bootstrap steps for the GitOps repositoryR
@@ -179,15 +208,15 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
             workload_manager=wl_gitops_manager,
             params=wl_gitops_params
         )
-        click.echo("[9/10] GitOps repository bootstrap process completed.")
+        click.echo("9/10: GitOps repository bootstrap process completed.")
     except WorkloadManagerError as e:
         raise click.ClickException(str(e))
 
     # Cleanup temporary folder for GitOps repository
     wl_gitops_manager.cleanup()
-    click.echo("[10/10] GitOps repository cleanup completed.")
+    click.echo("10/10: GitOps repository cleanup completed.")
 
-    click.echo("Bootstrapping workload. Done!")
+    click.echo(f"Bootstrapping workload completed in {time.time() - func_start_time:.2f} seconds.")
 
 
 def process_workload_names(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str):
@@ -223,11 +252,11 @@ def perform_bootstrap(
     Raises:
         WorkloadManagerError: If cloning, templating, or uploading process fails.
     """
-    if not workload_manager.clone_wl():
-        raise WorkloadManagerError("Failed to clone workload repository")
-
     if not workload_manager.clone_template():
         raise WorkloadManagerError("Failed to clone template repository")
+
+    if not workload_manager.clone_wl():
+        raise WorkloadManagerError("Failed to clone workload repository")
 
     # Bootstrap workload with the given service names
     service_names = [params.get("<WL_SERVICE_NAME>", "default-service")]
@@ -308,4 +337,3 @@ def _prepare_gitops_params(
 
     logger.debug(f"GitOps parameters prepared: {params}")
     return params
-
