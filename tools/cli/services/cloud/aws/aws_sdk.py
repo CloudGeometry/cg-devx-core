@@ -3,7 +3,6 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-import boto3
 from awscli.customizations.eks.get_token import STSClientFactory, TokenGenerator, TOKEN_EXPIRATION_MINS
 from botocore.exceptions import ClientError
 
@@ -128,17 +127,39 @@ class AwsSdk:
         bucket_policy = {
             "Version": "2012-10-17",
             "Statement": [
+                # non-restrictive allow-list
                 {
                     "Sid": "RestrictS3Access",
-                    "Principal": {
-                        "AWS": [
-                            self.current_user_arn(),
-                            identity
-                        ]
-                    },
-                    "Effect": "Allow",
                     "Action": ["s3:*"],
-                    "Resource": [f"arn:aws:s3:::{bucket_name}"]
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Condition": {
+                        "ArnLike": {
+                            "aws:PrincipalArn": [
+                                self.current_user_arn(),
+                                identity,
+                                f"arn:aws:iam::{self._account_id}:root"
+                            ]
+                        }
+                    },
+                    "Resource": [f"arn:aws:s3:::{bucket_name}", f"arn:aws:s3:::{bucket_name}/*"],
+                },
+                # an explicit deny. this one is self-sufficient
+                {
+                    "Sid": "ExplicitlyDenyS3Actions",
+                    "Action": ["s3:*"],
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Condition": {
+                        "ArnNotLike": {
+                            "aws:PrincipalArn": [
+                                self.current_user_arn(),
+                                identity,
+                                f"arn:aws:iam::{self._account_id}:root"
+                            ]
+                        }
+                    },
+                    "Resource": [f"arn:aws:s3:::{bucket_name}", f"arn:aws:s3:::{bucket_name}/*"],
                 }
             ]
         }
@@ -243,7 +264,7 @@ class AwsSdk:
          If a region is not specified, the bucket is created in the S3 default region.
 
          :param bucket_name: Bucket to create
-         :param region: String region to create bucket in, e.g., 'us-west-2'
+         :param region: Region to create bucket in, e.g., 'us-west-2'
          :return: True if bucket deleted, else False
          """
 

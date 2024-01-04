@@ -6,9 +6,10 @@ spec:
   templates:
   - name: crane
     container:
-      image: gcr.io/go-containerregistry/crane
+      image: "{{workflow.parameters.gcr-registry-proxy}}/go-containerregistry/crane"
       imagePullPolicy: IfNotPresent
-      args: ["push", "/workspace/{{workflow.parameters.workload}}.tar", "{{workflow.parameters.image}}:{{workflow.parameters.tag}}"]
+      args: ["push", "/workspace/{{workflow.parameters.wl-service-name}}.tar", 
+        "{{workflow.parameters.registry}}/{{workflow.parameters.workload-name}}/{{workflow.parameters.wl-service-name}}:{{workflow.parameters.tag}}"]
       volumeMounts:
         - name: kaniko-secret
           mountPath: /home/nonroot/.docker

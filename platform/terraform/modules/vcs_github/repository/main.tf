@@ -31,7 +31,7 @@ resource "github_repository" "repo" {
 # only allow the engineers team merge to the branch.
 
 resource "github_branch_protection" "this" {
-  count = var.branch_protection ? 1 : 0
+  count = var.branch_protection && var.vcs_subscription_plan ? 1 : 0
   repository_id = github_repository.repo.node_id
 
   pattern          = "main"

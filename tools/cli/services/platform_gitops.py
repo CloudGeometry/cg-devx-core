@@ -17,15 +17,17 @@ class PlatformGitOpsRepo:
         self._repo = Repo(LOCAL_GITOPS_FOLDER)
         self._git_man = git_man
         self._ssh_key_path = key_path
+        self._ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {self._ssh_key_path}'
         self._author_name = author_name
         self._author_email = author_email
 
     @trace()
     def update(self):
-        # clean stale branches
-        self._repo.remotes.origin.fetch(prune=True)
-        self._repo.heads.main.checkout()
-        self._repo.remotes.origin.pull(self._repo.active_branch)
+        with self._repo.git.custom_environment(GIT_SSH_COMMAND=self._ssh_cmd):
+            # clean stale branches
+            self._repo.remotes.origin.fetch(prune=True)
+            self._repo.heads.main.checkout()
+            self._repo.remotes.origin.pull(self._repo.active_branch)
 
     @trace()
     def branch_exist(self, branch_name):
@@ -38,8 +40,7 @@ class PlatformGitOpsRepo:
 
     @trace()
     def upload_changes(self):
-        ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {self._ssh_key_path}'
-        with self._repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
+        with self._repo.git.custom_environment(GIT_SSH_COMMAND=self._ssh_cmd):
             self._repo.git.add(all=True)
             author = Actor(name=self._author_name, email=self._author_email)
             self._repo.index.commit("initial", author=author, committer=author)
@@ -107,7 +108,10 @@ class PlatformGitOpsRepo:
             os.remove(wl_argo_manifest)
 
     @staticmethod
-    def _add_wl_vars(tf_module_path, wl_name: str, payload: dict = {}):
+    def _add_wl_vars(tf_module_path, wl_name: str, payload=None):
+        if payload is None:
+            payload = {}
+
         with open(tf_module_path / "terraform.tfvars.json", "r") as file:
             services_tf_vars = json.load(file)
 

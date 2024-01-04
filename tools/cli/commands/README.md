@@ -112,7 +112,15 @@ process.
 - Remote backend storage (e.g., AWS S3) used for IaC
 - All local files created by CG DevX CLI
 
-**NOTE!**: this process is irreversible
+> **NOTE!**: this process is irreversible
+
+> **NOTE!**: This operation will delete all workload repositories if you have them.
+> If workloads have any out of the cluster (cloud provider) resources, they will become orphaned,
+> and should be deleted manually.
+> It is highly recommended prior to destroying your installation to delete all active workloads first also deleting all
+> the resources.
+> Please see more on `workload delete` command with `--destroy-resources` flag [here](workload/README.md#delete).
+
 
 **Arguments**:
 
@@ -134,3 +142,5 @@ and then all other resources created by our automation.
 The cleanup process could still fail.
 If you have any issues, please try restarting the process.
 If it fails to delete your K8s cluster, please try deleting Load Balancer(s) manually and restart the process.
+For GitHub, external action runners should be removed prior to repository deletion.
+If it fails to delete your GitOps repo - please check and remove runners and restart the process.

@@ -68,3 +68,9 @@ variable "atlantis_repo_webhook_secret" {
   default   = ""
   sensitive = true
 }
+
+variable "vcs_subscription_plan" {
+  description = "True for advanced github/gitlab plan. False for free tier"
+  type    = bool
+  default = false
+}

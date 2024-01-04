@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: argo-workflow-templates
+  name: argo-cluster-workflow-templates
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: '30'

@@ -9,12 +9,12 @@ spec:
   templates:
   - name: trivy-fs-scan
     container:
-        image: aquasec/trivy
+        image: "{{workflow.parameters.dockerhub-registry-proxy}}/aquasec/trivy"
+        imagePullPolicy: IfNotPresent
         args:
           - fs
-          - /workdir
-          #          - /workdir/{{workflow.parameters.workload}}
+          -  /build/{{workflow.parameters.wl-service-name}}
         volumeMounts:
           - name: build
-            mountPath: /workdir
+            mountPath: /build
 
