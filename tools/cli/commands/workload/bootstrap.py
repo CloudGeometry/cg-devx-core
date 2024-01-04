@@ -4,6 +4,7 @@ import shutil
 import click
 
 from common.const.common_path import LOCAL_WORKLOAD_TEMP_FOLDER
+from common.const.const import TERRAFORM_VERSION
 from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.utils.command_utils import str_to_kebab, init_cloud_provider, check_installation_presence
@@ -140,7 +141,13 @@ def bootstrap(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_temp
         "# <TF_WL_HOSTING_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(p.internals["TF_BACKEND_STORAGE_NAME"],
                                                                                  f"workloads/{wl_name}/hosting_provider"),
         "# <TF_HOSTING_PROVIDER>": cloud_man.create_hosting_provider_snippet(),
+        "<REGISTRY_REGISTRY_URL>": p.parameters["<REGISTRY_REGISTRY_URL>"],
+        "<REGISTRY_DOCKERHUB_PROXY>": p.parameters["<REGISTRY_DOCKERHUB_PROXY>"],
+        "<REGISTRY_GCR_PROXY>": p.parameters["<REGISTRY_GCR_PROXY>"],
+        "<REGISTRY_K8S_GCR_PROXY>": p.parameters["<REGISTRY_K8S_GCR_PROXY>"],
+        "<REGISTRY_QUAY_PROXY>": p.parameters["<REGISTRY_QUAY_PROXY>"],
         "<GIT_RUNNER_GROUP_NAME>": p.parameters["<GIT_RUNNER_GROUP_NAME>"],
+        "<TERRAFORM_VERSION>": TERRAFORM_VERSION
     }
 
     wl_ops_man.parametrise(wl_gitops_repo_params)
