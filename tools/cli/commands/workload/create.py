@@ -2,12 +2,12 @@ import time
 
 import click
 
-from common.const.const import WL_REPOSITORY_BRANCH, WL_PR_BRANCH_NAME_PREFIX
+from common.const.const import GITOPS_REPOSITORY_MAIN_BRANCH, WL_PR_BRANCH_NAME_PREFIX
 from common.custom_excpetions import GitBranchAlreadyExists, PullRequestCreationError
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.command_utils import str_to_kebab, check_installation_presence, \
-    initialize_gitops_repository, create_and_setup_branch, create_and_open_pull_request
+    initialize_gitops_repository, create_and_setup_branch, create_and_open_pull_request, preprocess_workload_names
 from services.platform_gitops import PlatformGitOpsRepo
 
 
@@ -30,7 +30,7 @@ from services.platform_gitops import PlatformGitOpsRepo
     '--workload-gitops-main-branch-name',
     '-wlgmbn',
     'main_branch',
-    default=WL_REPOSITORY_BRANCH,
+    default=GITOPS_REPOSITORY_MAIN_BRANCH,
     help='Workload GitOps repository main branch name', type=click.STRING
 )
 @click.option(
@@ -60,7 +60,8 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branc
     state_store = StateStore()
     click.echo("1/7: State store initialized.")
 
-    wl_name, wl_repo_name, wl_gitops_repo_name = _process_workload_names(
+    wl_name, wl_repo_name, wl_gitops_repo_name = preprocess_workload_names(
+        logger=logger,
         wl_name=wl_name,
         wl_repo_name=wl_repo_name,
         wl_gitops_repo_name=wl_gitops_repo_name
@@ -89,7 +90,8 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branc
         create_and_open_pull_request(
             gor=gor,
             state_store=state_store,
-            wl_name=wl_name,
+            title=f"Introduce {wl_name}",
+            body="Add default secrets, groups and default repository structure.",
             branch_name=branch_name,
             main_branch=main_branch,
             logger=logger
@@ -102,26 +104,6 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branc
     gor.switch_to_branch(branch_name=main_branch)
     click.echo(f"7/7: Switched to branch '{main_branch}'.")
     click.echo(f"Workload GitOps code creation completed in {time.time() - func_start_time:.2f} seconds.")
-
-
-def _process_workload_names(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str) -> tuple[str, str, str]:
-    """
-    Process and normalize workload names to a standard format.
-
-    Parameters:
-        wl_name (str): Name of the workload.
-        wl_repo_name (str): Name of the workload repository.
-        wl_gitops_repo_name (str): Name of the workload GitOps repository.
-
-    Returns:
-        tuple[str, str, str]: Tuple of processed workload name, workload repository name, and GitOps repository name.
-    """
-    logger.debug(f"Processing workload names: {wl_name}, {wl_repo_name}, {wl_gitops_repo_name}")
-    processed_wl_name = str_to_kebab(wl_name)
-    processed_wl_repo_name = str_to_kebab(wl_repo_name or wl_name)
-    processed_wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name or f"{wl_repo_name}-gitops")
-    logger.info(f"Processed names: {processed_wl_name}, {processed_wl_repo_name}, {processed_wl_gitops_repo_name}")
-    return processed_wl_name, processed_wl_repo_name, processed_wl_gitops_repo_name
 
 
 def add_workload_and_commit(

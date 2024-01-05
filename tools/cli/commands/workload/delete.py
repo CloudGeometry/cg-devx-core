@@ -5,7 +5,7 @@ import time
 import click
 
 from common.const.common_path import LOCAL_WORKLOAD_TEMP_FOLDER
-from common.const.const import WL_REPOSITORY_BRANCH, WL_PR_BRANCH_NAME_PREFIX, WL_GITOPS_REPOSITORY_BRANCH, \
+from common.const.const import GITOPS_REPOSITORY_MAIN_BRANCH, WL_PR_BRANCH_NAME_PREFIX, WL_GITOPS_REPOSITORY_BRANCH, \
     WL_GITOPS_REPOSITORY_URL
 from common.const.parameter_names import GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
 from common.custom_excpetions import GitBranchAlreadyExists, PullRequestCreationError
@@ -13,7 +13,7 @@ from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.command_utils import str_to_kebab, prepare_cloud_provider_auth_env_vars, set_envs, \
     check_installation_presence, initialize_gitops_repository, create_and_setup_branch, \
-    create_and_open_pull_request
+    create_and_open_pull_request, preprocess_workload_names
 from services.platform_gitops import PlatformGitOpsRepo
 from services.tf_wrapper import TfWrapper
 from services.wl_template_manager import WorkloadManager
@@ -40,7 +40,7 @@ from services.wl_template_manager import WorkloadManager
     '--workload-gitops-main-branch-name',
     '-wlgmbn',
     'main_branch',
-    default=WL_REPOSITORY_BRANCH,
+    default=GITOPS_REPOSITORY_MAIN_BRANCH,
     help='Workload GitOps repository main branch name', type=click.STRING
 )
 @click.option(
@@ -105,7 +105,11 @@ def delete(
     check_installation_presence()
     click.echo(f"2/{logging_total_steps}: Logging and installation checked.")
 
-    wl_name, wl_gitops_repo_name = _process_workload_names(wl_name=wl_name, wl_gitops_repo_name=wl_gitops_repo_name)
+    wl_name, wl_repo_name, wl_gitops_repo_name = preprocess_workload_names(
+        logger=logger,
+        wl_name=wl_name,
+        wl_gitops_repo_name=wl_gitops_repo_name,
+    )
     click.echo(f"3/{logging_total_steps}: Workload names processed.")
 
     git_man, gor = initialize_gitops_repository(state_store=state_store, logger=logger)
@@ -145,7 +149,8 @@ def delete(
         create_and_open_pull_request(
             gor=gor,
             state_store=state_store,
-            wl_name=wl_name,
+            title=f"Remove {wl_name}",
+            body="Remove default secrets, groups and repository structure.",
             branch_name=branch_name,
             main_branch=main_branch,
             logger=logger
@@ -158,15 +163,6 @@ def delete(
     gor.switch_to_branch()
 
     click.echo(f"Deleting workload GitOps code completed in {time.time() - func_start_time:.2f} seconds.")
-
-
-def _process_workload_names(wl_name: str, wl_gitops_repo_name: str) -> tuple[str, str]:
-    """Normalize and process workload and GitOps repository names."""
-    logger.debug(f"Processing workload names: {wl_name}, {wl_gitops_repo_name}")
-    wl_name = str_to_kebab(wl_name)
-    wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name or f"{wl_name}-gitops")
-    logger.info(f"Processed names: {wl_name}, {wl_gitops_repo_name}")
-    return wl_name, wl_gitops_repo_name
 
 
 def _remove_workload_and_commit(gor: PlatformGitOpsRepo, wl_name: str) -> None:

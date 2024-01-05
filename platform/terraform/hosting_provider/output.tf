@@ -38,6 +38,11 @@ output "cluster_certificate_authority_data" {
   sensitive   = true
 }
 
+output "cluster_oidc_provider" {
+  value       = module.hosting-provider.cluster_oidc_provider
+  description = "Cluster OIDC provider"
+}
+
 # secret manager
 output "secret_manager_seal_key" {
   value       = module.hosting-provider.secret_manager_unseal_key

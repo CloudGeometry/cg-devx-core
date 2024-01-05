@@ -141,6 +141,29 @@ class WorkloadManager:
             logger.error(f"Error during cleanup process: {e}")
             raise
 
+    @trace()
+    def update(self):
+        if not self.wl_repo:
+            self.wl_repo = Repo(self.wl_repo_folder)
+        with self.wl_repo.git.custom_environment(GIT_SSH_COMMAND=f"ssh -o StrictHostKeyChecking=no -i {self.key_path}"):
+            # clean stale branches
+            self.wl_repo.remotes.origin.fetch(prune=True)
+            self.wl_repo.heads.main.checkout()
+            self.wl_repo.remotes.origin.pull(self.wl_repo.active_branch)
+
+    @trace()
+    def branch_exist(self, branch_name):
+        return branch_name in self.wl_repo.branches
+
+    @trace()
+    def create_branch(self, branch_name):
+        current = self.wl_repo.create_head(branch_name)
+        current.checkout()
+
+    @trace()
+    def switch_to_branch(self, branch_name: str = "main"):
+        self.wl_repo.heads[branch_name].checkout()
+
     def _replace_placeholders_in_folder(self, folder: Union[str, Path], params: Dict[str, str]) -> None:
         """
         Replace placeholders in all eligible files within the specified folder.

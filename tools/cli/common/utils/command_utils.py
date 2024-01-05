@@ -4,6 +4,7 @@ import time
 import webbrowser
 from logging import Logger
 from re import sub
+from typing import Optional
 
 import click
 import requests
@@ -158,7 +159,9 @@ def check_installation_presence():
         raise click.ClickException("GitOps repo does not exist")
 
 
-def initialize_gitops_repository(state_store: StateStore, logger: Logger) -> tuple:
+def initialize_gitops_repository(
+        state_store: StateStore, logger: Logger
+) -> tuple[GitProviderManager, PlatformGitOpsRepo]:
     """
     Initialize and return the GitOps repository manager.
 
@@ -217,7 +220,8 @@ def create_and_setup_branch(gor: PlatformGitOpsRepo, branch_name: str, logger: L
 def create_and_open_pull_request(
         gor: PlatformGitOpsRepo,
         state_store: StateStore,
-        wl_name: str,
+        title: str,
+        body: str,
         branch_name: str,
         main_branch: str,
         logger: Logger
@@ -228,7 +232,8 @@ def create_and_open_pull_request(
     Parameters:
         gor: PlatformGitOpsRepo class instance.
         state_store (StateStore): State store instance for accessing configuration.
-        wl_name (str): Name of the workload.
+        title (str): PR title.
+        body (str): PR body.
         branch_name (str): The branch for which the pull request is created.
         main_branch (str): Main branch of the repository.
         logger (Logger): A logger instance for logging the process.
@@ -236,10 +241,34 @@ def create_and_open_pull_request(
     try:
         pr_url = gor.create_pr(
             state_store.parameters["<GITOPS_REPOSITORY_NAME>"], branch_name, main_branch,
-            f"Introduce {wl_name}", "Add default secrets, groups and default repository structure."
+            title, body
         )
         webbrowser.open(pr_url, autoraise=False)
         logger.info(f"Pull request created: {pr_url}")
     except Exception as e:
         logger.error(f"Error in creating pull request: {e}")
         raise PullRequestCreationError(f"Could not create PR due to: {e}")
+
+
+def preprocess_workload_names(
+        logger: Logger,
+        wl_name: str, wl_repo_name: Optional[str] = None, wl_gitops_repo_name: Optional[str] = None
+                              ) -> tuple[str, str, str]:
+    """
+    Process and normalize workload names to a standard format.
+
+    Parameters:
+        wl_name (str): Name of the workload.
+        wl_repo_name (str): Name of the workload repository.
+        wl_gitops_repo_name (str): Name of the workload GitOps repository.
+        logger (Logger): A logger instance for logging the process.
+
+    Returns:
+        tuple[str, str, str]: Tuple of processed workload name, workload repository name, and GitOps repository name.
+    """
+    logger.debug(f"Processing workload names: {wl_name}, {wl_repo_name}, {wl_gitops_repo_name}")
+    wl_name = str_to_kebab(wl_name)
+    wl_repo_name = str_to_kebab(wl_repo_name or wl_name)
+    wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name or f"{wl_repo_name}-gitops")
+    logger.info(f"Processed names: {wl_name}, {wl_repo_name}, {wl_gitops_repo_name}")
+    return wl_name, wl_repo_name, wl_gitops_repo_name
