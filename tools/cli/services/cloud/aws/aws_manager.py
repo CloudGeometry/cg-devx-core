@@ -21,8 +21,8 @@ class AWSManager(CloudProviderManager):
     def region(self):
         return self.__aws_sdk.region
 
-    @trace()
-    def detect_cli_presence(self) -> bool:
+    @classmethod
+    def detect_cli_presence(cls) -> bool:
         """Check whether `name` is on PATH and marked as executable."""
         return detect_command_presence(CLI)
 

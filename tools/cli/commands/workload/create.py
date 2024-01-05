@@ -1,79 +1,141 @@
-import webbrowser
+import time
 
 import click
 
-from common.utils.command_utils import str_to_kebab, init_git_provider, check_installation_presence
-from common.logging_config import configure_logging
+from common.const.const import WL_REPOSITORY_BRANCH, WL_PR_BRANCH_NAME_PREFIX
+from common.custom_excpetions import GitBranchAlreadyExists, PullRequestCreationError
+from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
+from common.utils.command_utils import str_to_kebab, check_installation_presence, \
+    initialize_gitops_repository, create_and_setup_branch, create_and_open_pull_request
 from services.platform_gitops import PlatformGitOpsRepo
 
 
 @click.command()
 @click.option('--workload-name', '-wl', 'wl_name', help='Workload name', type=click.STRING, prompt=True)
-@click.option('--workload-repository-name', '-wlrn', 'wl_repo_name', help='Workload repository name',
-              type=click.STRING)
-@click.option('--workload-gitops-repository-name', '-wlgrn', 'wl_gitops_repo_name',
-              help='Workload GitOps repository name', type=click.STRING)
-@click.option('--verbosity', type=click.Choice(
-    ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-    case_sensitive=False
-), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
-def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity: str):
-    """Create workload boilerplate."""
-    click.echo("Creating workload GitOps code...")
+@click.option(
+    '--workload-repository-name',
+    '-wlrn',
+    'wl_repo_name',
+    help='Workload repository name',
+    type=click.STRING
+)
+@click.option(
+    '--workload-gitops-repository-name',
+    '-wlgrn',
+    'wl_gitops_repo_name',
+    help='Workload GitOps repository name', type=click.STRING
+)
+@click.option(
+    '--workload-gitops-main-branch-name',
+    '-wlgmbn',
+    'main_branch',
+    default=WL_REPOSITORY_BRANCH,
+    help='Workload GitOps repository main branch name', type=click.STRING
+)
+@click.option(
+    '--verbosity',
+    type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
+    default='CRITICAL',
+    help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)'
+)
+def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branch: str, verbosity: str) -> None:
+    """
+    Create workload boilerplate for GitOps.
 
-    # Set up global logger
+    Parameters:
+        wl_name (str): Name of the workload.
+        wl_repo_name (str): Name of the workload repository.
+        wl_gitops_repo_name (str): Name of the workload GitOps repository.
+        main_branch (str): Main branch name of the GitOps repository.
+        verbosity (str): Logging level.
+    """
+    func_start_time = time.time()
+    click.echo("Initializing workload GitOps code creation...")
+    branch_name = f"{WL_PR_BRANCH_NAME_PREFIX}{wl_name}-init"
+
     configure_logging(verbosity)
-
     check_installation_presence()
 
-    wl_name = str_to_kebab(wl_name)
+    state_store = StateStore()
+    click.echo("1/7: State store initialized.")
 
-    if not wl_repo_name:
-        wl_repo_name = wl_name
+    wl_name, wl_repo_name, wl_gitops_repo_name = _process_workload_names(
+        wl_name=wl_name,
+        wl_repo_name=wl_repo_name,
+        wl_gitops_repo_name=wl_gitops_repo_name
+    )
+    click.echo("2/7: Workload names processed.")
 
-    if not wl_gitops_repo_name:
-        if wl_repo_name:
-            wl_gitops_repo_name = f"{wl_repo_name}-gitops"
-        else:
-            wl_gitops_repo_name = f"{wl_name}-gitops"
-
-    wl_repo_name = str_to_kebab(wl_repo_name)
-    wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name)
-
-    p: StateStore = StateStore()
-
-    main_branch = "main"
-    git_man = init_git_provider(p)
-    gor = PlatformGitOpsRepo(git_man,
-                             author_name=p.internals["GIT_USER_NAME"],
-                             author_email=p.internals["GIT_USER_EMAIL"],
-                             key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"])
-    # update repo just in case
-    gor.update()
-
-    # create new branch
-    branch_name = f"feature/{wl_name}-init"
-    if gor.branch_exist(branch_name):
-        raise click.ClickException("Branch already exist, please use different workload name. ")
-    gor.create_branch(branch_name)
-
-    gor.add_workload(wl_name, wl_repo_name, wl_gitops_repo_name)
-
-    # commit and prepare a PR
-    gor.upload_changes()
+    git_man, gor = initialize_gitops_repository(state_store=state_store, logger=logger)
+    click.echo("3/7: GitOps repository initialized.")
 
     try:
-        pr_url = gor.create_pr(p.parameters["<GITOPS_REPOSITORY_NAME>"],
-                               branch_name,
-                               main_branch,
-                               f"introduce {wl_name}",
-                               f"Add default secrets, groups and default repository structure.")
-        webbrowser.open(pr_url, autoraise=False)
-    except Exception as e:
-        raise click.ClickException("Could not create PR")
+        create_and_setup_branch(gor=gor, branch_name=branch_name, logger=logger)
+    except GitBranchAlreadyExists as e:
+        raise click.ClickException(str(e))
 
-    gor.switch_to_branch()
+    click.echo(f"4/7: Branch '{branch_name}' created and set up.")
 
-    click.echo("Creating workload GitOps code. Done!")
-    return True
+    add_workload_and_commit(
+        gor=gor,
+        wl_name=wl_name,
+        wl_repo_name=wl_repo_name,
+        wl_gitops_repo_name=wl_gitops_repo_name
+    )
+    click.echo("5/7: Workload added and changes committed.")
+
+    try:
+        create_and_open_pull_request(
+            gor=gor,
+            state_store=state_store,
+            wl_name=wl_name,
+            branch_name=branch_name,
+            main_branch=main_branch,
+            logger=logger
+        )
+    except PullRequestCreationError as e:
+        raise click.ClickException(str(e))
+
+    click.echo(f"6/7: Pull request for branch '{branch_name}' created and opened in the web browser.")
+
+    gor.switch_to_branch(branch_name=main_branch)
+    click.echo(f"7/7: Switched to branch '{main_branch}'.")
+    click.echo(f"Workload GitOps code creation completed in {time.time() - func_start_time:.2f} seconds.")
+
+
+def _process_workload_names(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str) -> tuple[str, str, str]:
+    """
+    Process and normalize workload names to a standard format.
+
+    Parameters:
+        wl_name (str): Name of the workload.
+        wl_repo_name (str): Name of the workload repository.
+        wl_gitops_repo_name (str): Name of the workload GitOps repository.
+
+    Returns:
+        tuple[str, str, str]: Tuple of processed workload name, workload repository name, and GitOps repository name.
+    """
+    logger.debug(f"Processing workload names: {wl_name}, {wl_repo_name}, {wl_gitops_repo_name}")
+    processed_wl_name = str_to_kebab(wl_name)
+    processed_wl_repo_name = str_to_kebab(wl_repo_name or wl_name)
+    processed_wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name or f"{wl_repo_name}-gitops")
+    logger.info(f"Processed names: {processed_wl_name}, {processed_wl_repo_name}, {processed_wl_gitops_repo_name}")
+    return processed_wl_name, processed_wl_repo_name, processed_wl_gitops_repo_name
+
+
+def add_workload_and_commit(
+        gor: PlatformGitOpsRepo, wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str
+) -> None:
+    """
+    Add the workload to the GitOps repository and commit changes.
+
+    Parameters:
+        gor: PlatformGitOpsRepo class instance.
+        wl_name (str): Name of the workload.
+        wl_repo_name (str): Name of the workload repository.
+        wl_gitops_repo_name (str): Name of the workload GitOps repository.
+    """
+    gor.add_workload(wl_name, wl_repo_name, wl_gitops_repo_name)
+    gor.upload_changes()
+    logger.info("Workload added and committed to the repository.")

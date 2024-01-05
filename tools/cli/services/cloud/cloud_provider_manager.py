@@ -8,8 +8,9 @@ class CloudProviderManager(ABC):
     def region(self) -> str:
         pass
 
+    @classmethod
     @abstractmethod
-    def detect_cli_presence(self) -> bool:
+    def detect_cli_presence(cls) -> bool:
         """
         Check if cloud provider CLI tools are installed
         :return: True or False
