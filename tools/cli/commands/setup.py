@@ -152,6 +152,9 @@ def setup(
         if git_subscription_plan > 0:
             p.fragments["# <GIT_RUNNER_GROUP>"] = git_man.create_runner_group_snippet()
             p.parameters["<GIT_RUNNER_GROUP_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
+        else:
+            # match the GitHub's default runner group
+            p.parameters["<GIT_RUNNER_GROUP_NAME>"] = "Default"
 
         dns_provider_check(dns_man, p)
         click.echo("DNS provider pre-flight check. Done!")
@@ -768,10 +771,10 @@ def setup(
             "code_quality_admin_password": p.internals["CODE_QUALITY_PASSWORD"]
         })
         core_services_out = tf_wrapper.output()
-        p.parameters["<REGISTRY_DOCKERHUB_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["dockerhub_proxy_name"]}'
-        p.parameters["<REGISTRY_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["gcr_proxy_name"]}'
-        p.parameters["<REGISTRY_K8S_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["k8s_gcr_proxy_name"]}'
-        p.parameters["<REGISTRY_QUAY_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["quay_proxy_name"]}'
+        p.parameters["<REGISTRY_DOCKERHUB_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["dockerhub_proxy_name"]}'
+        p.parameters["<REGISTRY_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["gcr_proxy_name"]}'
+        p.parameters["<REGISTRY_K8S_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["k8s_gcr_proxy_name"]}'
+        p.parameters["<REGISTRY_QUAY_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["quay_proxy_name"]}'
 
         # unset envs as no longer needed
         unset_envs(core_services_tf_env_vars)

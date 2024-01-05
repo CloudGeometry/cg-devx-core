@@ -4,7 +4,7 @@ from typing import Dict
 import click
 
 from common.const.const import WL_REPOSITORY_URL, WL_GITOPS_REPOSITORY_URL, WL_GITOPS_REPOSITORY_BRANCH, \
-    WL_REPOSITORY_BRANCH
+    WL_REPOSITORY_BRANCH, TERRAFORM_VERSION
 from common.custom_excpetions import WorkloadManagerError
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
@@ -126,6 +126,12 @@ def bootstrap(
         cc_cluster_fqdn = state_store.parameters["<CC_CLUSTER_FQDN>"]
         registry_url = state_store.parameters["<REGISTRY_REGISTRY_URL>"]
         tf_backend_storage_name = state_store.internals["TF_BACKEND_STORAGE_NAME"]
+        dockerhub_proxy = state_store.parameters["<REGISTRY_DOCKERHUB_PROXY>"]
+        gcr_proxy = state_store.parameters["<REGISTRY_GCR_PROXY>"]
+        k8s_gcr_proxy = state_store.parameters["<REGISTRY_K8S_GCR_PROXY>"]
+        quay_proxy = state_store.parameters["<REGISTRY_QUAY_PROXY>"]
+        git_runner_group_name = state_store.parameters["<GIT_RUNNER_GROUP_NAME>"]
+        git_organisation_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
         click.echo("1/10: Configuration loaded.")
     except KeyError as e:
         error_message = f'Configuration loading failed due to missing key: {e}. ' \
@@ -147,13 +153,25 @@ def bootstrap(
     click.echo("3/10: Workload names processed.")
 
     # Prepare parameters for workload and GitOps repositories
-    wl_repo_params = _prepare_workload_params(wl_name=wl_name, wl_svc_name=wl_repo_name, wl_svc_port=wl_svc_port)
+    wl_repo_params = _prepare_workload_params(
+        wl_name=wl_name,
+        wl_svc_name=wl_repo_name,
+        registry_registry_url=registry_url,
+        registry_dockerhub_proxy=dockerhub_proxy,
+        registry_gcr_proxy=gcr_proxy,
+        registry_k8s_gcr_proxy=k8s_gcr_proxy,
+        registry_quay_proxy=quay_proxy,
+        wl_repo_name=wl_repo_name,
+        wl_gitops_repo_name=wl_gitops_repo_name,
+        git_organization_name=git_organisation_name,
+        git_runner_group_name=git_runner_group_name
+    )
     wl_gitops_params = _prepare_gitops_params(
         wl_name=wl_name,
         wl_svc_name=wl_svc_name,
         wl_svc_port=wl_svc_port,
         cc_cluster_fqdn=cc_cluster_fqdn,
-        registry_url=registry_url,
+        registry_registry_url=registry_url,
         k8s_role_mapping=cloud_man.create_k8s_cluster_role_mapping_snippet(),
         additional_labels=cloud_man.create_additional_labels(),
         tf_secrets_backend=cloud_man.create_iac_backend_snippet(
@@ -164,7 +182,13 @@ def bootstrap(
             location=tf_backend_storage_name,
             service=f"workloads/{wl_name}/hosting_provider"
         ),
-        hosting_provider_snippet=cloud_man.create_hosting_provider_snippet()
+        hosting_provider_snippet=cloud_man.create_hosting_provider_snippet(),
+        dockerhub_proxy=dockerhub_proxy,
+        registry_gcr_proxy=gcr_proxy,
+        registry_k8s_gcr_proxy=k8s_gcr_proxy,
+        registry_quay_proxy=quay_proxy,
+        git_runner_group_name=git_runner_group_name,
+        terraform_version=TERRAFORM_VERSION
     )
     click.echo("4/10: Parameters for workload and GitOps repositories prepared.")
 
@@ -270,23 +294,56 @@ def perform_bootstrap(
     )
 
 
-def _prepare_workload_params(wl_name: str, wl_svc_name: str, wl_svc_port: str | int):
+def _prepare_workload_params(
+        wl_name: str,
+        wl_svc_name: str,
+        registry_registry_url: str,
+        registry_dockerhub_proxy: str,
+        registry_gcr_proxy: str,
+        registry_k8s_gcr_proxy: str,
+        registry_quay_proxy: str,
+        wl_repo_name: str,
+        wl_gitops_repo_name: str,
+        git_organization_name: str,
+        git_runner_group_name: str
+) -> Dict[str, str]:
     """
     Prepare parameters for the workload repository bootstrap process.
 
     Args:
-        wl_name: Workload name.
-        wl_svc_name: Workload service name.
-        wl_svc_port: Workload service port.
+        wl_name (str): Workload name.
+        wl_svc_name (str): Workload service name.
+        registry_registry_url (str): URL for the registry.
+        registry_dockerhub_proxy (str): Proxy URL for DockerHub.
+        registry_gcr_proxy (str): Proxy URL for Google Container Registry.
+        registry_k8s_gcr_proxy (str): Proxy URL for Kubernetes GCR.
+        registry_quay_proxy (str): Proxy URL for Quay.io.
+        wl_repo_name (str): Name of the workload repository.
+        wl_gitops_repo_name (str): Name of the GitOps repository for the workload.
+        git_organization_name (str): Name of the Git organization.
+        git_runner_group_name (str): Name of the Git runner group.
 
     Returns:
-        dict: Dictionary of parameters.
+        Dict[str, str]: A dictionary containing prepared parameters for the workload repository bootstrap process.
     """
-    return {
+    logger.debug(f"Preparing workload parameters for '{wl_name}' with service '{wl_svc_name}'.")
+
+    params = {
         "<WL_NAME>": wl_name,
         "<WL_SERVICE_NAME>": wl_svc_name,
-        "<WL_SERVICE_PORT>": str(wl_svc_port)
+        "<REGISTRY_REGISTRY_URL>": registry_registry_url,
+        "<REGISTRY_DOCKERHUB_PROXY>": registry_dockerhub_proxy,
+        "<REGISTRY_GCR_PROXY>": registry_gcr_proxy,
+        "<REGISTRY_K8S_GCR_PROXY>": registry_k8s_gcr_proxy,
+        "<REGISTRY_QUAY_PROXY>": registry_quay_proxy,
+        "<WL_REPO_NAME>": wl_repo_name,
+        "<WL_GITOPS_REPO_NAME>": wl_gitops_repo_name,
+        "<GIT_ORGANIZATION_NAME>": git_organization_name,
+        "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name
     }
+
+    logger.debug(f"Workload parameters prepared: {params}")
+    return params
 
 
 def _prepare_gitops_params(
@@ -294,12 +351,18 @@ def _prepare_gitops_params(
         wl_svc_name: str,
         wl_svc_port: str | int,
         cc_cluster_fqdn: str,
-        registry_url: str,
+        registry_registry_url: str,
         k8s_role_mapping: str,
         additional_labels: str,
         tf_secrets_backend: str,
         tf_hosting_backend: str,
-        hosting_provider_snippet: str
+        hosting_provider_snippet: str,
+        dockerhub_proxy: str,
+        registry_gcr_proxy: str,
+        registry_k8s_gcr_proxy: str,
+        registry_quay_proxy: str,
+        git_runner_group_name: str,
+        terraform_version: str
 ) -> Dict[str, str]:
     """
     Prepare parameters for the GitOps repository bootstrap process.
@@ -307,14 +370,20 @@ def _prepare_gitops_params(
     Args:
         wl_name (str): Name of the workload.
         wl_svc_name (str): Name of the workload service.
-        wl_svc_port (int): Port number for the workload service.
+        wl_svc_port (str | int): Port number for the workload service.
         cc_cluster_fqdn (str): Fully qualified domain name for the cluster.
-        registry_url (str): URL for the registry.
+        registry_registry_url (str): URL for the registry.
         k8s_role_mapping (str): Kubernetes role mapping snippet.
         additional_labels (str): Additional labels snippet.
         tf_secrets_backend (str): Terraform secrets backend snippet.
         tf_hosting_backend (str): Terraform hosting backend snippet.
         hosting_provider_snippet (str): Hosting provider snippet.
+        dockerhub_proxy (str): Proxy URL for DockerHub.
+        registry_gcr_proxy (str): Proxy URL for Google Container Registry.
+        registry_k8s_gcr_proxy (str): Proxy URL for Kubernetes GCR.
+        registry_quay_proxy (str): Proxy URL for Quay.io.
+        git_runner_group_name (str): Name of the Git runner group.
+        terraform_version (str): Version of Terraform to use.
 
     Returns:
         Dict[str, str]: A dictionary containing prepared parameters for the GitOps repository bootstrap process.
@@ -325,14 +394,20 @@ def _prepare_gitops_params(
         "<WL_NAME>": wl_name,
         "<WL_SERVICE_NAME>": wl_svc_name,
         "<WL_SERVICE_URL>": f'{wl_svc_name}.{wl_name}.{cc_cluster_fqdn}',
-        "<WL_SERVICE_IMAGE>": f'{registry_url}/{wl_name}/{wl_svc_name}',
+        "<WL_SERVICE_IMAGE>": f'{registry_registry_url}/{wl_name}/{wl_svc_name}',
         "<WL_SERVICE_PORT>": str(wl_svc_port),
         "<K8S_ROLE_MAPPING>": k8s_role_mapping,
-        "<WL_IAM_ROLE_RN>": "[Put your workload service role mapping]",
+        "<WL_IAM_ROLE_RN>": "[Placeholder for workload service role mapping]",
         "<ADDITIONAL_LABELS>": additional_labels,
         "<TF_WL_SECRETS_REMOTE_BACKEND>": tf_secrets_backend,
         "<TF_WL_HOSTING_REMOTE_BACKEND>": tf_hosting_backend,
         "<TF_HOSTING_PROVIDER>": hosting_provider_snippet,
+        "<REGISTRY_DOCKERHUB_PROXY>": dockerhub_proxy,
+        "<REGISTRY_GCR_PROXY>": registry_gcr_proxy,
+        "<REGISTRY_K8S_GCR_PROXY>": registry_k8s_gcr_proxy,
+        "<REGISTRY_QUAY_PROXY>": registry_quay_proxy,
+        "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
+        "<TERRAFORM_VERSION>": terraform_version
     }
 
     logger.debug(f"GitOps parameters prepared: {params}")
