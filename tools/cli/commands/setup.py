@@ -771,10 +771,10 @@ def setup(
             "code_quality_admin_password": p.internals["CODE_QUALITY_PASSWORD"]
         })
         core_services_out = tf_wrapper.output()
-        p.parameters["<REGISTRY_DOCKERHUB_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["dockerhub_proxy_name"]}'
-        p.parameters["<REGISTRY_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["gcr_proxy_name"]}'
-        p.parameters["<REGISTRY_K8S_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["k8s_gcr_proxy_name"]}'
-        p.parameters["<REGISTRY_QUAY_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}{core_services_out["quay_proxy_name"]}'
+        p.parameters["<REGISTRY_DOCKERHUB_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["dockerhub_proxy_name"]}'
+        p.parameters["<REGISTRY_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["gcr_proxy_name"]}'
+        p.parameters["<REGISTRY_K8S_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["k8s_gcr_proxy_name"]}'
+        p.parameters["<REGISTRY_QUAY_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["quay_proxy_name"]}'
 
         # unset envs as no longer needed
         unset_envs(core_services_tf_env_vars)
