@@ -137,7 +137,6 @@ def bootstrap(
         quay_proxy = state_store.parameters["<REGISTRY_QUAY_PROXY>"]
         git_runner_group_name = state_store.parameters["<GIT_RUNNER_GROUP_NAME>"]
         git_organisation_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
-        cluster_oidc_issuer_url = state_store.parameters["<CC_CLUSTER_OIDC_ISSUER>"]
         cluster_name = state_store.parameters["<PRIMARY_CLUSTER_NAME>"]
 
         click.echo("1/11: Configuration loaded.")
@@ -200,9 +199,18 @@ def bootstrap(
         "<REGISTRY_QUAY_PROXY>": quay_proxy,
         "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
         "<TERRAFORM_VERSION>": TERRAFORM_VERSION,
-        "<CLUSTER_OIDC_ISSUER>": cluster_oidc_issuer_url,
         "<CLUSTER_NAME>": cluster_name,
     }
+
+    # set cloud provider specific params
+    cloud_provider = state_store.parameters["<CLOUD_PROVIDER>"]
+    if cloud_provider == CloudProviders.AWS:
+        wl_gitops_params["<CLUSTER_OIDC_PROVIDER_ARN>"] = state_store.parameters["<CC_CLUSTER_OIDC_PROVIDER>"]
+    elif cloud_provider == CloudProviders.Azure:
+        pass
+    else:
+        raise click.ClickException("Unknown cloud provider")
+
     click.echo("4/11: Parameters for workload and GitOps repositories prepared.")
 
     # Initialize WorkloadManager for the workload repository

@@ -158,7 +158,7 @@ output "cluster_oidc_provider_url" {
   value       = module.eks.oidc_provider
 }
 
-output "cluster_oidc_provider" {
+output "cluster_oidc_provider_arn" {
   description = "The ARN of the OIDC Provider if `enable_irsa = true`"
   value       = module.eks.oidc_provider_arn
 }

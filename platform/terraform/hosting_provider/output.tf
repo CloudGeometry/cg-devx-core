@@ -38,12 +38,6 @@ output "cluster_certificate_authority_data" {
   sensitive   = true
 }
 
-output "cluster_oidc_provider" {
-  value       = module.hosting-provider.cluster_oidc_provider
-  description = "Cluster OIDC provider"
-  sensitive   = true
-}
-
 # secret manager
 output "secret_manager_seal_key" {
   value       = module.hosting-provider.secret_manager_unseal_key
@@ -62,4 +56,11 @@ output "kube_config_raw" {
   value       = module.hosting-provider.kube_config_raw
   sensitive   = true
   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
+}
+
+# Cluster OIDC provider ARN for AWS only:
+output "cluster_oidc_provider_arn" {
+  value       = module.hosting-provider.cluster_oidc_provider_arn
+  description = "Cluster OIDC provider"
+  sensitive   = true
 }

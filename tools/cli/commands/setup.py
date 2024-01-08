@@ -346,7 +346,6 @@ def setup(
         p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
         p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
-        p.parameters["<CC_CLUSTER_OIDC_ISSUER>"] = hp_out["cluster_oidc_provider"]
         # artifact storage
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
         # kms keys
@@ -373,6 +372,7 @@ def setup(
                 "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
             }
             kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+            p.parameters["<CC_CLUSTER_OIDC_PROVIDER>"] = hp_out["cluster_oidc_provider_arn"]
         elif p.cloud_provider == CloudProviders.Azure:
             # user could get kubeconfig by running command
             # `az aks get-credentials --name my-cluster --resource-group my-rg --admin`

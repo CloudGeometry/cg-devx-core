@@ -56,9 +56,3 @@ output "artifacts_storage" {
   value       = azurerm_storage_container.artifacts_repository.name
   description = "Continuous Integration Artifact Repository storage backend"
 }
-
-output "cluster_oidc_provider" {
-  value       = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
-  description = "The OpenID Connect identity provider."
-  sensitive   = true
-}
