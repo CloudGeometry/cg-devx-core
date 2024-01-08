@@ -41,6 +41,7 @@ output "cluster_certificate_authority_data" {
 output "cluster_oidc_provider" {
   value       = module.hosting-provider.cluster_oidc_provider
   description = "Cluster OIDC provider"
+  sensitive   = true
 }
 
 # secret manager

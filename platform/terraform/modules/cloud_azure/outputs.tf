@@ -59,6 +59,6 @@ output "artifacts_storage" {
 
 output "cluster_oidc_provider" {
   value       = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
-  sensitive   = true
   description = "The OpenID Connect identity provider."
+  sensitive   = true
 }
