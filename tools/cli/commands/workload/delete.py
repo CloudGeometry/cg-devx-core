@@ -37,13 +37,6 @@ from services.wl_template_manager import WorkloadManager
     default=False
 )
 @click.option(
-    '--workload-gitops-main-branch-name',
-    '-wlgmbn',
-    'main_branch',
-    default=GITOPS_REPOSITORY_MAIN_BRANCH,
-    help='Workload GitOps repository main branch name', type=click.STRING
-)
-@click.option(
     '--workload-gitops-template-url',
     '-wlgu',
     'wl_gitops_template_url',
@@ -67,7 +60,7 @@ from services.wl_template_manager import WorkloadManager
 )
 def delete(
         wl_name: str, wl_gitops_repo_name: str, destroy_resources: bool, wl_gitops_template_url: str,
-        wl_gitops_template_branch: str, main_branch: str, verbosity: str
+        wl_gitops_template_branch: str, verbosity: str
 ):
     """
     Deletes all the workload boilerplate, including optionally destroying associated resources.
@@ -152,7 +145,7 @@ def delete(
             title=f"Remove {wl_name}",
             body="Remove default secrets, groups and repository structure.",
             branch_name=branch_name,
-            main_branch=main_branch,
+            main_branch=GITOPS_REPOSITORY_MAIN_BRANCH,
             logger=logger
         )
     except PullRequestCreationError as e:

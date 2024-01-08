@@ -27,19 +27,12 @@ from services.platform_gitops import PlatformGitOpsRepo
     help='Workload GitOps repository name', type=click.STRING
 )
 @click.option(
-    '--workload-gitops-main-branch-name',
-    '-wlgmbn',
-    'main_branch',
-    default=GITOPS_REPOSITORY_MAIN_BRANCH,
-    help='Workload GitOps repository main branch name', type=click.STRING
-)
-@click.option(
     '--verbosity',
     type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
     default='CRITICAL',
     help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)'
 )
-def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branch: str, verbosity: str) -> None:
+def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity: str) -> None:
     """
     Create workload boilerplate for GitOps.
 
@@ -47,7 +40,6 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branc
         wl_name (str): Name of the workload.
         wl_repo_name (str): Name of the workload repository.
         wl_gitops_repo_name (str): Name of the workload GitOps repository.
-        main_branch (str): Main branch name of the GitOps repository.
         verbosity (str): Logging level.
     """
     func_start_time = time.time()
@@ -93,7 +85,7 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branc
             title=f"Introduce {wl_name}",
             body="Add default secrets, groups and default repository structure.",
             branch_name=branch_name,
-            main_branch=main_branch,
+            main_branch=GITOPS_REPOSITORY_MAIN_BRANCH,
             logger=logger
         )
     except PullRequestCreationError as e:
@@ -101,8 +93,8 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, main_branc
 
     click.echo(f"6/7: Pull request for branch '{branch_name}' created and opened in the web browser.")
 
-    gor.switch_to_branch(branch_name=main_branch)
-    click.echo(f"7/7: Switched to branch '{main_branch}'.")
+    gor.switch_to_branch(branch_name=GITOPS_REPOSITORY_MAIN_BRANCH)
+    click.echo(f"7/7: Switched to branch '{GITOPS_REPOSITORY_MAIN_BRANCH}'.")
     click.echo(f"Workload GitOps code creation completed in {time.time() - func_start_time:.2f} seconds.")
 
 
