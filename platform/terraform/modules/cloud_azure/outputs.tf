@@ -49,6 +49,12 @@ output "cluster_certificate_authority_data" {
   sensitive   = true
 }
 
+output "cluster_oidc_issuer_url" {
+  value       = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
+  description = "Cluster OIDC provider"
+  sensitive   = true
+}
+
 # secret manager
 output "secret_manager_unseal_key" {
   value       = azurerm_key_vault_key.secret_manager_unseal_kms_key.name

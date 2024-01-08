@@ -41,6 +41,11 @@ output "cluster_certificate_authority_data" {
   description = "K8s cluster Certificate Authority certificate data"
   sensitive   = true
 }
+output "cluster_oidc_issuer_url" {
+  value       = module.hosting-provider.cluster_oidc_issuer_url
+  description = "The URL on the K8s cluster for the OpenID Connect identity provider"
+  sensitive   = true
+}
 
 # secret manager
 output "secret_manager_seal_key" {
