@@ -21,7 +21,8 @@
 - Azure - Supported
 - GCP - Will be added to a future release
 
-\* Experimental functions are provided for you to try, but are not documented or supported, and are likely to be buggy,
+> <sup>*</sup> Experimental functions are provided for you to try, but are not documented or supported, and are likely to
+be buggy,
 or to change after release.
 
 ## Prerequisites
@@ -36,7 +37,7 @@ You should have:
    make commits, manage users, and perform other tasks, such as executing Terraform scripts. For Github, you can create
    one
    following [this guide](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account).
-3. A Github Organization. Organizations are used to group repositories, and CGDevX will create a new repo within a
+3. A GitHub Organization. Organizations are used to group repositories, and CGDevX will create a new repo within a
    specific
    organization so that it's easy to find and manage later should you decide to stop using CGDevX. you don't have one,
    please
@@ -118,17 +119,24 @@ Before deploying to Azure, ensure that you have:
    To set this up,
    you can follow [this guide](https://learn.microsoft.com/en-us/azure/dns/dns-delegate-domain-azure-dns).
 4. A user account with `Owner` access.
-   You can use [this guide](https://learn.microsoft.com/en-us/azure/role-based-access-control/role-assignments-portal-subscription-admin)
+   You can
+   use [this guide](https://learn.microsoft.com/en-us/azure/role-based-access-control/role-assignments-portal-subscription-admin)
    to set it up,
    or [this guide](https://learn.microsoft.com/en-us/azure/role-based-access-control/quickstart-assign-role-user-portal)
    to grant permissions to an existing user.
 5. The Azure CLI (**az**) and **[kubelogin](https://aka.ms/aks/kubelogin)** installed and configured to use this user.
    You can
-   use [this](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) and [this](https://azure.github.io/kubelogin/install.html) guides
+   use [this](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
+   and [this](https://azure.github.io/kubelogin/install.html) guides
    to install the CLI.
 
 ## Installation process
 
 Once you have the prerequisites installed and configured, you are ready to install the CGDevX CLI.
-Follow the instructions in the [CLI tool readme](tools/README.md). Once installed, you can find the
-CLI commands [here](tools/cli/commands/README.md).
+Follow the instructions in the [CLI tool readme](tools/README.md).
+
+Once installed the CLI,
+you should be able to provision a cluster using [`setup`](tools/cli/commands/README.md#setup) command.
+You can find the full list of the CLI commands [here](tools/cli/commands/README.md).
+
+Once you have a running cluster, you could create your first workload using this [guide](WORKLOADS.md).
