@@ -226,7 +226,8 @@ def setup(
         # create terraform storage backend
         click.echo("Creating tf backend storage...")
 
-        tf_backend_storage = cloud_man.create_iac_state_storage(p.get_input_param(GITOPS_REPOSITORY_NAME))
+        tf_backend_storage, key = cloud_man.create_iac_state_storage(p.get_input_param(GITOPS_REPOSITORY_NAME))
+        p.internals["TF_BACKEND_STORAGE_ACCESS_KEY"] = key
         p.internals["TF_BACKEND_STORAGE_NAME"] = tf_backend_storage
 
         p.fragments["# <TF_VCS_REMOTE_BACKEND>"] = cloud_man.create_iac_backend_snippet(tf_backend_storage,
@@ -242,11 +243,15 @@ def setup(
 
         p.fragments["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
+        p.fragments["# <IAC_PR_AUTOMATION_CONFIG>"] = cloud_man.create_iac_pr_automation_config_snippet()
+
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
         p.fragments["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
+        p.fragments["# <BASE_ADDITIONAL_ANNOTATIONS>"] = cloud_man.create_additional_labels()
         p.fragments["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
         p.fragments["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
+
 
         # dns zone info for external dns
         dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
@@ -330,7 +335,7 @@ def setup(
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_HOSTING_PROVIDER)
         tf_wrapper.init()
-        tf_wrapper.apply({"ssh_public_key": p.parameters.get("<CC_CLUSTER_SSH_PUBLIC_KEY>", "")})
+        tf_wrapper.apply({"cluster_ssh_public_key": p.parameters.get("<CC_CLUSTER_SSH_PUBLIC_KEY>", "")})
         hp_out = tf_wrapper.output()
 
         # store out params
@@ -649,15 +654,24 @@ def setup(
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_SECRETS_MANAGER)
         tf_wrapper.init()
-        tf_wrapper.apply({
+
+        sec_man_tf_params = {
             "vcs_bot_ssh_public_key": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
             "vcs_bot_ssh_private_key": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
             "vcs_token": p.internals["GIT_ACCESS_TOKEN"],
             "atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
             "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
             "vault_token": p.internals["VAULT_ROOT_TOKEN"],
-            "cluster_endpoint": p.internals["CC_CLUSTER_ENDPOINT"]
-        })
+            "cluster_endpoint": p.internals["CC_CLUSTER_ENDPOINT"],
+        }
+        if "<CC_CLUSTER_SSH_PUBLIC_KEY>" in p.parameters:
+            sec_man_tf_params["cluster_ssh_public_key"] = p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"]
+
+        if "TF_BACKEND_STORAGE_ACCESS_KEY" in p.internals:
+            sec_man_tf_params["tf_backend_storage_access_key"] = p.internals["TF_BACKEND_STORAGE_ACCESS_KEY"]
+
+        tf_wrapper.apply(sec_man_tf_params)
+
         sec_man_out = tf_wrapper.output()
         p.internals["REGISTRY_OIDC_CLIENT_ID"] = sec_man_out["registry_oidc_client_id"]
         p.internals["REGISTRY_OIDC_CLIENT_SECRET"] = sec_man_out["registry_oidc_client_secret"]

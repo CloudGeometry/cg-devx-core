@@ -377,6 +377,10 @@ class AzureSdk:
         except ResourceExistsError:
             logger.warning(f"Storage name {storage_account_name} is already in use. Try another name.")
 
+    def get_storage_account_keys(self, resource_group_name: str, storage_account_name: str):
+        r = self.storage_mgmt_client.storage_accounts.list_keys(resource_group_name, storage_account_name)
+        return r.keys
+
     def set_storage_account_versioning(self, storage_account_name: str, resource_group_name: str) -> None:
         """
         Set a storage account data protection options.
@@ -443,6 +447,7 @@ class AzureSdk:
         self.create_resource_group(resource_group_name)
         self.create_storage_account(resource_group_name, storage_account_name)
         self.create_blob_container(storage_account_name, container_name)
+
         return container_name
 
     def _validate_location(self, location: Optional[str]) -> str:

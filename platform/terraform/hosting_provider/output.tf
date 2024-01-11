@@ -54,8 +54,8 @@ output "artifact_storage" {
 # Output part for Azure module only:
 output "kube_config_raw" {
   value       = module.hosting-provider.kube_config_raw
-  sensitive   = true
   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
+  sensitive   = true
 }
 
 # Cluster OIDC provider ARN for AWS only:

@@ -1,4 +1,4 @@
 output "app_client_id" {
-  value       = azuread_application.appname.application_id
-  description = "ID of current app client"
+  value       = azurerm_user_assigned_identity.aks_workload_identity.client_id
+  description = "ID of client"
 }

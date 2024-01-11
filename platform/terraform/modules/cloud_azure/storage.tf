@@ -20,7 +20,7 @@ resource "azurerm_storage_account" "storage_account" {
     bypass                     = ["AzureServices"]
     default_action             = "Deny"
     virtual_network_subnet_ids = [azurerm_subnet.private_subnet.id]
-    ip_rules                   = [chomp(data.http.runner_ip_address.body)]
+    ip_rules                   = [chomp(data.http.runner_ip_address.response_body)]
   }
 
   identity {
@@ -29,7 +29,8 @@ resource "azurerm_storage_account" "storage_account" {
 
   lifecycle {
     ignore_changes = [
-      tags
+      tags,
+      network_rules.0.ip_rules
     ]
   }
 }

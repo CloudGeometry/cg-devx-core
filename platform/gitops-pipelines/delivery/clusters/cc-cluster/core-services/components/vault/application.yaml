@@ -18,10 +18,12 @@ spec:
           value: vault.<DOMAIN_NAME>
       values: |-
         server:
-          annotations:
+          annotations: {
             # <SIDECAR_ANNOTATION>
-          extraLabels:
+          }
+          extraLabels: {
             # <ADDITIONAL_LABELS>
+          }
           serviceAccount:
             create: true
             name: vault

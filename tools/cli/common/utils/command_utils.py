@@ -67,10 +67,12 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
         if not AzureManager.detect_cli_presence():
             raise click.ClickException("Cloud CLI is missing")
 
+        subscription_id = state.get_input_param(CLOUD_PROFILE)
         cloud_manager: AzureManager = AzureManager(
-            state.get_input_param(CLOUD_PROFILE), state.get_input_param(CLOUD_REGION)
+            subscription_id, state.get_input_param(CLOUD_REGION)
         )
         domain_manager: DNSManager = AzureDNSManager(state.get_input_param(CLOUD_PROFILE))
+        state.parameters["<AZ_SUBSCRIPTION_ID>"] = subscription_id
 
     return cloud_manager, domain_manager
 

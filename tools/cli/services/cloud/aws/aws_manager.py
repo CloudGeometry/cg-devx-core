@@ -157,3 +157,8 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_external_secrets_config(self, **kwargs) -> str:
         return ""
+
+    @trace()
+    def create_iac_pr_automation_config_snippet(self):
+        return '''# aws specific section
+      # ----'''

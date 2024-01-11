@@ -31,4 +31,6 @@ module "secrets" {
   atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
   vault_token                  = var.vault_token
   cluster_endpoint             = var.cluster_endpoint
+  cluster_ssh_public_key       = var.cluster_ssh_public_key
+  tf_backend_storage_access_key       = var.tf_backend_storage_access_key
 }

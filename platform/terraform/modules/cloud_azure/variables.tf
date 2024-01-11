@@ -80,7 +80,7 @@ variable "alert_emails" {
   default = []
 }
 
-variable "ssh_public_key" {
+variable "cluster_ssh_public_key" {
   description = "(Required) Specifies the SSH public key for AKS worker nodes."
   type        = string
   default     = ""
