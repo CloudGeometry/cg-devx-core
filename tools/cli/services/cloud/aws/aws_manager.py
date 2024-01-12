@@ -40,7 +40,7 @@ class AWSManager(CloudProviderManager):
         self.__aws_sdk.create_bucket(tf_backend_storage_name, region)
         self.__aws_sdk.enable_bucket_versioning(tf_backend_storage_name, region)
 
-        return tf_backend_storage_name
+        return tf_backend_storage_name, ""
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str, **kwargs: dict):

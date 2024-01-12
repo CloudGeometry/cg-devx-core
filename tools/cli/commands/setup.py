@@ -252,7 +252,6 @@ def setup(
         p.fragments["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
         p.fragments["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
 
-
         # dns zone info for external dns
         dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
         p.internals["DNS_ZONE_NAME"] = dns_zone_name
