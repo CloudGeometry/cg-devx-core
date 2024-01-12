@@ -32,6 +32,6 @@ resource "sonarqube_permissions" "workload-admins" {
 resource "sonarqube_permissions" "workload-developers" {
   group_name  = "${var.project_name}-developers"
   project_key = sonarqube_project.this.project
-  permissions = ["codeviewer", "issueadmin", "securityhotspotadmin", "scan"]
+  permissions = ["codeviewer", "issueadmin", "scan", "securityhotspotadmin"]
   depends_on  = [sonarqube_group.workload_developers]
 }

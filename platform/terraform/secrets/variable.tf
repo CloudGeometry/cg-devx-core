@@ -42,3 +42,23 @@ variable "cluster_endpoint" {
   description = "(Required) K8s cluster endpoint"
   type        = string
 }
+
+variable "workloads" {
+  description = "Workloads configuration"
+  type        = map(object({
+    description = optional(string, "")
+  }))
+  default = {}
+}
+
+variable "cluster_ssh_public_key" {
+  description = "Specifies the SSH public key for K8s worker nodes. Only applicable to AKS."
+  type        = string
+  default     = ""
+}
+
+variable "tf_backend_storage_access_key" {
+  description = "Specifies the access key for tf backend storage. Only applicable to AKS."
+  type        = string
+  default     = ""
+}

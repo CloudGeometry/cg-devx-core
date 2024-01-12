@@ -26,6 +26,7 @@ module "eks" {
     }
     vpc-cni = {
       most_recent              = true
+      before_compute           = true
       service_account_role_arn = module.vpc_cni_irsa.iam_role_arn
       configuration_values     = jsonencode({
         env = {
@@ -91,7 +92,7 @@ module "eks" {
 # key-pair for custom launch template
 #resource "aws_key_pair" "eks_nodes" {
 #  key_name   = "${local.name}-eks-nodes"
-#  public_key = var.ssh_public_key
+#  public_key = var.cluster_ssh_public_key
 #}
 #
 #resource "aws_launch_template" "eks_node_with_keypair" {

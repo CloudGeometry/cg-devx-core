@@ -13,7 +13,9 @@ spec:
     chart: reloader
     helm:
       values: |-
-        ignoreSecrets: false
+        reloader:
+          ignoreSecrets: false
+          reloadStrategy: annotations
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: reloader

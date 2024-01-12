@@ -40,7 +40,7 @@ class AWSManager(CloudProviderManager):
         self.__aws_sdk.create_bucket(tf_backend_storage_name, region)
         self.__aws_sdk.enable_bucket_versioning(tf_backend_storage_name, region)
 
-        return tf_backend_storage_name
+        return tf_backend_storage_name, ""
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str, **kwargs: dict):
@@ -92,10 +92,7 @@ class AWSManager(CloudProviderManager):
         return textwrap.dedent('''\
         provider "aws" {
           default_tags {
-            tags = {
-              ClusterName   = local.cluster_name
-              ProvisionedBy = "CGDevX"
-            }
+            tags = local.tags
           }
         }''')
 
@@ -160,3 +157,8 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_external_secrets_config(self, **kwargs) -> str:
         return ""
+
+    @trace()
+    def create_iac_pr_automation_config_snippet(self):
+        return '''# aws specific section
+      # ----'''

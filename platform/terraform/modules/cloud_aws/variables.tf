@@ -30,6 +30,10 @@ variable "cluster_name" {
     condition     = (length(var.cluster_name) <= 16) && (length(var.cluster_name) >= 2)
     error_message = "Must be between 2 and 16 symbols long"
   }
+  validation {
+    condition     = can(regex("[a-z0-9]+(?:-[a-z0-9]+)*", var.cluster_name))
+    error_message = "Invalid input, string should be in kebab-case."
+  }
 }
 
 variable "cluster_version" {
@@ -71,9 +75,17 @@ variable "node_groups" {
 variable "cluster_node_labels" {
   type    = map(any)
   default = {
-    ProvisionedBy = "CGDevX"
+    provisioned-by = "cg-devx"
   }
   description = "(Optional) EKS node labels"
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {
+    ProvisionedBy = "CGDevX"
+  }
+  description = "(Optional) Specifies the AWS resource tags"
 }
 
 variable "alert_emails" {
@@ -81,7 +93,7 @@ variable "alert_emails" {
   default = []
 }
 
-variable "ssh_public_key" {
+variable "cluster_ssh_public_key" {
   description = "(Optional) SSH public key to access worker nodes."
   type        = string
   default     = ""

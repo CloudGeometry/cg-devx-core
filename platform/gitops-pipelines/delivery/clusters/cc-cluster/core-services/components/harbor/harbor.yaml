@@ -38,6 +38,14 @@ spec:
               kubernetes.io/ingress.class: nginx
         database:
           type: internal
+          internal:
+            resources:
+              limits:
+                cpu: 500m
+                memory: 800Mi
+              requests:
+                cpu: 500m
+                memory: 800Mi
         registry:
           # set the service account to be used, default if left empty
           serviceAccountName: ""

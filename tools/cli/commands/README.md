@@ -24,7 +24,7 @@ checkpoints) and could be re-run
 
 `setup` command could be executed using arguments, environment variables, or input file.
 
-Arguments:
+**Arguments**:
 
 | Name (short, full)             | Type                                    | Description                                       |
 |--------------------------------|-----------------------------------------|---------------------------------------------------|
@@ -49,6 +49,8 @@ Arguments:
 | -dw, --setup-demo-workload     | Flag                                    | Setup demo workload                               |
 | -f, --config-file              | FILENAME                                | Load parameters from file                         |
 | --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
+
+> **Note!**: For all names use kebab-case.
 
 `parameters.yaml` file example
 
@@ -110,7 +112,21 @@ process.
 - Remote backend storage (e.g., AWS S3) used for IaC
 - All local files created by CG DevX CLI
 
-**NOTE!**: this process is irreversible
+> **NOTE!**: this process is irreversible
+
+> **NOTE!**: This operation will delete all workload repositories if you have them.
+> If workloads have any out of the cluster (cloud provider) resources, they will become orphaned,
+> and should be deleted manually.
+> It is highly recommended prior to destroying your installation to delete all active workloads first also deleting all
+> the resources.
+> Please see more on `workload delete` command with `--destroy-resources` flag [here](workload/README.md#delete).
+
+
+**Arguments**:
+
+| Name (short, full) | Type                                    | Description                                       |
+|--------------------|-----------------------------------------|---------------------------------------------------|
+| --verbosity        | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
 
 **Command snippet**
 
@@ -126,3 +142,5 @@ and then all other resources created by our automation.
 The cleanup process could still fail.
 If you have any issues, please try restarting the process.
 If it fails to delete your K8s cluster, please try deleting Load Balancer(s) manually and restart the process.
+For GitHub, external action runners should be removed prior to repository deletion.
+If it fails to delete your GitOps repo - please check and remove runners and restart the process.

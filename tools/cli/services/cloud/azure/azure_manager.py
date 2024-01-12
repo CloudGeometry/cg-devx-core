@@ -18,11 +18,11 @@ class AzureManager(CloudProviderManager):
 
     def __init__(self, subscription_id: str, location: Optional[str] = None):
         self.iac_backend_storage_container_name: Optional[str] = None
-        self.__azure_sdk = AzureSdk(subscription_id, location)
+        self._azure_sdk = AzureSdk(subscription_id, location)
 
     @property
     def region(self):
-        return self.__azure_sdk.location
+        return self._azure_sdk.location
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str):
@@ -32,7 +32,7 @@ class AzureManager(CloudProviderManager):
         self.iac_backend_storage_container_name = name
         resource_group_name = self._generate_resource_group_name()
         storage_account_name = self._generate_storage_account_name()
-        self.__azure_sdk.set_storage_access(identity, storage_account_name, resource_group_name)
+        self._azure_sdk.set_storage_access(identity, storage_account_name, resource_group_name)
 
     @trace()
     def destroy_iac_state_storage(self, bucket: str) -> bool:
@@ -51,7 +51,7 @@ class AzureManager(CloudProviderManager):
             bool: True if the resource group was successfully destroyed, False otherwise.
         """
         self.iac_backend_storage_container_name = bucket
-        return self.__azure_sdk.destroy_resource_group(self._generate_resource_group_name())
+        return self._azure_sdk.destroy_resource_group(self._generate_resource_group_name())
 
     @trace()
     def create_iac_backend_snippet(self, location: str, service: str, **kwargs) -> str:
@@ -124,12 +124,13 @@ class AzureManager(CloudProviderManager):
 
         resource_group_name = self._generate_resource_group_name()
         storage_account_name = self._generate_storage_account_name()
-        storage = self.__azure_sdk.create_storage(self.iac_backend_storage_container_name,
-                                                  storage_account_name,
-                                                  resource_group_name)
-        self.__azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
+        storage = self._azure_sdk.create_storage(self.iac_backend_storage_container_name,
+                                                 storage_account_name,
+                                                 resource_group_name)
+        keys = self._azure_sdk.get_storage_account_keys(resource_group_name, storage_account_name)
+        self._azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
 
-        return storage
+        return storage, keys[0].value
 
     @trace()
     def evaluate_permissions(self) -> bool:
@@ -138,10 +139,10 @@ class AzureManager(CloudProviderManager):
         :return: True or False
         """
         missing_permissions = []
-        missing_permissions.extend(self.__azure_sdk.blocked(aks_permissions))
-        missing_permissions.extend(self.__azure_sdk.blocked(blob_permissions))
-        missing_permissions.extend(self.__azure_sdk.blocked(vnet_permissions))
-        missing_permissions.extend(self.__azure_sdk.blocked(rbac_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(aks_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(blob_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(vnet_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(rbac_permissions))
         return len(missing_permissions) == 0
 
     @staticmethod
@@ -185,7 +186,7 @@ class AzureManager(CloudProviderManager):
 
     @trace()
     def create_additional_labels(self) -> str:
-        return 'azure.workload.identity/use: "true"'
+        return ""
 
     @trace()
     def create_sidecar_annotation(self) -> str:
@@ -209,4 +210,14 @@ class AzureManager(CloudProviderManager):
                 "subscriptionId": "{subscription_id}",
                 "resourceGroup": "{resource_group}",
                 "useWorkloadIdentityExtension": true
-              }}'''.format(subscription_id=self.__azure_sdk.subscription_id, resource_group=location)
+              }}'''.format(subscription_id=self._azure_sdk.subscription_id, resource_group=location)
+
+    @trace()
+    def create_iac_pr_automation_config_snippet(self):
+        return '''# azure specific section
+      ARM_USE_AKS_WORKLOAD_IDENTITY       = true,
+      ARM_USE_CLI                         = false,
+      ARM_SUBSCRIPTION_ID                 = "<AZ_SUBSCRIPTION_ID>",
+      ARM_CLIENT_ID                       = "<IAC_PR_AUTOMATION_IAM_ROLE_RN>",
+      ARM_ACCESS_KEY                      = var.tf_backend_storage_access_key,
+      # ----'''

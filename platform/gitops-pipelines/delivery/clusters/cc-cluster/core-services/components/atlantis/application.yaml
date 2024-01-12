@@ -24,6 +24,10 @@ spec:
           mount: true
           annotations:
             <K8S_ROLE_MAPPING>: "<IAC_PR_AUTOMATION_IAM_ROLE_RN>"
+        podTemplate:
+          labels: {
+            # <ADDITIONAL_LABELS>
+          }
         resources:
           limits:
             cpu: 400m

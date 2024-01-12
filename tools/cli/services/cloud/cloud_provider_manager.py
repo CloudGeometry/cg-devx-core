@@ -126,3 +126,11 @@ class CloudProviderManager(ABC):
         :return: External secrets operator configuration
         """
         pass
+
+    @abstractmethod
+    def create_iac_pr_automation_config_snippet(self):
+        """
+        Creates Cloud Provider specific configuration section for Atlantis
+        :return: Atlantis configuration section
+        """
+        pass

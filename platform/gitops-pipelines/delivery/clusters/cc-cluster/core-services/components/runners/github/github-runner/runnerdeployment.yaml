@@ -13,3 +13,5 @@ spec:
       serviceAccountName: github-runner
       dockerdWithinRunnerContainer: true
       automountServiceAccountToken: true
+      # set runner group name when GitHub is on non-free plan
+      # <GIT_RUNNER_GROUP>

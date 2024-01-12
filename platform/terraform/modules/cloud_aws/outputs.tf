@@ -153,8 +153,7 @@ output "node_security_group_id" {
 ################################################################################
 # IRSA
 ################################################################################
-
-output "cluster_oidc_provider" {
+output "cluster_oidc_provider_url" {
   description = "The OpenID Connect identity provider (issuer URL without leading `https://`)"
   value       = module.eks.oidc_provider
 }

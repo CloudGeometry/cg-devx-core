@@ -13,6 +13,8 @@ spec:
     helm:
       values: |-
         nameOverride: argo
+        images:
+          pullPolicy: IfNotPresent
         executor:
           resources:
             requests:

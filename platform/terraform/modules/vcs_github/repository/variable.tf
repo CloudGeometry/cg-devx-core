@@ -27,11 +27,6 @@ variable "has_issues" {
   default = false
 }
 
-variable "is_template" {
-  type    = bool
-  default = false
-}
-
 variable "default_branch_name" {
   type    = string
   default = "main"
@@ -40,6 +35,16 @@ variable "default_branch_name" {
 variable "delete_branch_on_merge" {
   type    = bool
   default = true
+}
+
+variable "branch_protection" {
+  type    = bool
+  default = true
+}
+
+variable "allow_merge_commit" {
+  type    = bool
+  default = false
 }
 
 variable "template" {
@@ -64,4 +69,8 @@ variable "atlantis_repo_webhook_secret" {
   sensitive = true
 }
 
-
+variable "vcs_subscription_plan" {
+  description = "True for advanced github/gitlab plan. False for free tier"
+  type    = bool
+  default = false
+}
