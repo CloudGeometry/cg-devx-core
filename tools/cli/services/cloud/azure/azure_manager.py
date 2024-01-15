@@ -186,7 +186,7 @@ class AzureManager(CloudProviderManager):
 
     @trace()
     def create_additional_labels(self) -> str:
-        return ""
+        return 'azure.workload.identity/use: "true"'
 
     @trace()
     def create_sidecar_annotation(self) -> str:
