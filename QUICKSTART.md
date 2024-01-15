@@ -21,10 +21,6 @@
 - Azure - Supported
 - GCP - Will be added to a future release
 
-> <sup>*</sup> Experimental functions are provided for you to try, but are not documented or supported, and are likely to
-be buggy,
-or to change after release.
-
 ## Prerequisites
 
 Before you begin the installation process, ensure you have the following prerequisites covered:
