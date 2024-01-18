@@ -94,6 +94,7 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity:
     click.echo(f"6/7: Pull request for branch '{branch_name}' created and opened in the web browser.")
 
     gor.switch_to_branch(branch_name=GITOPS_REPOSITORY_MAIN_BRANCH)
+    gor.delete_branch(branch_name)
     click.echo(f"7/7: Switched to branch '{GITOPS_REPOSITORY_MAIN_BRANCH}'.")
     click.echo(f"Workload GitOps code creation completed in {time.time() - func_start_time:.2f} seconds.")
 

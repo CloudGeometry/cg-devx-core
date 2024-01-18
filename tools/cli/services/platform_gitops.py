@@ -52,6 +52,11 @@ class PlatformGitOpsRepo:
         self._repo.heads[branch_name].checkout()
 
     @trace()
+    def delete_branch(self, branch_name: str):
+        ref = self._repo.heads[branch_name]
+        self._repo.delete_head(ref)
+
+    @trace()
     def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
         return self._git_man.create_pr(repo_name, head_branch, base_branch, title, body)
 

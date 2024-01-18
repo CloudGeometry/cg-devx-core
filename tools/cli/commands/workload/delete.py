@@ -154,6 +154,7 @@ def delete(
     click.echo(f"{7 if destroy_resources else 6}/{logging_total_steps}: Pull request created and opened.")
 
     gor.switch_to_branch()
+    gor.delete_branch(branch_name)
 
     click.echo(f"Deleting workload GitOps code completed in {time.time() - func_start_time:.2f} seconds.")
 
