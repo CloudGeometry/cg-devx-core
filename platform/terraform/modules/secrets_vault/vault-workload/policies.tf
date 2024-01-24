@@ -3,8 +3,12 @@ resource "vault_policy" "workload-admin" {
 
   policy = <<EOT
 # Allow full access to workloads secrets
-path "workloads/${var.workload_name}/*" {
+path "workloads/+/${var.workload_name}/*" {
     capabilities = ["create", "read", "update", "delete", "list"]
+}
+# Allow list for workloads path
+path "workloads/+/" {
+    capabilities = ["list"]
 }
 # List available secrets engines to retrieve accessor ID
 path "sys/mounts" {
@@ -18,10 +22,13 @@ resource "vault_policy" "workload-developer" {
 
   policy = <<EOT
 # Allow write access to workloads secrets
-path "workloads/${var.workload_name}/*" {
+path "workloads/+/${var.workload_name}/*" {
     capabilities = ["create", "read", "update", "list"]
 }
-
+# Allow list for workloads path
+path "workloads/+/" {
+    capabilities = ["list"]
+}
 # List available secrets engines to retrieve accessor ID
 path "sys/mounts" {
   capabilities = [ "read" ]
