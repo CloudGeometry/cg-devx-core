@@ -1,3 +1,12 @@
+locals {
+  oidc_groups_ids = concat(
+    [for workload in module.workloads : workload.admins_group_id],
+    [for workload in module.workloads : workload.developers_group_id],
+    [vault_identity_group.admins.id],
+    [vault_identity_group.developers.id]
+  )
+}
+
 module "argo" {
   source = "./oidc-client"
 
@@ -6,7 +15,7 @@ module "argo" {
   ]
 
   app_name               = "argo"
-  identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
+  identity_group_ids     = local.oidc_groups_ids
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris          = [
     "https://<CI_INGRESS_URL>/oauth2/callback",
@@ -22,7 +31,7 @@ module "argocd" {
   ]
 
   app_name               = "argocd"
-  identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
+  identity_group_ids     = local.oidc_groups_ids
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris          = [
     "https://<CD_INGRESS_URL>/auth/callback",
@@ -38,7 +47,7 @@ module "grafana" {
   ]
 
   app_name               = "grafana"
-  identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
+  identity_group_ids     = local.oidc_groups_ids
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris          = [
     "https://<GRAFANA_INGRESS_URL>/login/generic_oauth",
@@ -54,7 +63,7 @@ module "harbor" {
   ]
 
   app_name               = "harbor"
-  identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
+  identity_group_ids     = local.oidc_groups_ids
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris          = [
     "https://<REGISTRY_INGRESS_URL>/c/oidc/callback",
@@ -70,7 +79,7 @@ module "sonarqube" {
   ]
 
   app_name               = "sonarqube"
-  identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
+  identity_group_ids     = local.oidc_groups_ids
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris          = [
     "https://<CODE_QUALITY_INGRESS_URL>/oauth2/callback/oidc",
@@ -86,7 +95,7 @@ module "oauth2_backstage" {
   ]
 
   app_name               = "oauth2_backstage"
-  identity_group_ids     = [vault_identity_group.admins.id, vault_identity_group.developers.id]
+  identity_group_ids     = local.oidc_groups_ids
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris = [
     "https://<PORTAL_INGRESS_URL>/oauth2/callback",
