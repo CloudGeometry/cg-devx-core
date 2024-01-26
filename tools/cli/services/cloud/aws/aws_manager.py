@@ -1,4 +1,5 @@
 import textwrap
+from typing import Tuple
 
 from common.tracing_decorator import trace
 from common.utils.generators import random_string_generator
@@ -27,10 +28,21 @@ class AWSManager(CloudProviderManager):
         return detect_command_presence(CLI)
 
     @trace()
-    def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
+    def create_iac_state_storage(self, name: str, **kwargs: dict) -> Tuple[str, str]:
         """
-        Creates cloud native terraform remote state storage
-        :return: Resource identifier, Region
+        Creates cloud-native Terraform remote state storage in AWS.
+
+        This method generates a unique name for an S3 bucket based on the provided 'name' and a random string.
+        It then creates the S3 bucket in the specified or default region and enables versioning on the bucket
+        for Terraform state files.
+
+        Args:
+            name (str): Base name to use for generating the S3 bucket name.
+            **kwargs (dict): Additional keyword arguments, where 'region' can be specified for the S3 bucket location.
+
+        Returns:
+            Tuple[str, str]: A tuple containing the name of the created S3 bucket and an empty string
+            (as the second value is not used in this context).
         """
         region = self.region
         if kwargs and "region" in kwargs:
