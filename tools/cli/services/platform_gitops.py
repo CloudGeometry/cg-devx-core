@@ -2,7 +2,7 @@ import json
 import os
 
 from ghrepo import GHRepo
-from git import Repo, Actor
+from git import Repo, Actor, RemoteReference
 
 from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
     LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER
@@ -54,7 +54,8 @@ class PlatformGitOpsRepo:
     @trace()
     def delete_branch(self, branch_name: str):
         ref = self._repo.heads[branch_name]
-        self._repo.delete_head(ref)
+        # use force delete as branch is not fully merged yet
+        self._repo.delete_head(ref, force=True)
 
     @trace()
     def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
