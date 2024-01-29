@@ -1,10 +1,12 @@
 import re
+import time
 import webbrowser
 
 import click
 import hvac
 import portforward
 import yaml
+from alive_progress import alive_bar
 
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
@@ -81,6 +83,8 @@ def setup(
 ):
     """Creates new CG DevX installation."""
     click.echo("Setup CG DevX installation...")
+    # Initialize the start time to measure the duration of the platform setup
+    func_start_time = time.time()
 
     # Set up global logger
     configure_logging(verbosity)
@@ -412,138 +416,155 @@ def setup(
     # install ArgoCD
     if not p.has_checkpoint("k8s-delivery"):
         click.echo("8/12: Installing ArgoCD...")
+        with alive_bar(20, title='ArgoCD Installation Progress') as bar:
 
-        kube_client = init_k8s_client(cloud_man, p)
+            kube_client = init_k8s_client(cloud_man, p)
+            cd_man = DeliveryServiceManager(kube_client)
+            bar()
 
-        cd_man = DeliveryServiceManager(kube_client)
+            argocd_bootstrap_name = "argocd-bootstrap"
+            argocd_core_project_name = "core"
 
-        argocd_bootstrap_name = "argocd-bootstrap"
-        argocd_core_project_name = "core"
+            # get CoreDNS deployments to validate cluster
+            coredns_deployment = kube_client.get_deployment("kube-system", "coredns")
+            bar()
 
-        # get CoreDNS deployments to validate cluster
-        coredns_deployment = kube_client.get_deployment("kube-system", "coredns")
+            # wait for deployment readiness
+            kube_client.wait_for_deployment(coredns_deployment)
+            bar()  # Add a few here
 
-        # wait for deployment readiness
-        kube_client.wait_for_deployment(coredns_deployment)
+            kube_client.create_namespace(ARGOCD_NAMESPACE)
+            bar()
+            kube_client.create_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
+            bar()
+            kube_client.create_cluster_role(ARGOCD_NAMESPACE, argocd_bootstrap_name)
+            bar()
 
-        kube_client.create_namespace(ARGOCD_NAMESPACE)
-        kube_client.create_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
-        kube_client.create_cluster_role(ARGOCD_NAMESPACE, argocd_bootstrap_name)
+            kube_client.create_cluster_role_binding(ARGOCD_NAMESPACE, argocd_bootstrap_name, argocd_bootstrap_name)
+            bar()
 
-        kube_client.create_cluster_role_binding(ARGOCD_NAMESPACE, argocd_bootstrap_name, argocd_bootstrap_name)
+            job = cd_man.create_argocd_bootstrap_job(argocd_bootstrap_name)
+            kube_client.wait_for_job(job)
+            bar()  # Add a few here
+            # cleanup temp resources
+            try:
+                kube_client.remove_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
+                kube_client.remove_cluster_role(argocd_bootstrap_name)
+                kube_client.remove_cluster_role_binding(argocd_bootstrap_name)
+            except Exception as e:
+                click.echo("Could not clean up ArgoCD bootstrap temporary resources, manual clean-up is required")
+            bar()
 
-        job = cd_man.create_argocd_bootstrap_job(argocd_bootstrap_name)
-        kube_client.wait_for_job(job)
-        # cleanup temp resources
-        try:
-            kube_client.remove_service_account(ARGOCD_NAMESPACE, argocd_bootstrap_name)
-            kube_client.remove_cluster_role(argocd_bootstrap_name)
-            kube_client.remove_cluster_role_binding(argocd_bootstrap_name)
-        except Exception as e:
-            click.echo("Could not clean up ArgoCD bootstrap temporary resources, manual clean-up is required")
+            # wait for ArgoCD to be ready
 
-        # wait for ArgoCD to be ready
+            argocd_ss = kube_client.get_stateful_set_objects(ARGOCD_NAMESPACE, "argocd-application-controller")
+            kube_client.wait_for_stateful_set(argocd_ss)
+            bar()
 
-        argocd_ss = kube_client.get_stateful_set_objects(ARGOCD_NAMESPACE, "argocd-application-controller")
-        kube_client.wait_for_stateful_set(argocd_ss)
+            # 	argocd-server
+            argocd_server = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-server")
+            kube_client.wait_for_deployment(argocd_server)
+            bar()  # add a few here
+            # wait for additional ArgoCD Pods to transition to Running
+            # this is related to a condition where apps attempt to deploy before
+            # repo, redis, or other health checks are passing
+            # this can cause future steps to break since the registry app
+            # may never apply
 
-        # 	argocd-server
-        argocd_server = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-server")
-        kube_client.wait_for_deployment(argocd_server)
+            # 	argocd-repo-server
+            argocd_repo_server = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-repo-server")
+            kube_client.wait_for_deployment(argocd_repo_server)
+            bar()
 
-        # wait for additional ArgoCD Pods to transition to Running
-        # this is related to a condition where apps attempt to deploy before
-        # repo, redis, or other health checks are passing
-        # this can cause future steps to break since the registry app
-        # may never apply
+            # HA components
 
-        # 	argocd-repo-server
-        argocd_repo_server = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-repo-server")
-        kube_client.wait_for_deployment(argocd_repo_server)
+            # argocd-redis-ha-haproxy Deployment
+            argocd_redis_ha_haproxy = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-redis-ha-haproxy")
+            kube_client.wait_for_deployment(argocd_redis_ha_haproxy)
+            bar()
 
-        # HA components
+            # argocd-redis-ha StatefulSet
+            cert_manager = kube_client.get_stateful_set_objects(ARGOCD_NAMESPACE, "argocd-redis-ha-server")
+            kube_client.wait_for_stateful_set(cert_manager)
+            bar()
 
-        # argocd-redis-ha-haproxy Deployment
-        argocd_redis_ha_haproxy = kube_client.get_deployment(ARGOCD_NAMESPACE, "argocd-redis-ha-haproxy")
-        kube_client.wait_for_deployment(argocd_redis_ha_haproxy)
+            # create additional namespaces
+            kube_client.create_namespace(ARGO_WORKFLOW_NAMESPACE)
+            kube_client.create_namespace(ATLANTIS_NAMESPACE)
+            kube_client.create_namespace(EXTERNAL_SECRETS_OPERATOR_NAMESPACE)
+            bar()
 
-        # argocd-redis-ha StatefulSet
-        cert_manager = kube_client.get_stateful_set_objects(ARGOCD_NAMESPACE, "argocd-redis-ha-server")
-        kube_client.wait_for_stateful_set(cert_manager)
+            # create additional service accounts
+            kube_client.create_service_account(ATLANTIS_NAMESPACE, "atlantis")
+            kube_client.create_service_account(EXTERNAL_SECRETS_OPERATOR_NAMESPACE, "external-secrets")
+            bar()
 
-        # create additional namespaces
-        kube_client.create_namespace(ARGO_WORKFLOW_NAMESPACE)
-        kube_client.create_namespace(ATLANTIS_NAMESPACE)
-        kube_client.create_namespace(EXTERNAL_SECRETS_OPERATOR_NAMESPACE)
+            # create argocd kubernetes project and secret for connectivity to private gitops repos
+            annotations = {"managed-by": "argocd.argoproj.io"}
 
-        # create additional service accounts
-        kube_client.create_service_account(ATLANTIS_NAMESPACE, "atlantis")
-        kube_client.create_service_account(EXTERNAL_SECRETS_OPERATOR_NAMESPACE, "external-secrets")
+            # credentials template
+            git_wildcard_url = "".join(p.parameters["<GIT_REPOSITORY_GIT_URL>"].partition("/")[:-1])
 
-        # create argocd kubernetes project and secret for connectivity to private gitops repos
-        annotations = {"managed-by": "argocd.argoproj.io"}
+            argocd_sec_secret_name = f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-repo-creds'.lower()
+            argocd_secret = {
+                "type": "git",
+                "name": argocd_sec_secret_name,
+                "url": git_wildcard_url,
+                "sshPrivateKey": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
+            }
+            creds_labels = {"argocd.argoproj.io/secret-type": "repo-creds"}
 
-        # credentials template
-        git_wildcard_url = "".join(p.parameters["<GIT_REPOSITORY_GIT_URL>"].partition("/")[:-1])
+            kube_client.create_plain_secret(ARGOCD_NAMESPACE,
+                                            argocd_sec_secret_name,
+                                            argocd_secret,
+                                            annotations,
+                                            creds_labels)
+            bar()
 
-        argocd_sec_secret_name = f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-repo-creds'.lower()
-        argocd_secret = {
-            "type": "git",
-            "name": argocd_sec_secret_name,
-            "url": git_wildcard_url,
-            "sshPrivateKey": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
-        }
-        creds_labels = {"argocd.argoproj.io/secret-type": "repo-creds"}
+            # repo
+            argocd_sec_project_name = f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-gitops'.lower()
+            argocd_project = {
+                "type": "git",
+                "name": argocd_sec_project_name,
+                "url": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+            }
+            repo_labels = {"argocd.argoproj.io/secret-type": "repository"}
 
-        kube_client.create_plain_secret(ARGOCD_NAMESPACE,
-                                        argocd_sec_secret_name,
-                                        argocd_secret,
-                                        annotations,
-                                        creds_labels)
+            kube_client.create_plain_secret(ARGOCD_NAMESPACE,
+                                            argocd_sec_project_name,
+                                            argocd_project,
+                                            annotations,
+                                            repo_labels)
+            bar()
 
-        # repo
-        argocd_sec_project_name = f'{p.parameters["<GIT_ORGANIZATION_NAME>"]}-gitops'.lower()
-        argocd_project = {
-            "type": "git",
-            "name": argocd_sec_project_name,
-            "url": p.parameters["<GIT_REPOSITORY_GIT_URL>"],
-        }
-        repo_labels = {"argocd.argoproj.io/secret-type": "repository"}
+            # argocd pods are ready, get and set credentials
+            argo_pas = kube_client.get_secret(ARGOCD_NAMESPACE, "argocd-initial-admin-secret")
+            p.internals["ARGOCD_USER"] = "admin"
+            p.internals["ARGOCD_PASSWORD"] = argo_pas
 
-        kube_client.create_plain_secret(ARGOCD_NAMESPACE,
-                                        argocd_sec_project_name,
-                                        argocd_project,
-                                        annotations,
-                                        repo_labels)
+            # get argocd auth token
+            with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
+                                     config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
+                                     log_level=portforward.LogLevel.ERROR):
+                argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
+                p.internals["ARGOCD_TOKEN"] = argocd_token
+            bar()
 
-        # argocd pods are ready, get and set credentials
-        argo_pas = kube_client.get_secret(ARGOCD_NAMESPACE, "argocd-initial-admin-secret")
-        p.internals["ARGOCD_USER"] = "admin"
-        p.internals["ARGOCD_PASSWORD"] = argo_pas
+            # create argocd "core" project
+            # TODO: explicitly whitelist project repositories
+            cd_man.create_project(argocd_core_project_name, [
+                p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+                "https://charts.jetstack.io",
+                "https://kubernetes-sigs.github.io/external-dns",
+                "*"
+            ])
 
-        # get argocd auth token
-        with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                 config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
-                                 log_level=portforward.LogLevel.ERROR):
-            argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
-            p.internals["ARGOCD_TOKEN"] = argocd_token
+            # deploy registry app
+            cd_man.create_core_application(argocd_core_project_name, p.parameters["<GIT_REPOSITORY_GIT_URL>"])
+            bar()
 
-        click.echo("applying the registry application to argocd")
-
-        # create argocd "core" project
-        # TODO: explicitly whitelist project repositories
-        cd_man.create_project(argocd_core_project_name, [
-            p.parameters["<GIT_REPOSITORY_GIT_URL>"],
-            "https://charts.jetstack.io",
-            "https://kubernetes-sigs.github.io/external-dns",
-            "*"
-        ])
-
-        # deploy registry app
-        cd_man.create_core_application(argocd_core_project_name, p.parameters["<GIT_REPOSITORY_GIT_URL>"])
-
-        p.set_checkpoint("k8s-delivery")
-        p.save_checkpoint()
+            p.set_checkpoint("k8s-delivery")
+            p.save_checkpoint()
 
         click.echo("8/12: Installing ArgoCD. Done!")
     else:
@@ -552,104 +573,118 @@ def setup(
     # initialize and unseal vault
     if not p.has_checkpoint("secrets-management"):
         click.echo("9/12: Initializing Secrets Manager...")
+        with alive_bar(7, title='Initializing Secrets Manager') as bar:
 
-        # need to wait here as vault is not available just after argo app deployment
-        wait(30)
+            # default AWS EKS auth token life-time is 14m
+            # to be safe should refresh token before proceeding
+            kube_client = init_k8s_client(cloud_man, p)
+            bar()
 
-        # default AWS EKS auth token life-time is 14m
-        # to be safe should refresh token before proceeding
-        kube_client = init_k8s_client(cloud_man, p)
+            # wait for cert manager as it's created just before vault
+            cert_manager = kube_client.get_deployment("cert-manager", "cert-manager")
+            kube_client.wait_for_deployment(cert_manager)
+            bar()
 
-        # wait for cert manager as it's created just before vault
-        cert_manager = kube_client.get_deployment("cert-manager", "cert-manager")
-        kube_client.wait_for_deployment(cert_manager)
+            external_dns = kube_client.get_deployment("external-dns", "external-dns")
+            kube_client.wait_for_deployment(external_dns)
+            bar()
 
-        wait(60)
+            external_dns = kube_client.get_deployment("ingress-nginx", "ingress-nginx-controller")
+            kube_client.wait_for_deployment(external_dns)
+            bar()
 
-        # wait for vault readiness
-        try:
-            vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
-        except Exception as e:
-            raise click.ClickException("Vault service creation taking longer than expected. Please verify manually "
-                                       "and restart")
-        kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
+            # wait for vault readiness
+            try:
+                vault_ss = kube_client.get_stateful_set_objects(VAULT_NAMESPACE, "vault")
+            except Exception as e:
+                raise click.ClickException("Vault service creation taking longer than expected. Please verify manually "
+                                           "and restart")
+            kube_client.wait_for_stateful_set(vault_ss, 600, wait_availability=False)
+            bar()
 
-        # Vault init from the UI/API is broken from Vault version 1.12.0 till now 1.14.4
-        # https://discuss.hashicorp.com/t/cant-init-1-13-2-with-awskms/54000
-        # Workaround init using kubectl
-        # with portforward.forward(VAULT_NAMESPACE, "vault-0", 8200, 8200,
-        #                          config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
-        #                          log_level=portforward.LogLevel.ERROR:
-        #
-        #     vault_client = hvac.Client(url='http://127.0.0.1:8200')
-        #     if not vault_client.sys.is_initialized():
-        #         vault_init_result = vault_client.sys.initialize()
-        #         vault_root_token = vault_init_result['root_token']
-        #         vault_keys = vault_init_result['keys']
-        #
-        #     if vault_client.sys.is_sealed():
-        #         vault_secret = {
-        #             "root-token": vault_root_token
-        #         }
-        #         for i, x in enumerate(vault_keys):
-        #             vault_secret[f"root-unseal-key-{i}"] = x
-        #         kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
+            # Vault init from the UI/API is broken from Vault version 1.12.0 till now 1.14.4
+            # https://discuss.hashicorp.com/t/cant-init-1-13-2-with-awskms/54000
+            # Workaround init using kubectl
+            # with portforward.forward(VAULT_NAMESPACE, "vault-0", 8200, 8200,
+            #                          config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
+            #                          log_level=portforward.LogLevel.ERROR:
+            #
+            #     vault_client = hvac.Client(url='http://127.0.0.1:8200')
+            #     if not vault_client.sys.is_initialized():
+            #         vault_init_result = vault_client.sys.initialize()
+            #         vault_root_token = vault_init_result['root_token']
+            #         vault_keys = vault_init_result['keys']
+            #
+            #     if vault_client.sys.is_sealed():
+            #         vault_secret = {
+            #             "root-token": vault_root_token
+            #         }
+            #         for i, x in enumerate(vault_keys):
+            #             vault_secret[f"root-unseal-key-{i}"] = x
+            #         kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
 
-        wait(30)
+            # use k8s console client
+            wait(30)
+            kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
+            try:
+                out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
+            except Exception as e:
+                raise click.ClickException(f"Could not unseal vault: {e}")
+            bar()
 
-        # use k8s console client
-        kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
-        try:
-            out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
-        except Exception as e:
-            raise click.ClickException(f"Could not unseal vault: {e}")
+            vault_keys = re.findall("^Recovery\\sKey\\s(?P<index>\\d):\\s(?P<key>.+)$", out, re.MULTILINE)
+            vault_root_token = re.findall("^Initial\\sRoot\\sToken:\\s(?P<token>.+)$", out, re.MULTILINE)
 
-        vault_keys = re.findall("^Recovery\\sKey\\s(?P<index>\\d):\\s(?P<key>.+)$", out, re.MULTILINE)
-        vault_root_token = re.findall("^Initial\\sRoot\\sToken:\\s(?P<token>.+)$", out, re.MULTILINE)
+            if not vault_root_token:
+                raise click.ClickException("Could not unseal vault")
 
-        if not vault_root_token:
-            raise click.ClickException("Could not unseal vault")
+            vault_secret = {
+                "root-token": vault_root_token[0]
+            }
+            for i, v in vault_keys:
+                vault_secret[f"root-unseal-key-{i}"] = v
 
-        vault_secret = {
-            "root-token": vault_root_token[0]
-        }
-        for i, v in vault_keys:
-            vault_secret[f"root-unseal-key-{i}"] = v
+            kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
+            bar()
 
-        kube_client.create_plain_secret(VAULT_NAMESPACE, "vault-unseal-secret", vault_secret)
         p.internals["VAULT_ROOT_TOKEN"] = vault_root_token[0]
-
         p.set_checkpoint("secrets-management")
         p.save_checkpoint()
 
         click.echo("9/12: Secrets Manager initialization. Done!")
-
-        wait(30)
     else:
         click.echo("9/12: Skipped Secrets Manager initialization.")
 
     if not p.has_checkpoint("secrets-management-tf"):
         click.echo("10/12: Setting Secrets...")
 
-        # default AWS EKS auth token life-time is 14m
-        # to be safe should refresh token before proceeding
-        kube_client = init_k8s_client(cloud_man, p)
+        with alive_bar(5, title='Secret Manager Pre-Deployment Readiness') as bar:
+            # default AWS EKS auth token life-time is 14m
+            # to be safe should refresh token before proceeding
+            kube_client = init_k8s_client(cloud_man, p)
+            bar()
 
-        ingress = kube_client.get_ingress(VAULT_NAMESPACE, "vault")
-        kube_client.wait_for_ingress(ingress)
+            ingress = kube_client.get_ingress(VAULT_NAMESPACE, "vault")
+            kube_client.wait_for_ingress(ingress)
+            bar()
 
-        tls_cert = kube_client.get_certificate(VAULT_NAMESPACE, "vault-tls")
-        kube_client.wait_for_certificate(tls_cert)
+            tls_cert = kube_client.get_certificate(VAULT_NAMESPACE, "vault-tls")
+            kube_client.wait_for_certificate(tls_cert)
+            bar()
 
-        # run security manager tf to create secrets and roles
-        sec_man_tf_env_vars = {
-            **{
-                "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
-                "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
-            },
-            **cloud_provider_auth_env_vars}
-        # set envs as required by tf
-        set_envs(sec_man_tf_env_vars)
+            wait_http_endpoint_readiness(f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}')
+            bar()
+
+            # run security manager tf to create secrets and roles
+            sec_man_tf_env_vars = {
+                **{
+                    "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
+                    "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
+                },
+                **cloud_provider_auth_env_vars}
+            # set envs as required by tf
+            set_envs(sec_man_tf_env_vars)
+            bar()
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_SECRETS_MANAGER)
         tf_wrapper.init()
@@ -728,51 +763,56 @@ def setup(
     if not p.has_checkpoint("core-services-tf"):
         click.echo("12/12: Configuring core services...")
 
-        # default AWS EKS auth token life-time is 14m
-        # to be safe should refresh token before proceeding
-        kube_client = init_k8s_client(cloud_man, p)
+        with alive_bar(9, title='Core Services Pre-Deployment Readiness') as bar:
+            # default AWS EKS auth token life-time is 14m
+            # to be safe should refresh token before proceeding
+            kube_client = init_k8s_client(cloud_man, p)
+            bar()
 
-        # wait for harbor readiness
-        harbor_dep = kube_client.get_deployment(HARBOR_NAMESPACE, "harbor-core")
-        kube_client.wait_for_deployment(harbor_dep)
+            # wait for harbor readiness
+            harbor_dep = kube_client.get_deployment(HARBOR_NAMESPACE, "harbor-core")
+            kube_client.wait_for_deployment(harbor_dep)
+            bar()
 
-        wait(10)
-        harbor_ingress = kube_client.get_ingress(HARBOR_NAMESPACE, "harbor-ingress")
-        kube_client.wait_for_ingress(harbor_ingress)
+            harbor_ingress = kube_client.get_ingress(HARBOR_NAMESPACE, "harbor-ingress")
+            kube_client.wait_for_ingress(harbor_ingress)
+            bar()
 
-        wait(10)
-        harbor_tls_cert = kube_client.get_certificate(HARBOR_NAMESPACE, "harbor-tls")
-        kube_client.wait_for_certificate(harbor_tls_cert)
+            harbor_tls_cert = kube_client.get_certificate(HARBOR_NAMESPACE, "harbor-tls")
+            kube_client.wait_for_certificate(harbor_tls_cert)
+            bar()
 
-        wait(10)
-        # wait for sonarqube readiness
-        sonar_ss = kube_client.get_stateful_set_objects(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
-        kube_client.wait_for_stateful_set(sonar_ss)
+            # wait for sonarqube readiness
+            sonar_ss = kube_client.get_stateful_set_objects(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
+            kube_client.wait_for_stateful_set(sonar_ss)
+            bar()
 
-        wait(10)
-        sonar_ingress = kube_client.get_ingress(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
-        kube_client.wait_for_ingress(sonar_ingress)
+            sonar_ingress = kube_client.get_ingress(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
+            kube_client.wait_for_ingress(sonar_ingress)
+            bar()
 
-        wait(10)
-        sonar_tls_cert = kube_client.get_certificate(SONARQUBE_NAMESPACE, "sonarqube-tls")
-        kube_client.wait_for_certificate(sonar_tls_cert)
+            sonar_tls_cert = kube_client.get_certificate(SONARQUBE_NAMESPACE, "sonarqube-tls")
+            kube_client.wait_for_certificate(sonar_tls_cert)
+            bar()
 
-        # wait for registry API endpoint readiness
-        wait_http_endpoint_readiness(f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}')
+            # wait for registry API endpoint readiness
+            wait_http_endpoint_readiness(f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}')
+            bar()
 
-        p.internals["REGISTRY_USERNAME"] = "admin"
-        # run security manager tf to create secrets and roles
-        core_services_tf_env_vars = {
-            **{
-                "HARBOR_URL": f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}',
-                "HARBOR_USERNAME": p.internals["REGISTRY_USERNAME"],
-                "HARBOR_PASSWORD": p.internals["REGISTRY_PASSWORD"],
-                "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
-                "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
-            },
-            **cloud_provider_auth_env_vars}
-        # set envs as required by tf
-        set_envs(core_services_tf_env_vars)
+            p.internals["REGISTRY_USERNAME"] = "admin"
+            # run security manager tf to create secrets and roles
+            core_services_tf_env_vars = {
+                **{
+                    "HARBOR_URL": f'https://{p.parameters["<REGISTRY_INGRESS_URL>"]}',
+                    "HARBOR_USERNAME": p.internals["REGISTRY_USERNAME"],
+                    "HARBOR_PASSWORD": p.internals["REGISTRY_PASSWORD"],
+                    "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
+                    "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
+                },
+                **cloud_provider_auth_env_vars}
+            # set envs as required by tf
+            set_envs(core_services_tf_env_vars)
+            bar()
 
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_CORE_SERVICES)
         tf_wrapper.init()
@@ -785,10 +825,14 @@ def setup(
             "code_quality_admin_password": p.internals["CODE_QUALITY_PASSWORD"]
         })
         core_services_out = tf_wrapper.output()
-        p.parameters["<REGISTRY_DOCKERHUB_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["dockerhub_proxy_name"]}'
-        p.parameters["<REGISTRY_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["gcr_proxy_name"]}'
-        p.parameters["<REGISTRY_K8S_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["k8s_gcr_proxy_name"]}'
-        p.parameters["<REGISTRY_QUAY_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["quay_proxy_name"]}'
+        p.parameters[
+            "<REGISTRY_DOCKERHUB_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["dockerhub_proxy_name"]}'
+        p.parameters[
+            "<REGISTRY_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["gcr_proxy_name"]}'
+        p.parameters[
+            "<REGISTRY_K8S_GCR_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["k8s_gcr_proxy_name"]}'
+        p.parameters[
+            "<REGISTRY_QUAY_PROXY>"] = f'{p.parameters["<REGISTRY_REGISTRY_URL>"]}/{core_services_out["quay_proxy_name"]}'
 
         # unset envs as no longer needed
         unset_envs(core_services_tf_env_vars)
@@ -805,6 +849,15 @@ def setup(
                                         p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"])
 
     show_credentials(p)
+
+    # Calculate the total seconds elapsed
+    total_seconds = time.time() - func_start_time
+
+    # Use divmod to separate the total seconds into minutes and seconds
+    minutes, seconds = divmod(total_seconds, 60)
+
+    # Display the result with minutes as integers and seconds with two decimal places
+    click.echo(f"Platform setup completed in {int(minutes)} minutes, {int(seconds)} seconds")
 
     return True
 
