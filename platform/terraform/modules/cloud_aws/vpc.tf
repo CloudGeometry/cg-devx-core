@@ -16,10 +16,16 @@ module "vpc" {
 
   public_subnet_tags = {
     "kubernetes.io/role/elb" = 1
+    "Tier"                   = "public"
   }
 
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
+    "Tier"                            = "private"
+  }
+
+  intra_subnet_tags = {
+    "Tier" = "intra"
   }
 
 }
