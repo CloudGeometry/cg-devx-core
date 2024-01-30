@@ -7,15 +7,16 @@ module "gitops-repo" {
   atlantis_url                 = var.atlantis_url
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   vcs_subscription_plan        = var.vcs_subscription_plan
-  vcs_owner                    = var.vcs_owner
+  vcs_owner                    = data.gitlab_group.owner.group_id
+  branch_protection            = true
 }
 
-resource "gitlab_user_runner" "this" {
-  runner_type = "project_type"
-  project_id = module.gitops-repo.repo_id
+# resource "gitlab_user_runner" "this" {
+#   runner_type = "project_type"
+#   project_id = module.gitops-repo.repo_id
 
-  description = "The ${var.gitops_repo_name} runner"
-}
+#   description = "The ${var.gitops_repo_name} runner"
+# }
 
 output "gitops_repo_git_clone_url" {
   value = module.gitops-repo.repo_git_clone_url

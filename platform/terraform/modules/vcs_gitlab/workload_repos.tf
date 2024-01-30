@@ -19,5 +19,5 @@ module "workload_repos" {
   atlantis_enabled             = each.value.atlantis_enabled
   atlantis_url                 = var.atlantis_url
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
-  vcs_owner = var.vcs_owner
+  vcs_owner                    = data.gitlab_group.owner.group_id
 }

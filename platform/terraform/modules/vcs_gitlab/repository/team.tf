@@ -1,10 +1,8 @@
-data "gitlab_current_user" "current_user" {}
-
-resource "gitlab_group" "owners" {
-  name             = "${var.repo_name}-owners"
-  description      = "owners of the ${var.repo_name}"
+resource "gitlab_group" "admins" {
+  name             = "${var.repo_name}-admins"
+  description      = "admins of the ${var.repo_name}"
   parent_id        = var.vcs_owner
-  path             = "${var.repo_name}-owners"
+  path             = "${var.repo_name}-admins"
   visibility_level = "private"
 }
 resource "gitlab_group" "developers" {
@@ -61,4 +59,10 @@ resource "gitlab_project_share_group" "guests_project" {
   project      = gitlab_project.repo.id
   group_id     = gitlab_group.guests.id
   group_access = "guest"
+}
+
+resource "gitlab_project_share_group" "admins_project" {
+  project      = gitlab_project.repo.id
+  group_id     = gitlab_group.admins.id
+  group_access = "owner"
 }

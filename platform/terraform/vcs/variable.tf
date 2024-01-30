@@ -10,9 +10,9 @@ variable "vcs_bot_ssh_public_key" {
 
 variable "workloads" {
   description = "Workloads configuration"
-  type        = map(object({
+  type = map(object({
     description = optional(string, "")
-    repos       = map(object({
+    repos = map(object({
       description            = optional(string, "")
       visibility             = optional(string, "private")
       auto_init              = optional(bool, false)

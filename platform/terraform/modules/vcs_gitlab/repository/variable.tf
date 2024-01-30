@@ -39,7 +39,7 @@ variable "delete_branch_on_merge" {
 
 variable "branch_protection" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "allow_merge_commit" {
@@ -76,5 +76,5 @@ variable "vcs_subscription_plan" {
 }
 
 variable "vcs_owner" {
-  type      = string
+  type = string
 }
