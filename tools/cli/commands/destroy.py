@@ -1,4 +1,5 @@
 import shutil
+import time
 
 import click
 import portforward
@@ -26,6 +27,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 ), default='CRITICAL', help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)')
 def destroy(verbosity: str):
     """Destroy existing CG DevX installation."""
+    # Initialize the start time to measure the duration of the platform destruction
+    func_start_time = time.time()
 
     # Set up global logger
     configure_logging(verbosity)
@@ -136,6 +139,11 @@ def destroy(verbosity: str):
     # delete local data folder
     shutil.rmtree(LOCAL_FOLDER)
 
-    click.echo("Done!")
+    # Calculate the total seconds elapsed
+    total_seconds = time.time() - func_start_time
 
-    return
+    # Use divmod to separate the total seconds into minutes and seconds
+    minutes, seconds = divmod(total_seconds, 60)
+
+    # Display the result with minutes as integers and seconds with two decimal places
+    click.echo(f"Platform destroy completed in {int(minutes)} minutes, {int(seconds)} seconds")

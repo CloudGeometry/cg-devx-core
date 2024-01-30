@@ -1,5 +1,5 @@
 import textwrap
-from typing import Optional
+from typing import Optional, Tuple
 
 from common.tracing_decorator import trace
 from common.utils.generators import random_string_generator
@@ -16,8 +16,10 @@ K8s = 'kubelogin'
 class AzureManager(CloudProviderManager):
     """Azure wrapper."""
 
-    def __init__(self, subscription_id: str, location: Optional[str] = None):
-        self.iac_backend_storage_container_name: Optional[str] = None
+    def __init__(
+            self, subscription_id: str, location: Optional[str] = None, storage_container_name: Optional[str] = None
+    ):
+        self.iac_backend_storage_container_name: Optional[str] = storage_container_name
         self._azure_sdk = AzureSdk(subscription_id, location)
 
     @property
@@ -71,9 +73,9 @@ class AzureManager(CloudProviderManager):
         """
         return textwrap.dedent(f'''\
             backend "azurerm" {{
-              resource_group_name  = "{self._generate_resource_group_name()}"
-              storage_account_name = "{self._generate_storage_account_name()}"
-              container_name       = "{self.iac_backend_storage_container_name}"
+              resource_group_name  = "{self._generate_resource_group_name(location)}"
+              storage_account_name = "{self._generate_storage_account_name(location)}"
+              container_name       = "{location or self.iac_backend_storage_container_name}"
               key                  = "terraform/{service}/terraform.tfstate"
             }}''')
 
@@ -115,22 +117,36 @@ class AzureManager(CloudProviderManager):
         return detect_command_presence(CLI) & detect_command_presence(K8s)
 
     @trace()
-    def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
+    def create_iac_state_storage(self, name: str, **kwargs: dict) -> Tuple[str, str]:
         """
-        Creates cloud native terraform remote state storage
-        :return: Resource identifier
+        Creates cloud-native Terraform remote state storage.
+
+        The method generates a unique name for the storage container based on the provided 'name' and a random
+        string. It then creates a resource group and a storage account adhering to Azure's naming conventions.
+        After setting up the storage account, it retrieves the storage account keys and enables versioning
+        for the storage account.
+
+        Args:
+            name (str): Base name to use for generating the storage container name.
+            **kwargs (dict): Additional keyword arguments that may be used in the future.
+
+        Returns:
+            tuple: A tuple containing the resource identifier of the created storage
+            and the primary key of the storage account.
         """
         self.iac_backend_storage_container_name = f"{name}-{random_string_generator()}".lower()
 
         resource_group_name = self._generate_resource_group_name()
         storage_account_name = self._generate_storage_account_name()
-        storage = self._azure_sdk.create_storage(self.iac_backend_storage_container_name,
-                                                 storage_account_name,
-                                                 resource_group_name)
+        self._azure_sdk.create_storage(
+            container_name=self.iac_backend_storage_container_name,
+            storage_account_name=storage_account_name,
+            resource_group_name=resource_group_name)
+
         keys = self._azure_sdk.get_storage_account_keys(resource_group_name, storage_account_name)
         self._azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
 
-        return storage, keys[0].value
+        return self.iac_backend_storage_container_name, keys[0].value
 
     @trace()
     def evaluate_permissions(self) -> bool:
@@ -158,27 +174,37 @@ class AzureManager(CloudProviderManager):
         """
         return f"{base_name}-{random_string_generator()}".lower()
 
-    def _generate_storage_account_name(self) -> str:
+    def _generate_storage_account_name(self, container_name: Optional[str] = None) -> str:
         """
         Generate a unique storage account name that adheres to Azure's naming conventions.
 
         Azure's storage account name must be between 3 and 24 characters in length and can only use numbers and lower-case letters.
 
+        Args:
+            container_name (Optional[str]): The container name to use for generating the storage account name.
+                                            If not provided, the internal variable is used.
+
         Returns:
             str: A unique storage account name adhering to Azure's naming conventions.
         """
-        # Remove characters as storage account name could only contain numbers and letters
-        safe_name = self.iac_backend_storage_container_name.replace('_', '').replace('-', '')
+        container_name = container_name or self.iac_backend_storage_container_name
+        # Remove disallowed characters as the storage account name can only contain numbers and letters
+        safe_name = container_name.replace('_', '').replace('-', '')
         return f"{safe_name[:20]}iac".lower()
 
-    def _generate_resource_group_name(self) -> str:
+    def _generate_resource_group_name(self, container_name: Optional[str] = None) -> str:
         """
         Generate a unique resource group name based on the container name.
+
+        Args:
+            container_name (Optional[str]): The container name to use for generating the resource group name.
+                                            If not provided, the internal variable is used.
 
         Returns:
             str: A unique name for the resource group.
         """
-        return f"{self.iac_backend_storage_container_name[:20]}-rg"
+        container_name = container_name or self.iac_backend_storage_container_name
+        return f"{container_name[:20]}-rg"
 
     @trace()
     def create_ingress_annotations(self) -> str:

@@ -4,6 +4,7 @@ from kubernetes import client, watch, config
 from kubernetes.client import ApiException
 
 from common.const.common_path import LOCAL_FOLDER
+from common.logging_config import logger
 from common.retry_decorator import exponential_backoff
 from common.tracing_decorator import trace
 
@@ -194,8 +195,8 @@ class KubeClient:
         res = batch_v1_instance.create_namespaced_job(namespace=namespace, body=body)
         return res
 
-    @exponential_backoff()
     @trace()
+    @exponential_backoff()
     def get_deployment(self, namespace: str, deployment_name: str):
         """
         Reads a Deployment.
@@ -208,8 +209,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff()
     @trace()
+    @exponential_backoff()
     def get_pod(self, namespace: str, pod_name: str):
         """
         Reads a Deployment.
@@ -222,8 +223,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff()
     @trace()
+    @exponential_backoff()
     def get_stateful_set_objects(self, namespace: str, name: str):
         """
         Reads a StatefulSet.
@@ -236,8 +237,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff()
     @trace()
+    @exponential_backoff()
     def get_ingress(self, namespace: str, name: str):
         """
         Reads an Ingress.
@@ -250,8 +251,8 @@ class KubeClient:
         except ApiException as e:
             raise e
 
-    @exponential_backoff()
     @trace()
+    @exponential_backoff()
     def get_certificate(self, namespace: str, name: str):
         """
         Reads a cert-manager certificate.

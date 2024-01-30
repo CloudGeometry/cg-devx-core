@@ -7,7 +7,6 @@ import stat
 from zipfile import ZipFile
 
 import requests
-from python_terraform import *
 
 from common.const.common_path import LOCAL_TOOLS_FOLDER, LOCAL_TF_TOOL, LOCAL_KCTL_TOOL
 from common.const.const import KUBECTL_VERSION, TERRAFORM_VERSION

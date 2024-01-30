@@ -183,3 +183,7 @@ class GitLabProviderManager(GitProviderManager):
         :return: Plan name
         """
         return GitSubscriptionPlans.Free
+
+    @trace()
+    def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
+        pass
