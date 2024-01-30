@@ -160,3 +160,7 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_external_secrets_config(self, **kwargs) -> str:
         return ""
+
+    @trace()
+    def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
+        return '''awsRegion: <CLOUD_REGION>'''

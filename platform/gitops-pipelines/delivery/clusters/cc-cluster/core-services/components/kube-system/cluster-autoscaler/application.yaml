@@ -41,15 +41,16 @@ spec:
           roles:
             - worker
 
-        # awsRegion -- AWS region (required if `cloudProvider=aws`)
-        awsRegion: <CLOUD_REGION>
-
         # cloudProvider -- The cloud provider where the autoscaler runs.
         # Currently only `gce`, `aws`, `azure`, `magnum` and `clusterapi` are supported.
         # `aws` supported for AWS. `gce` for GCE. `azure` for Azure AKS.
         # `magnum` for OpenStack Magnum, `clusterapi` for Cluster API.
         cloudProvider: <CLOUD_PROVIDER>
 
+        # cloud provider specific configuration
+        # <K8S_AUTOSCALER>
+        # ---
+        
         # containerSecurityContext -- [Security context for container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
         containerSecurityContext:
           capabilities:

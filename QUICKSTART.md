@@ -19,7 +19,7 @@
 
 - AWS - Supported
 - Azure - Experimental*
-- GCP -  Will be added to a future release
+- GCP - Will be added to a future release
 
 \* Experimental functions are provided for you to try, but are not documented or supported, and are likely to be buggy, or to change after release.
 

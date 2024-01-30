@@ -5,6 +5,7 @@ from typing import List, Tuple, Optional
 from azure.core.exceptions import ResourceNotFoundError, HttpResponseError, AzureError, ResourceExistsError
 from azure.identity import AzureCliCredential
 from azure.mgmt.authorization import AuthorizationManagementClient
+from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.dns import DnsManagementClient
 from azure.mgmt.privatedns import PrivateDnsManagementClient
 from azure.mgmt.resource import ResourceManagementClient
@@ -12,6 +13,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.v2021_04_01.models import SkuName, Kind
 from azure.mgmt.subscription import SubscriptionClient
 from azure.storage.blob import BlobServiceClient
+
 from common.logging_config import logger
 from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
@@ -29,6 +31,7 @@ class AzureSdk:
         self.dns_client: DnsManagementClient = DnsManagementClient(self.credential, self.subscription_id)
         self.storage_mgmt_client = StorageManagementClient(self.credential, self.subscription_id)
         self.private_dns_client = PrivateDnsManagementClient(self.credential, self.subscription_id)
+        self.compute_client = ComputeManagementClient(self.credential, self.subscription_id)
         self.subscription_client = SubscriptionClient(self.credential)
         self.location = self._validate_location(location)
 
@@ -513,3 +516,7 @@ class AzureSdk:
         """
         for tenant in self.subscription_client.tenants.list():
             return tenant.tenant_id
+
+    def get_vmss(self, rg_name):
+        vmss_list = self.compute_client.virtual_machine_scale_sets.list(rg_name)
+        return [v.name for v in vmss_list]

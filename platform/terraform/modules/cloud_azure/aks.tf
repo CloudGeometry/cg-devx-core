@@ -25,6 +25,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   image_cleaner_enabled            = false
   azure_policy_enabled             = true
   http_application_routing_enabled = false
+  node_resource_group              = "${local.name}-vmss-rg"
 
   default_node_pool {
     name                   = local.default_node_group.name

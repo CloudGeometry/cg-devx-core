@@ -341,6 +341,13 @@ def setup(
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
         p.internals["CC_CLUSTER_CA_CERT_PATH"] = write_ca_cert(hp_out["cluster_certificate_authority_data"])
         p.internals["CC_CLUSTER_OIDC_ISSUER_URL"] = hp_out["cluster_oidc_issuer_url"]
+
+        # generate cluster autoscaler config here as it could depend on node groups configuration
+        p.fragments["# <K8S_AUTOSCALER>"] = cloud_man.create_autoscaler_snippet(
+            p.parameters["<PRIMARY_CLUSTER_NAME>"],
+            hp_out["cluster_node_groups"]
+        )
+
         # artifact storage
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
         # kms keys
