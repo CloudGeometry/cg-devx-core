@@ -20,11 +20,11 @@ class AzureManager(CloudProviderManager):
             self, subscription_id: str, location: Optional[str] = None, storage_container_name: Optional[str] = None
     ):
         self.iac_backend_storage_container_name: Optional[str] = storage_container_name
-        self._azure_sdk = AzureSdk(subscription_id, location)
+        self.__azure_sdk = AzureSdk(subscription_id, location)
 
     @property
     def region(self):
-        return self._azure_sdk.location
+        return self.__azure_sdk.location
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str):
@@ -34,7 +34,7 @@ class AzureManager(CloudProviderManager):
         self.iac_backend_storage_container_name = name
         resource_group_name = self._generate_resource_group_name()
         storage_account_name = self._generate_storage_account_name()
-        self._azure_sdk.set_storage_access(identity, storage_account_name, resource_group_name)
+        self.__azure_sdk.set_storage_access(identity, storage_account_name, resource_group_name)
 
     @trace()
     def destroy_iac_state_storage(self, bucket: str) -> bool:
@@ -53,7 +53,7 @@ class AzureManager(CloudProviderManager):
             bool: True if the resource group was successfully destroyed, False otherwise.
         """
         self.iac_backend_storage_container_name = bucket
-        return self._azure_sdk.destroy_resource_group(self._generate_resource_group_name())
+        return self.__azure_sdk.destroy_resource_group(self._generate_resource_group_name())
 
     @trace()
     def create_iac_backend_snippet(self, location: str, service: str, **kwargs) -> str:
@@ -138,13 +138,13 @@ class AzureManager(CloudProviderManager):
 
         resource_group_name = self._generate_resource_group_name()
         storage_account_name = self._generate_storage_account_name()
-        self._azure_sdk.create_storage(
+        self.__azure_sdk.create_storage(
             container_name=self.iac_backend_storage_container_name,
             storage_account_name=storage_account_name,
             resource_group_name=resource_group_name)
 
-        keys = self._azure_sdk.get_storage_account_keys(resource_group_name, storage_account_name)
-        self._azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
+        keys = self.__azure_sdk.get_storage_account_keys(resource_group_name, storage_account_name)
+        self.__azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
 
         return self.iac_backend_storage_container_name, keys[0].value
 
@@ -155,10 +155,10 @@ class AzureManager(CloudProviderManager):
         :return: True or False
         """
         missing_permissions = []
-        missing_permissions.extend(self._azure_sdk.blocked(aks_permissions))
-        missing_permissions.extend(self._azure_sdk.blocked(blob_permissions))
-        missing_permissions.extend(self._azure_sdk.blocked(vnet_permissions))
-        missing_permissions.extend(self._azure_sdk.blocked(rbac_permissions))
+        missing_permissions.extend(self.__azure_sdk.blocked(aks_permissions))
+        missing_permissions.extend(self.__azure_sdk.blocked(blob_permissions))
+        missing_permissions.extend(self.__azure_sdk.blocked(vnet_permissions))
+        missing_permissions.extend(self.__azure_sdk.blocked(rbac_permissions))
         return len(missing_permissions) == 0
 
     @staticmethod
@@ -236,12 +236,12 @@ class AzureManager(CloudProviderManager):
                 "subscriptionId": "{subscription_id}",
                 "resourceGroup": "{resource_group}",
                 "useWorkloadIdentityExtension": true
-              }}'''.format(subscription_id=self._azure_sdk.subscription_id, resource_group=location)
+              }}'''.format(subscription_id=self.__azure_sdk.subscription_id, resource_group=location)
 
     @trace()
     def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
         autoscaling_groups = ""
-        vmss_list = self._azure_sdk.get_vmss(f"{cluster_name}-vmss-rg")
+        vmss_list = self.__azure_sdk.get_vmss(f"{cluster_name}-vmss-rg")
 
         if not len(vmss_list):
             raise Exception("Could not find vmss")
@@ -253,11 +253,11 @@ class AzureManager(CloudProviderManager):
             minSize: {node["min_size"]}
             maxSize: {node["max_size"]}'''
 
-        tenant_id = self._azure_sdk.get_tenant_id()
+        tenant_id = self.__azure_sdk.get_tenant_id()
         return f'''autoscalingGroups: {autoscaling_groups}
         azureClientID: "<CLUSTER_AUTOSCALER_IAM_ROLE_RN>"
         azureResourceGroup: {cluster_name}-vmss-rg
-        azureSubscriptionID: {self._azure_sdk.subscription_id}
+        azureSubscriptionID: {self.__azure_sdk.subscription_id}
         azureTenantID: {tenant_id}
         azureUseWorkloadIdentityExtension: true
         azureVMType: "vmss"'''
