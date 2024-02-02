@@ -1,4 +1,5 @@
 import json
+import textwrap
 from typing import Dict, Optional, Union, Tuple
 
 import requests
@@ -12,6 +13,7 @@ from services.vcs.git_provider_manager import GitProviderManager
 
 class GitLabProviderManager(GitProviderManager):
     """GitLab provider wrapper."""
+    __BASE_API_URI = "https://gitlab.com/api/v4"
 
     def __init__(self, token: str, group_name: str):
         """
@@ -22,8 +24,8 @@ class GitLabProviderManager(GitProviderManager):
         """
         self.__token = token
         self.__group_name = group_name
-        self.__required_role = 40  # 'Maintainer'
-        self.__required_token_scope = {'api', 'read_api', 'read_user', 'read_repository', 'write_repository'}
+        self.__required_role = 40  # Maintainer
+        self.__required_token_scope = {"api"}
 
     def _get_headers(self) -> Dict[str, str]:
         """
@@ -32,8 +34,8 @@ class GitLabProviderManager(GitProviderManager):
         :return: Dictionary containing the necessary headers for the API call.
         """
         return {
-            'Authorization': f'Bearer {self.__token}',
-            'Accept': 'application/json'
+            "Authorization": f"Bearer {self.__token}",
+            "Accept": "application/json"
         }
 
     @property
@@ -50,10 +52,10 @@ class GitLabProviderManager(GitProviderManager):
         :raises HTTPError: If there's an issue with the API request.
         """
         headers = {
-            'Private-Token': f'{self.__token}',
+            "Private-Token": f"{self.__token}",
         }
         try:
-            response = requests.get(f'https://gitlab.com/api/v4/projects/{self.__group_name}%2F{name}', headers=headers)
+            response = requests.get(url=f"{self.__BASE_API_URI}/projects/{self.__group_name}%2F{name}", headers=headers)
             if response.status_code == 404:
                 return False
             elif response.status_code == 200:
@@ -68,14 +70,13 @@ class GitLabProviderManager(GitProviderManager):
         :return: ID of the GitLab group or None if the group is not found or an error occurs.
         """
         headers = self._get_headers()
-        url = f'https://gitlab.com/api/v4/groups?search={self.__group_name}'
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url=f"{self.__BASE_API_URI}/groups?search={self.__group_name}", headers=headers)
             response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
 
             # Attempt to get the ID of the first group. If groups are empty, this will raise an IndexError
             first_group = response.json()[0]
-            return first_group.get('id')
+            return first_group.get("id")
 
         except (IndexError, KeyError, requests.RequestException):
             return None
@@ -87,8 +88,10 @@ class GitLabProviderManager(GitProviderManager):
         :return: Dictionary containing token details or an empty dictionary if an error occurs.
         """
         try:
-            response = requests.get('https://gitlab.com/api/v4/personal_access_tokens/self',
-                                    headers=self._get_headers())
+            response = requests.get(
+                url=f"{self.__BASE_API_URI}/personal_access_tokens/self",
+                headers=self._get_headers()
+            )
             response.raise_for_status()
             return response.json()
         except requests.RequestException:
@@ -103,10 +106,12 @@ class GitLabProviderManager(GitProviderManager):
         :return: User's role (as an integer) in the group or None if an error occurs.
         """
         try:
-            response = requests.get(f'https://gitlab.com/api/v4/groups/{group_id}/members/{user_id}',
-                                    headers=self._get_headers())
+            response = requests.get(
+                url=f"{self.__BASE_API_URI}/groups/{group_id}/members/{user_id}",
+                headers=self._get_headers()
+            )
             response.raise_for_status()
-            return response.json().get('access_level')
+            return response.json().get("access_level")
         except requests.RequestException:
             return None
 
@@ -125,14 +130,13 @@ class GitLabProviderManager(GitProviderManager):
             token_data = self._retrieve_token_data()
 
             # Extract the list of scopes associated with the token
-            token_scopes = token_data['scopes']
+            token_scopes = token_data["scopes"]
 
             # Extract the user ID associated with the token
-            user_id = token_data['user_id']
+            user_id = token_data["user_id"]
 
             # Fetch the user's role within the specified group
             user_role = self._get_user_role(group_id, user_id)
-
             # Evaluate and return True if the user's role meets or exceeds the required role
             # and the token's scopes include all required scopes; otherwise, return False
             return user_role >= self.__required_role and self.__required_token_scope.issubset(token_scopes)
@@ -150,10 +154,10 @@ class GitLabProviderManager(GitProviderManager):
         :raises HTTPError: If there's an issue with the API request.
         """
         headers = {
-            'Private-Token': f'{self.__token}',
+            "Private-Token": f"{self.__token}",
         }
         try:
-            response = requests.get('https://gitlab.com/api/v4/user', headers=headers)
+            response = requests.get(url=f"{self.__BASE_API_URI}/user", headers=headers)
             res = json.loads(response.text)
 
             name = res.get("name", FALLBACK_AUTHOR_NAME)
@@ -170,7 +174,24 @@ class GitLabProviderManager(GitProviderManager):
 
         :return: A string containing the Terraform module snippet.
         """
-        return 'provider "gitlab" {}'
+        return "provider \"gitlab\" {}"
+
+    @trace()
+    def create_tf_required_provider_snippet(self) -> str:
+        """Generates a multiline string containing a Terraform configuration snippet
+
+        This function creates a configuration snippet for the GitLab provider, which includes
+        details such as the source and version of the provider.
+
+        Returns:
+            str: A multiline string containing the GitLab provider configuration snippet.
+        """
+        return textwrap.dedent("""\
+        gitlab = {
+              # https://registry.terraform.io/providers/gitlabhq/gitlab/latest/docs
+              source  = "gitlabhq/gitlab"
+              version = "16.7.0"
+            }""")
 
     @trace()
     def create_runner_group_snippet(self) -> str:
