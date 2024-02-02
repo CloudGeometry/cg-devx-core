@@ -78,6 +78,7 @@ module "cluster_autoscaler_sa" {
 
   oidc_issuer_url      = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
   resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_location = azurerm_resource_group.rg.location
   name                 = "cluster-autoscaler"
   service_account_name = "cluster-autoscaler"
   role_definitions     = [{ "name" = "Contributor", "scope" = "" }]
