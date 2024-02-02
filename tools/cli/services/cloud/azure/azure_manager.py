@@ -241,7 +241,7 @@ class AzureManager(CloudProviderManager):
     @trace()
     def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
         autoscaling_groups = ""
-        vmss_list = self.__azure_sdk.get_vmss(f"{cluster_name}-vmss-rg")
+        vmss_list = self._azure_sdk.get_vmss(f"{cluster_name}-vmss-rg")
 
         if not len(vmss_list):
             raise Exception("Could not find vmss")
@@ -253,11 +253,11 @@ class AzureManager(CloudProviderManager):
             minSize: {node["min_size"]}
             maxSize: {node["max_size"]}'''
 
-        tenant_id = self.__azure_sdk.get_tenant_id()
+        tenant_id = self._azure_sdk.get_tenant_id()
         return f'''autoscalingGroups: {autoscaling_groups}
         azureClientID: "<CLUSTER_AUTOSCALER_IAM_ROLE_RN>"
         azureResourceGroup: {cluster_name}-vmss-rg
-        azureSubscriptionID: {self.__azure_sdk.subscription_id}
+        azureSubscriptionID: {self._azure_sdk.subscription_id}
         azureTenantID: {tenant_id}
         azureUseWorkloadIdentityExtension: true
         azureVMType: "vmss"'''
