@@ -150,6 +150,7 @@ def setup(
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.parameters["<GIT_USER_EMAIL>"] = git_user_email
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
+        p.fragments["# <GIT_REQUIRED_PROVIDER>"] = git_man.create_tf_required_provider_snippet()
 
         git_subscription_plan = git_man.get_organization_plan()
         p.parameters["<GIT_SUBSCRIPTION_PLAN>"] = str(bool(git_subscription_plan)).lower()
