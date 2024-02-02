@@ -35,9 +35,9 @@ gitpython = "3.1.32"
 ghrepo = "0.7.0"
 dnspython = "2.4.2"
 httpx = "0.25.0"
-python-terraform = "0.10.1"
 hvac = "1.2.1"
 portforward = "^0.6.0"
+alive-progress = "^3.1.5"
 
 [tool.poetry.dev-dependencies]
 flake8 = "6.1.0"

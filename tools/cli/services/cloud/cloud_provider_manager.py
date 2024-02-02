@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 
 class CloudProviderManager(ABC):
@@ -26,10 +27,20 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
-    def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
+    def create_iac_state_storage(self, name: str, **kwargs: dict) -> Tuple[str, str]:
         """
-        Creates cloud native terraform remote state storage
-        :return: Resource identifier
+        Abstract method to create cloud-native Terraform remote state storage.
+
+        This method should be implemented by specific cloud provider classes (e.g., AWS, Azure) to create
+        and configure storage resources suitable for managing Terraform's remote state.
+
+        Args:
+            name (str): Base name to use for generating the storage resource name.
+            **kwargs (dict): Additional keyword arguments specific to the cloud provider's implementation.
+
+        Returns:
+            Tuple[str, str]: A tuple containing the identifiers or key information of the created storage resource,
+            specific to the cloud provider's implementation.
         """
         pass
 
@@ -136,5 +147,13 @@ class CloudProviderManager(ABC):
         """
         Creates external secrets operator configuration
         :return: External secrets operator configuration
+        """
+        pass
+
+    @abstractmethod
+    def create_iac_pr_automation_config_snippet(self):
+        """
+        Creates Cloud Provider specific configuration section for Atlantis
+        :return: Atlantis configuration section
         """
         pass

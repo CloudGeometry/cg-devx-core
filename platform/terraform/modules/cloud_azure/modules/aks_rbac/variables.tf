@@ -3,6 +3,11 @@ variable "resource_group_name" {
   type        = string
 }
 
+variable "resource_group_location" {
+  description = "(Required) Specifies the location of the resource group."
+  type        = string
+}
+
 variable "name" {
   description = "(Required) Specifies the name of the resource group."
   type        = string

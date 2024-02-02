@@ -21,12 +21,13 @@ resource "azurerm_key_vault" "key_vault" {
     default_action             = "Deny"
     # still affected by issue https://github.com/hashicorp/terraform-provider-azurerm/issues/14783
     virtual_network_subnet_ids = [azurerm_subnet.private_subnet.id]
-    ip_rules                   = [chomp(data.http.runner_ip_address.body)]
+    ip_rules                   = [chomp(data.http.runner_ip_address.response_body)]
   }
 
   lifecycle {
     ignore_changes = [
-      tags
+      tags,
+      network_acls.0.ip_rules
     ]
   }
 
@@ -46,6 +47,12 @@ resource "azurerm_role_assignment" "rbac_keyvault_administrator" {
   scope                = azurerm_key_vault.key_vault.id
   role_definition_name = "Key Vault Administrator"
   principal_id         = data.azurerm_client_config.client_identity.object_id
+
+  lifecycle {
+    ignore_changes = [
+      principal_id
+    ]
+  }
 }
 
 resource "random_string" "key_random_suffix" {

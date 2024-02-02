@@ -90,8 +90,14 @@ Commands:
 
 - `setup` Creates new CG DevX installation
 - `destroy` Destroys existing CG DevX installation
+- `workload` Commands related to Workload Management
+    - `create` Generates configuration of key Workload resources
+    - `bootstrap` Bootstraps Workload with configuration templates
+    - `delete` Removes configuration of key Workload resources
 
 Arguments:
 Are command specific and could be supplied via command lime, environment variables, or file
 
-For more details, please check [commands](cli/commands/README.md)
+For more details,
+please check CG DevX quickstart [commands](cli/commands/README.md)
+and [workload commands](cli/commands/workload/README.md)

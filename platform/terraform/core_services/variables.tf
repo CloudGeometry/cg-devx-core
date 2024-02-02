@@ -25,3 +25,11 @@ variable "registry_main_robot_password" {
   type      = string
   sensitive = true
 }
+
+variable "workloads" {
+  description = "Workloads configuration"
+  type        = map(object({
+    description = optional(string, "")
+  }))
+  default = {}
+}

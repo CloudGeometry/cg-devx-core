@@ -11,9 +11,9 @@ from services.k8s.k8s import KubeClient
 
 
 @exponential_backoff(base_delay=5)
-def get_argocd_token(user, password):
+def get_argocd_token(user, password, endpoint="localhost:8080"):
     try:
-        response = requests.post("https://localhost:8080/api/v1/session",
+        response = requests.post(f"https://{endpoint}/api/v1/session",
                                  verify=False,
                                  headers={"Content-Type": "application/json"},
                                  data=json.dumps({"username": user, "password": password})
@@ -28,9 +28,9 @@ def get_argocd_token(user, password):
 
 
 @exponential_backoff(base_delay=5)
-def delete_application(app_name, token):
+def delete_application(app_name, token, endpoint="localhost:8080"):
     try:
-        response = requests.delete(f"https://localhost:8080/api/v1/applications/{app_name}?cascade=true",
+        response = requests.delete(f"https://{endpoint}/api/v1/applications/{app_name}?cascade=true",
                                    verify=False,
                                    headers={
                                        "Content-Type": "application/json",

@@ -14,24 +14,16 @@ provider "vault" {
   skip_tls_verify = "true"
 }
 
-# Cloud Provider configuration
-# <TF_HOSTING_PROVIDER>
-
 locals {
   cluster_name   = "<PRIMARY_CLUSTER_NAME>"
   provisioned_by = "cgdevx"
-  ### Workload groups definition bellow
-  workloads      = {
-    # "workload-demo" = {
-    # },
-  }
 }
 
 module "secrets" {
   source = "../modules/secrets_vault"
 
   cluster_name                 = local.cluster_name
-  workloads                    = local.workloads
+  workloads                    = var.workloads
   vcs_bot_ssh_public_key       = var.vcs_bot_ssh_public_key
   vcs_bot_ssh_private_key      = var.vcs_bot_ssh_private_key
   vcs_token                    = var.vcs_token
@@ -39,4 +31,6 @@ module "secrets" {
   atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
   vault_token                  = var.vault_token
   cluster_endpoint             = var.cluster_endpoint
+  cluster_ssh_public_key       = var.cluster_ssh_public_key
+  tf_backend_storage_access_key       = var.tf_backend_storage_access_key
 }

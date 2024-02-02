@@ -62,9 +62,17 @@ variable "node_groups" {
 variable "cluster_node_labels" {
   type    = map(string)
   default = {
-    ProvisionedBy = "CGDevX"
+    provisioned-by = "cg-devx"
   }
   description = "(Optional) Specifies the AKS node labels"
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {
+    ProvisionedBy = "CGDevX"
+  }
+  description = "(Optional) Specifies the Azure resource tags"
 }
 
 variable "alert_emails" {
@@ -72,7 +80,7 @@ variable "alert_emails" {
   default = []
 }
 
-variable "ssh_public_key" {
+variable "cluster_ssh_public_key" {
   description = "(Required) Specifies the SSH public key for AKS worker nodes."
   type        = string
   default     = ""

@@ -3,7 +3,6 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 
-import boto3
 from awscli.customizations.eks.get_token import STSClientFactory, TokenGenerator, TOKEN_EXPIRATION_MINS
 from botocore.exceptions import ClientError
 
@@ -128,17 +127,39 @@ class AwsSdk:
         bucket_policy = {
             "Version": "2012-10-17",
             "Statement": [
+                # non-restrictive allow-list
                 {
                     "Sid": "RestrictS3Access",
-                    "Principal": {
-                        "AWS": [
-                            self.current_user_arn(),
-                            identity
-                        ]
-                    },
-                    "Effect": "Allow",
                     "Action": ["s3:*"],
-                    "Resource": [f"arn:aws:s3:::{bucket_name}"]
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Condition": {
+                        "ArnLike": {
+                            "aws:PrincipalArn": [
+                                self.current_user_arn(),
+                                identity,
+                                f"arn:aws:iam::{self._account_id}:root"
+                            ]
+                        }
+                    },
+                    "Resource": [f"arn:aws:s3:::{bucket_name}", f"arn:aws:s3:::{bucket_name}/*"],
+                },
+                # an explicit deny. this one is self-sufficient
+                {
+                    "Sid": "ExplicitlyDenyS3Actions",
+                    "Action": ["s3:*"],
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Condition": {
+                        "ArnNotLike": {
+                            "aws:PrincipalArn": [
+                                self.current_user_arn(),
+                                identity,
+                                f"arn:aws:iam::{self._account_id}:root"
+                            ]
+                        }
+                    },
+                    "Resource": [f"arn:aws:s3:::{bucket_name}", f"arn:aws:s3:::{bucket_name}/*"],
                 }
             ]
         }
@@ -243,7 +264,7 @@ class AwsSdk:
          If a region is not specified, the bucket is created in the S3 default region.
 
          :param bucket_name: Bucket to create
-         :param region: String region to create bucket in, e.g., 'us-west-2'
+         :param region: Region to create bucket in, e.g., 'us-west-2'
          :return: True if bucket deleted, else False
          """
 
@@ -252,18 +273,16 @@ class AwsSdk:
             if region is None:
                 region = self.region
 
-            s3_client = self._session_manager.session.client('s3', region_name=region)
+            resource = self._session_manager.session.resource("s3", region_name=region)
+            s3_client = self._session_manager.session.client("s3", region_name=region)
 
-            objects = s3_client.get_paginator("list_objects_v2")
+            bucket = resource.Bucket(bucket_name)
+            bucket_versioning = resource.BucketVersioning(bucket_name)
 
-            objects_iterator = objects.paginate(Bucket=bucket_name)
-            for res in objects_iterator:
-                if 'Versions' in res:
-                    objects = [{'Key': obj['Key'], 'VersionId': obj['VersionId']} for obj in res['Versions']]
-                    s3_client.delete_objects(Bucket=bucket_name, Delete={'Objects': objects})
-                if 'Contents' in res:
-                    objects = [{'Key': obj['Key']} for obj in res['Contents']]
-                    s3_client.delete_objects(Bucket=bucket_name, Delete={'Objects': objects})
+            if bucket_versioning.status == 'Enabled':
+                bucket.object_versions.delete()
+            else:
+                bucket.objects.all().delete()
 
             s3_client.delete_bucket(Bucket=bucket_name)
         except ClientError as e:

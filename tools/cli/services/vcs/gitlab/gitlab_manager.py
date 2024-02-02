@@ -5,6 +5,7 @@ import requests
 from requests.exceptions import HTTPError
 
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
+from common.enums.git_plans import GitSubscriptionPlans
 from common.tracing_decorator import trace
 from services.vcs.git_provider_manager import GitProviderManager
 
@@ -28,12 +29,16 @@ class GitLabProviderManager(GitProviderManager):
         """
         Construct and return headers for GitLab API requests.
 
-        :return: Dictionary containing necessary headers for the API call.
+        :return: Dictionary containing the necessary headers for the API call.
         """
         return {
             'Authorization': f'Bearer {self.__token}',
             'Accept': 'application/json'
         }
+
+    @property
+    def organization(self) -> str:
+        return self.__group_name
 
     @trace()
     def check_repository_existence(self, name: str = "GitOps") -> bool:
@@ -166,3 +171,19 @@ class GitLabProviderManager(GitProviderManager):
         :return: A string containing the Terraform module snippet.
         """
         return 'provider "gitlab" {}'
+
+    @trace()
+    def create_runner_group_snippet(self) -> str:
+        return ''
+
+    @trace()
+    def get_organization_plan(self) -> GitSubscriptionPlans:
+        """
+        Get active plan, if present
+        :return: Plan name
+        """
+        return GitSubscriptionPlans.Free
+
+    @trace()
+    def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
+        pass

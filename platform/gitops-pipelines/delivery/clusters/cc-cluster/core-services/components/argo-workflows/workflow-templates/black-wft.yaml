@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: black-wft
+spec:
+  templates:
+  - name: black
+    container:
+      image: "{{workflow.parameters.dockerhub-registry-proxy}}/pyfound/black"
+      imagePullPolicy: IfNotPresent
+      command: ["black", "--check", "-v", "/workspace/{{workflow.parameters.wl-service-name}}"]
+      volumeMounts:
+        - name: build
+          mountPath: /workspace
+

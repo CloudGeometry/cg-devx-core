@@ -83,3 +83,10 @@ output "artifacts_storage" {
   value       = azurerm_storage_container.artifacts_repository.name
   description = "Continuous Integration Artifact Repository storage backend"
 }
+
+# stub value for module compatibility
+output "cluster_oidc_provider_arn" {
+  value       = ""
+  sensitive   = true
+  description = "Cluster OIDC provider stub."
+}

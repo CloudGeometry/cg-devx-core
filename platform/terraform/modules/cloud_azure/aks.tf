@@ -31,7 +31,6 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     name                   = local.default_node_group.name
     vm_size                = local.default_node_group.instance_types[0]
     vnet_subnet_id         = azurerm_subnet.private_subnet.id
-    # pod_subnet_id          = [] ?? do we need it
     zones                  = local.azs
     node_labels            = var.cluster_node_labels
     enable_auto_scaling    = local.enable_native_auto_scaling
@@ -47,7 +46,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   linux_profile {
     admin_username = local.node_admin_username
     ssh_key {
-      key_data = var.ssh_public_key
+      key_data = var.cluster_ssh_public_key
     }
   }
 

@@ -1,5 +1,5 @@
 import textwrap
-from typing import Optional
+from typing import Optional, Tuple
 
 from common.tracing_decorator import trace
 from common.utils.generators import random_string_generator
@@ -16,13 +16,15 @@ K8s = 'kubelogin'
 class AzureManager(CloudProviderManager):
     """Azure wrapper."""
 
-    def __init__(self, subscription_id: str, location: Optional[str] = None):
-        self.iac_backend_storage_container_name: Optional[str] = None
-        self.__azure_sdk = AzureSdk(subscription_id, location)
+    def __init__(
+            self, subscription_id: str, location: Optional[str] = None, storage_container_name: Optional[str] = None
+    ):
+        self.iac_backend_storage_container_name: Optional[str] = storage_container_name
+        self._azure_sdk = AzureSdk(subscription_id, location)
 
     @property
     def region(self):
-        return self.__azure_sdk.location
+        return self._azure_sdk.location
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str):
@@ -32,7 +34,7 @@ class AzureManager(CloudProviderManager):
         self.iac_backend_storage_container_name = name
         resource_group_name = self._generate_resource_group_name()
         storage_account_name = self._generate_storage_account_name()
-        self.__azure_sdk.set_storage_access(identity, storage_account_name, resource_group_name)
+        self._azure_sdk.set_storage_access(identity, storage_account_name, resource_group_name)
 
     @trace()
     def destroy_iac_state_storage(self, bucket: str) -> bool:
@@ -51,7 +53,7 @@ class AzureManager(CloudProviderManager):
             bool: True if the resource group was successfully destroyed, False otherwise.
         """
         self.iac_backend_storage_container_name = bucket
-        return self.__azure_sdk.destroy_resource_group(self._generate_resource_group_name())
+        return self._azure_sdk.destroy_resource_group(self._generate_resource_group_name())
 
     @trace()
     def create_iac_backend_snippet(self, location: str, service: str, **kwargs) -> str:
@@ -71,9 +73,9 @@ class AzureManager(CloudProviderManager):
         """
         return textwrap.dedent(f'''\
             backend "azurerm" {{
-              resource_group_name  = "{self._generate_resource_group_name()}"
-              storage_account_name = "{self._generate_storage_account_name()}"
-              container_name       = "{self.iac_backend_storage_container_name}"
+              resource_group_name  = "{self._generate_resource_group_name(location)}"
+              storage_account_name = "{self._generate_storage_account_name(location)}"
+              container_name       = "{location or self.iac_backend_storage_container_name}"
               key                  = "terraform/{service}/terraform.tfstate"
             }}''')
 
@@ -115,21 +117,36 @@ class AzureManager(CloudProviderManager):
         return detect_command_presence(CLI) & detect_command_presence(K8s)
 
     @trace()
-    def create_iac_state_storage(self, name: str, **kwargs: dict) -> str:
+    def create_iac_state_storage(self, name: str, **kwargs: dict) -> Tuple[str, str]:
         """
-        Creates cloud native terraform remote state storage
-        :return: Resource identifier
+        Creates cloud-native Terraform remote state storage.
+
+        The method generates a unique name for the storage container based on the provided 'name' and a random
+        string. It then creates a resource group and a storage account adhering to Azure's naming conventions.
+        After setting up the storage account, it retrieves the storage account keys and enables versioning
+        for the storage account.
+
+        Args:
+            name (str): Base name to use for generating the storage container name.
+            **kwargs (dict): Additional keyword arguments that may be used in the future.
+
+        Returns:
+            tuple: A tuple containing the resource identifier of the created storage
+            and the primary key of the storage account.
         """
         self.iac_backend_storage_container_name = f"{name}-{random_string_generator()}".lower()
 
         resource_group_name = self._generate_resource_group_name()
         storage_account_name = self._generate_storage_account_name()
-        storage = self.__azure_sdk.create_storage(self.iac_backend_storage_container_name,
-                                                  storage_account_name,
-                                                  resource_group_name)
-        self.__azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
+        self._azure_sdk.create_storage(
+            container_name=self.iac_backend_storage_container_name,
+            storage_account_name=storage_account_name,
+            resource_group_name=resource_group_name)
 
-        return storage
+        keys = self._azure_sdk.get_storage_account_keys(resource_group_name, storage_account_name)
+        self._azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
+
+        return self.iac_backend_storage_container_name, keys[0].value
 
     @trace()
     def evaluate_permissions(self) -> bool:
@@ -138,10 +155,10 @@ class AzureManager(CloudProviderManager):
         :return: True or False
         """
         missing_permissions = []
-        missing_permissions.extend(self.__azure_sdk.blocked(aks_permissions))
-        missing_permissions.extend(self.__azure_sdk.blocked(blob_permissions))
-        missing_permissions.extend(self.__azure_sdk.blocked(vnet_permissions))
-        missing_permissions.extend(self.__azure_sdk.blocked(rbac_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(aks_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(blob_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(vnet_permissions))
+        missing_permissions.extend(self._azure_sdk.blocked(rbac_permissions))
         return len(missing_permissions) == 0
 
     @staticmethod
@@ -157,27 +174,37 @@ class AzureManager(CloudProviderManager):
         """
         return f"{base_name}-{random_string_generator()}".lower()
 
-    def _generate_storage_account_name(self) -> str:
+    def _generate_storage_account_name(self, container_name: Optional[str] = None) -> str:
         """
         Generate a unique storage account name that adheres to Azure's naming conventions.
 
         Azure's storage account name must be between 3 and 24 characters in length and can only use numbers and lower-case letters.
 
+        Args:
+            container_name (Optional[str]): The container name to use for generating the storage account name.
+                                            If not provided, the internal variable is used.
+
         Returns:
             str: A unique storage account name adhering to Azure's naming conventions.
         """
-        # Remove characters as storage account name could only contain numbers and letters
-        safe_name = self.iac_backend_storage_container_name.replace('_', '').replace('-', '')
+        container_name = container_name or self.iac_backend_storage_container_name
+        # Remove disallowed characters as the storage account name can only contain numbers and letters
+        safe_name = container_name.replace('_', '').replace('-', '')
         return f"{safe_name[:20]}iac".lower()
 
-    def _generate_resource_group_name(self) -> str:
+    def _generate_resource_group_name(self, container_name: Optional[str] = None) -> str:
         """
         Generate a unique resource group name based on the container name.
+
+        Args:
+            container_name (Optional[str]): The container name to use for generating the resource group name.
+                                            If not provided, the internal variable is used.
 
         Returns:
             str: A unique name for the resource group.
         """
-        return f"{self.iac_backend_storage_container_name[:20]}-rg"
+        container_name = container_name or self.iac_backend_storage_container_name
+        return f"{container_name[:20]}-rg"
 
     @trace()
     def create_ingress_annotations(self) -> str:
@@ -209,7 +236,7 @@ class AzureManager(CloudProviderManager):
                 "subscriptionId": "{subscription_id}",
                 "resourceGroup": "{resource_group}",
                 "useWorkloadIdentityExtension": true
-              }}'''.format(subscription_id=self.__azure_sdk.subscription_id, resource_group=location)
+              }}'''.format(subscription_id=self._azure_sdk.subscription_id, resource_group=location)
 
     @trace()
     def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
@@ -234,3 +261,13 @@ class AzureManager(CloudProviderManager):
         azureTenantID: {tenant_id}
         azureUseWorkloadIdentityExtension: true
         azureVMType: "vmss"'''
+
+    @trace()
+    def create_iac_pr_automation_config_snippet(self):
+        return '''# azure specific section
+      ARM_USE_AKS_WORKLOAD_IDENTITY       = true,
+      ARM_USE_CLI                         = false,
+      ARM_SUBSCRIPTION_ID                 = "<AZ_SUBSCRIPTION_ID>",
+      ARM_CLIENT_ID                       = "<IAC_PR_AUTOMATION_IAM_ROLE_RN>",
+      ARM_ACCESS_KEY                      = var.tf_backend_storage_access_key,
+      # ----'''
