@@ -1,8 +1,8 @@
 ---
 apiVersion: argoproj.io/v1alpha1
-kind: WorkflowTemplate
+kind: ClusterWorkflowTemplate
 metadata:
-  name: version-changer-wft
+  name: version-changer-cwft
   namespace: argo
 spec:
   entrypoint: version-changer
