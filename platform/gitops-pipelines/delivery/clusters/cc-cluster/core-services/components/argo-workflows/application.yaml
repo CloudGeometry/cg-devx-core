@@ -35,9 +35,6 @@ spec:
           rbac:
             create: true
         server:
-          logging:
-            level: debug
-            globallevel: '6'
           authMode: sso
           #        secure: false
           serviceAccount:
