@@ -23,6 +23,12 @@ spec:
           - --tar-path=/workspace/{{workflow.parameters.wl-service-name}}.tar
           - --registry-mirror={{workflow.parameters.registry}}
           - --skip-default-registry-fallback
+          - --snapshot-mode=time
+          - --use-new-run
+          - --cache=true
+          - --cache-copy-layers
+          - --cache-run-layers
+          - --cache-repo={{workflow.parameters.registry}}/kaniko-cache/{{workflow.parameters.workload-name}}-{{workflow.parameters.wl-service-name}}
         volumeMounts:
           - name: kaniko-secret
             mountPath: /kaniko/.docker
