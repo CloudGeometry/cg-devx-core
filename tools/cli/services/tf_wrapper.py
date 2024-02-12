@@ -12,7 +12,7 @@ from common.logging_config import logger
 
 class TerraformExecutionError(Exception):
     def __init__(self, return_code: int, stdout: str, stderr: str):
-        super().__init__(f"Terraform command failed with return code {return_code} and error: {stderr}")
+        super().__init__(f"Terraform command failed with return code {return_code} and error: \"{stderr}\"")
         self.return_code = return_code
         self.stdout = stdout
         self.stderr = stderr
@@ -304,7 +304,7 @@ class TerraformCommandManager:
             return None
 
         # Communicate with the process to retrieve stderr and the return code
-        stderr, _ = target_process.communicate()
+        _, stderr = target_process.communicate()
         return_code = target_process.returncode
 
         # Reset an internal process if it was used

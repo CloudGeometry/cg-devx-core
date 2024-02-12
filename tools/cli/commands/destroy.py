@@ -4,6 +4,7 @@ import time
 import click
 import portforward
 import urllib3
+from git import InvalidGitRepositoryError
 
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, LOCAL_FOLDER
 from common.const.namespaces import ARGOCD_NAMESPACE
@@ -40,12 +41,20 @@ def destroy(verbosity: str):
     p: StateStore = StateStore()
 
     git_man = init_git_provider(p)
-    gor = PlatformGitOpsRepo(git_man,
-                             author_name=p.internals["GIT_USER_NAME"],
-                             author_email=p.internals["GIT_USER_EMAIL"],
-                             key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"])
 
-    gor.update()
+    if p.has_checkpoint("gitops-vcs"):
+        try:
+            gor = PlatformGitOpsRepo(
+                git_man=git_man,
+                author_name=p.internals["GIT_USER_NAME"],
+                author_email=p.internals["GIT_USER_EMAIL"],
+                key_path=p.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+                repo_remote_url=p.parameters.get("<GIT_REPOSITORY_GIT_URL>")
+            )
+        except InvalidGitRepositoryError:
+            raise click.ClickException("GitOps repo does not exist")
+
+        gor.update()
 
     click.confirm(
         f'This will destroy cluster "{p.parameters["<PRIMARY_CLUSTER_NAME>"]}" and local files at "{LOCAL_FOLDER}". '
