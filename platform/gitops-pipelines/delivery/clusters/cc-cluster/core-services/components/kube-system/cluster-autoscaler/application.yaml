@@ -1,0 +1,114 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-autoscaler
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: core
+  source:
+    repoURL: https://kubernetes.github.io/autoscaler
+    chart: cluster-autoscaler
+    targetRevision: 9.34.1
+    helm:
+      values: |-
+        affinity: {}
+        additionalLabels: {}
+        autoDiscovery:
+          clusterName: <PRIMARY_CLUSTER_NAME>
+          tags:
+            - k8s.io/cluster-autoscaler/enabled
+            - k8s.io/cluster-autoscaler/<PRIMARY_CLUSTER_NAME>
+          roles:
+            - worker
+        cloudProvider: <CLOUD_PROVIDER>
+        # cloud provider specific configuration
+        # <K8S_AUTOSCALER>
+        # ---
+        containerSecurityContext:
+          capabilities:
+            drop:
+            - ALL
+        deployment:
+          annotations: {}
+        dnsPolicy: ClusterFirst
+        envFromConfigMap: ""
+        envFromSecret: ""
+        extraArgs:
+          logtostderr: true
+          stderrthreshold: info
+          v: 4
+        hostNetwork: false
+        kwokConfigMapName: "kwok-provider-config"
+        nodeSelector: {}
+        podAnnotations: {}
+        podDisruptionBudget:
+          maxUnavailable: 1
+          # minAvailable: 2
+        podLabels: {
+          # <ADDITIONAL_LABELS>
+        }
+        priorityClassName: "system-cluster-critical"
+        prometheusRule:
+          enabled: true
+          additionalLabels:
+            ruleType: ClusterAutoscalerRules
+          namespace: monitoring
+          interval: null
+          rules: []
+        rbac:
+          create: true
+          pspEnabled: false
+          clusterScoped: true
+          serviceAccount:
+            annotations:
+              <K8S_ROLE_MAPPING>: "<CLUSTER_AUTOSCALER_IAM_ROLE_RN>"
+            create: true
+            name:
+              cluster-autoscaler
+            automountServiceAccountToken: true
+        replicaCount: 1
+        resources:
+          limits:
+            cpu: 100m
+            memory: 300Mi
+          requests:
+            cpu: 100m
+            memory: 300Mi
+        revisionHistoryLimit: 10
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          runAsGroup: 1001
+        service:
+          create: true
+          annotations: {}
+          labels: {}
+          externalIPs: []
+          loadBalancerIP: ""
+          loadBalancerSourceRanges: []
+          servicePort: 8085
+          portName: http
+          type: ClusterIP
+        serviceMonitor:
+          enabled: true
+          interval: 10s
+          namespace: monitoring
+          selector:
+            release: prometheus-operator
+          path: /metrics
+          annotations: {}
+          metricRelabelings: {}
+        tolerations: []
+        topologySpreadConstraints: []
+        updateStrategy: {}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cluster-autoscaler
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

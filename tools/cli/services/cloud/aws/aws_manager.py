@@ -16,11 +16,11 @@ class AWSManager(CloudProviderManager):
     """AWS wrapper."""
 
     def __init__(self, region, profile, key, secret):
-        self.__aws_sdk = AwsSdk(region, profile, key, secret)
+        self._aws_sdk = AwsSdk(region, profile, key, secret)
 
     @property
     def region(self):
-        return self.__aws_sdk.region
+        return self._aws_sdk.region
 
     @classmethod
     def detect_cli_presence(cls) -> bool:
@@ -49,8 +49,8 @@ class AWSManager(CloudProviderManager):
             region = kwargs["region"]
         tf_backend_storage_name = f'{name}-{random_string_generator()}'.lower()
 
-        self.__aws_sdk.create_bucket(tf_backend_storage_name, region)
-        self.__aws_sdk.enable_bucket_versioning(tf_backend_storage_name, region)
+        self._aws_sdk.create_bucket(tf_backend_storage_name, region)
+        self._aws_sdk.enable_bucket_versioning(tf_backend_storage_name, region)
 
         return tf_backend_storage_name, ""
 
@@ -60,14 +60,14 @@ class AWSManager(CloudProviderManager):
         if kwargs and "region" in kwargs:
             region = kwargs["region"]
 
-        self.__aws_sdk.set_bucket_policy(name, identity, region)
+        self._aws_sdk.set_bucket_policy(name, identity, region)
 
     @trace()
     def destroy_iac_state_storage(self, name: str) -> bool:
         """
         Destroy cloud native terraform remote state storage
         """
-        return self.__aws_sdk.delete_bucket(name)
+        return self._aws_sdk.delete_bucket(name)
 
     @trace()
     def create_iac_backend_snippet(self, location: str, service: str, **kwargs: dict) -> str:
@@ -136,7 +136,7 @@ class AWSManager(CloudProviderManager):
 
     @trace()
     def get_k8s_token(self, cluster_name: str) -> str:
-        token = self.__aws_sdk.get_token(cluster_name=cluster_name)
+        token = self._aws_sdk.get_token(cluster_name=cluster_name)
         return token['status']['token']
 
     @trace()
@@ -146,11 +146,11 @@ class AWSManager(CloudProviderManager):
         :return: True or False
         """
         missing_permissions = []
-        missing_permissions.extend(self.__aws_sdk.blocked(vpc_permissions))
-        missing_permissions.extend(self.__aws_sdk.blocked(eks_permissions))
-        missing_permissions.extend(self.__aws_sdk.blocked(iam_permissions))
-        missing_permissions.extend(self.__aws_sdk.blocked(s3_permissions))
-        missing_permissions.extend(self.__aws_sdk.blocked(own_iam_permissions, [self.__aws_sdk.current_user_arn()]))
+        missing_permissions.extend(self._aws_sdk.blocked(vpc_permissions))
+        missing_permissions.extend(self._aws_sdk.blocked(eks_permissions))
+        missing_permissions.extend(self._aws_sdk.blocked(iam_permissions))
+        missing_permissions.extend(self._aws_sdk.blocked(s3_permissions))
+        missing_permissions.extend(self._aws_sdk.blocked(own_iam_permissions, [self._aws_sdk.current_user_arn()]))
         return len(missing_permissions) == 0
 
     @trace()
@@ -174,3 +174,7 @@ class AWSManager(CloudProviderManager):
     def create_iac_pr_automation_config_snippet(self):
         return '''# aws specific section
       # ----'''
+
+    @trace()
+    def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
+        return '''awsRegion: <CLOUD_REGION>'''

@@ -23,6 +23,7 @@ locals {
   additional_node_pools        = try(slice(var.node_groups, 1, length(var.node_groups)), [])
   max_pods                     = 100
   node_admin_username          = "azadmin"
+  enable_native_auto_scaling   = var.enable_native_auto_scaling
 }
 
 resource "azurerm_resource_group" "rg" {
