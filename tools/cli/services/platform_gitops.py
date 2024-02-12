@@ -1,8 +1,10 @@
 import json
 import os
+import shutil
+from typing import Optional
 
 from ghrepo import GHRepo
-from git import Repo, Actor
+from git import InvalidGitRepositoryError, Repo, Actor, NoSuchPathError
 
 from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
     LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER
@@ -13,14 +15,53 @@ from services.vcs.git_provider_manager import GitProviderManager
 
 
 class PlatformGitOpsRepo:
-    def __init__(self, git_man: GitProviderManager, key_path: str = None, author_name: str = FALLBACK_AUTHOR_NAME,
-                 author_email: str = FALLBACK_AUTHOR_EMAIL):
-        self._repo = Repo(LOCAL_GITOPS_FOLDER)
+    def __init__(
+            self,
+            git_man: GitProviderManager,
+            key_path: Optional[str] = None,
+            author_name: str = FALLBACK_AUTHOR_NAME,
+            author_email: str = FALLBACK_AUTHOR_EMAIL,
+            repo_remote_url: Optional[str] = None
+    ):
+        self._repo = self._initialize_repo(repo_remote_url)
         self._git_man = git_man
         self._ssh_key_path = key_path
         self._ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {self._ssh_key_path}'
         self._author_name = author_name
         self._author_email = author_email
+
+    @trace()
+    def _initialize_repo(self, repo_remote_url: Optional[str]) -> Repo:
+        """
+        Initializes the local repository by loading it or cloning from a remote URL,
+        and returns the Repo object.
+
+        :param repo_remote_url: Optional URL to the remote repository to clone from if the local repo is not valid.
+        :return: Repo object of the initialized repository.
+        """
+        try:
+            logger.debug(f"Attempting to load local repository from: {LOCAL_GITOPS_FOLDER}")
+            return Repo(LOCAL_GITOPS_FOLDER)
+        except (InvalidGitRepositoryError, NoSuchPathError):
+            logger.debug("Local repository is not valid or does not exist. Proceeding to clone from remote URL.")
+            return self._clone_repo(repo_remote_url)
+
+    @trace()
+    def _clone_repo(self, repo_remote_url: Optional[str]) -> Repo:
+        """
+        Clones the repository from the given remote URL to the local path.
+
+        :param repo_remote_url: URL to the remote repository to clone. Must be provided if local repository is invalid.
+        :return: Repo object of the cloned repository.
+        """
+        if not repo_remote_url:
+            logger.error("repo_remote_url is required but not provided. Unable to clone repository.")
+            raise InvalidGitRepositoryError("Git remote URI wasn't provided, unable to clone repository.")
+        if os.path.exists(LOCAL_GITOPS_FOLDER):
+            logger.debug(f"Removing existing local repository at {LOCAL_GITOPS_FOLDER} before cloning.")
+            shutil.rmtree(LOCAL_GITOPS_FOLDER)
+        logger.debug(f"Cloning from: {repo_remote_url} to {LOCAL_GITOPS_FOLDER}")
+        return Repo.clone_from(repo_remote_url, LOCAL_GITOPS_FOLDER)
 
     @trace()
     def update(self):
