@@ -138,6 +138,7 @@ def bootstrap(
         git_runner_group_name = state_store.parameters["<GIT_RUNNER_GROUP_NAME>"]
         git_organisation_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
         cluster_name = state_store.parameters["<PRIMARY_CLUSTER_NAME>"]
+        cloud_account = state_store.internals["CLOUD_ACCOUNT"]
 
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
@@ -182,7 +183,6 @@ def bootstrap(
         "<WL_SERVICE_IMAGE>": f'{registry_url}/{wl_name}/{wl_svc_name}',
         "<WL_SERVICE_PORT>": str(wl_svc_port),
         "# <K8S_ROLE_MAPPING>": cloud_man.create_k8s_cluster_role_mapping_snippet(),
-        "<WL_IAM_ROLE_RN>": f"{cluster_name}-{wl_name}-{wl_svc_name}-role",
         "# <ADDITIONAL_LABELS>": cloud_man.create_additional_labels(),
         "# <TF_WL_SECRETS_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(
             location=tf_backend_storage_name,
@@ -201,6 +201,12 @@ def bootstrap(
         "<TERRAFORM_VERSION>": TERRAFORM_VERSION,
         "<CLUSTER_NAME>": cluster_name,
     }
+
+    if state_store.cloud_provider == CloudProviders.AWS:
+        wl_gitops_params[
+            "<WL_IAM_ROLE_RN>"] = f'arn:aws:iam::{cloud_account}:role/{cluster_name}-{wl_name}-{wl_svc_name}-role'
+    else:
+        wl_gitops_params["<WL_IAM_ROLE_RN>"] = "<set workload role mapping here>"
 
     # set cloud provider specific params
     cloud_provider = state_store.parameters["<CLOUD_PROVIDER>"]

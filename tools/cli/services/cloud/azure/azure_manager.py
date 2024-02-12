@@ -26,6 +26,10 @@ class AzureManager(CloudProviderManager):
     def region(self):
         return self._azure_sdk.location
 
+    @property
+    def account(self):
+        return self._azure_sdk.get_tenant_id()
+
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str):
         """

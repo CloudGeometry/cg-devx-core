@@ -9,6 +9,10 @@ class CloudProviderManager(ABC):
     def region(self) -> str:
         pass
 
+    @property
+    def account(self) -> str:
+        pass
+
     @classmethod
     @abstractmethod
     def detect_cli_presence(cls) -> bool:
