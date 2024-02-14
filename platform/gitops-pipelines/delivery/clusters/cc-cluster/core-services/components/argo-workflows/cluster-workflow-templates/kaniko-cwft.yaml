@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: kaniko-cwft
+spec:
+  templates:
+    - name: kaniko
+      container:
+        env:
+          - name: WL_SERVICE
+            value: '{{workflow.parameters.wl-service-name}}'
+          - name: DOCKERFILE
+            value: '{{workflow.parameters.dockerfile}}'
+          - name: BUILD_CONTEXT
+            value: '{{workflow.parameters.build-context}}'
+        image: '{{workflow.parameters.gcr-registry-proxy}}/kaniko-project/executor'
+        imagePullPolicy: IfNotPresent
+        args:
+          - --dockerfile={{workflow.parameters.dockerfile}}
+          - --context=dir:///workspace/{{workflow.parameters.build-context}}
+          - --no-push
+          - --tar-path=/workspace/{{workflow.parameters.wl-service-name}}.tar
+          - --registry-mirror={{workflow.parameters.registry}}
+          - --skip-default-registry-fallback
+          - --snapshot-mode=time
+          - --use-new-run
+          - --cache=true
+          - --cache-copy-layers
+          - --cache-run-layers
+          - --cache-repo={{workflow.parameters.registry}}/kaniko-cache/{{workflow.parameters.workload-name}}-{{workflow.parameters.wl-service-name}}
+        volumeMounts:
+          - name: kaniko-secret
+            mountPath: /kaniko/.docker
+          - name: build
+            mountPath: /workspace
