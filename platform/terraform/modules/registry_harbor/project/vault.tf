@@ -1,5 +1,6 @@
 locals {
   b64_docker_auth = base64encode("robot@${var.project_name}+robot:${random_password.robot_password.result}")
+  push_b64_docker_auth = base64encode("robot@${var.project_name}+push-robot:${random_password.push_robot_password.result}")
 }
 
 resource "vault_generic_secret" "docker_config" {
@@ -13,14 +14,28 @@ resource "vault_generic_secret" "docker_config" {
 
 }
 
-resource "vault_generic_secret" "harbor_main_robot_secret" {
-  path = "workloads/${var.project_name}/workload-robot-auth"
+resource "vault_generic_secret" "push_docker_config" {
+  path = "workloads/${var.project_name}/push_dockerconfigjson"
 
   data_json = jsonencode(
     {
-      HARBOR_ROBOT_NAME     = "robot@${var.project_name}+robot",
-      HARBOR_ROBOT_PASSWORD = random_password.robot_password.result,
-      HARBOR_ROBOT_B64_AUTH = local.b64_docker_auth,
+      dockerconfig = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.push_b64_docker_auth}" } } }),
+    }
+  )
+
+}
+
+resource "vault_generic_secret" "harbor_workload_robot_secret" {
+  path = "workloads/${var.project_name}/workload-robots-auth"
+
+  data_json = jsonencode(
+    {
+      WL_ROBOT_NAME     = "robot@${var.project_name}+robot",
+      WL_ROBOT_PASSWORD = random_password.robot_password.result,
+      WL_ROBOT_B64_AUTH = local.b64_docker_auth,
+      WL_PUSH_ROBOT_NAME     = "robot@${var.project_name}+push-robot",
+      WL_PUSH_ROBOT_PASSWORD = random_password.push_robot_password.result,
+      WL_PUSH_ROBOT_B64_AUTH = local.push_b64_docker_auth,
     }
   )
 
