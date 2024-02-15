@@ -35,13 +35,14 @@ class GitProviderManager(ABC):
 
     @abstractmethod
     def create_tf_required_provider_snippet(self) -> str:
-        """Generates a multiline string containing a Terraform configuration snippet
+        """
+        Generates a multiline string containing a Terraform configuration snippet
 
         This function creates a configuration snippet for the Git provider, which includes
         details such as the source and version of the provider.
 
-        Returns:
-            str: A multiline string containing the Git provider configuration snippet.
+        :return: A multiline string containing the Git provider configuration snippet.
+        :rtype: str
         """
         pass
 

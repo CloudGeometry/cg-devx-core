@@ -12,7 +12,7 @@ from common.const.parameter_names import GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
 from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.utils.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs, \
-    wait, init_git_provider, check_installation_presence
+    wait, init_git_provider, check_installation_presence, prepare_git_provider_env_vars
 from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token, delete_application
 from services.k8s.k8s import KubeClient
 from services.platform_gitops import PlatformGitOpsRepo
@@ -64,12 +64,12 @@ def destroy(verbosity: str):
 
     cloud_man, dns_man = init_cloud_provider(p)
     cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
+    git_provider_env_vars = prepare_git_provider_env_vars(p)
 
     tf_env_vars = {
         **cloud_provider_auth_env_vars,
+        **git_provider_env_vars,
         **{
-            "GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-            "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME),
             "VAULT_TOKEN": p.internals.get("VAULT_ROOT_TOKEN", None),
             "VAULT_ADDR": f'https://{p.parameters.get("<SECRET_MANAGER_INGRESS_URL>", None)}',
         }

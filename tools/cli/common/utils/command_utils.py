@@ -93,7 +93,7 @@ def init_git_provider(state: StateStore) -> GitProviderManager:
     return git_man
 
 
-def prepare_cloud_provider_auth_env_vars(state: StateStore):
+def prepare_cloud_provider_auth_env_vars(state: StateStore) -> dict:
     if state.cloud_provider == CloudProviders.AWS:
         # drop empty values
         cloud_provider_auth_env_vars = {
@@ -108,6 +108,16 @@ def prepare_cloud_provider_auth_env_vars(state: StateStore):
     else:
         cloud_provider_auth_env_vars = {}
     return cloud_provider_auth_env_vars
+
+
+def prepare_git_provider_env_vars(state: StateStore) -> dict:
+    if state.git_provider == GitProviders.GitHub:
+        return {
+            "GITHUB_TOKEN": state.get_input_param(GIT_ACCESS_TOKEN),
+            "GITHUB_OWNER": state.get_input_param(GIT_ORGANIZATION_NAME)
+        }
+    elif state.git_provider == GitProviders.GitLab:
+        return {"GITLAB_TOKEN": state.get_input_param(GIT_ACCESS_TOKEN)}
 
 
 def set_envs(env_vars):

@@ -178,19 +178,20 @@ class GitLabProviderManager(GitProviderManager):
 
     @trace()
     def create_tf_required_provider_snippet(self) -> str:
-        """Generates a multiline string containing a Terraform configuration snippet
+        """
+        Generates a multiline string containing a Terraform configuration snippet
 
         This function creates a configuration snippet for the GitLab provider, which includes
         details such as the source and version of the provider.
 
-        Returns:
-            str: A multiline string containing the GitLab provider configuration snippet.
+        :return: A multiline string containing the GitLab provider configuration snippet.
+        :rtype: str
         """
         return textwrap.dedent("""\
         gitlab = {
               # https://registry.terraform.io/providers/gitlabhq/gitlab/latest/docs
               source  = "gitlabhq/gitlab"
-              version = "16.7.0"
+              version = "<GITLAB_PROVIDER_VERSION>"
             }""")
 
     @trace()
