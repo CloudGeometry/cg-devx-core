@@ -75,6 +75,18 @@ class CloudProviderManager(ABC):
         pass
 
     @abstractmethod
+    def create_autoscaler_snippet(self, cluster_name: str, node_groups: [] = []):
+        """
+        Creates K8s Autoscaler configuration snippet
+        :return: Configuration snippet
+
+        Args:
+            cluster_name: K8s cluster name
+            node_groups: Node groups definition
+        """
+        pass
+
+    @abstractmethod
     def create_seal_snippet(self, key_id: str, **kwargs):
         """
         Creates helm vault seal snippet

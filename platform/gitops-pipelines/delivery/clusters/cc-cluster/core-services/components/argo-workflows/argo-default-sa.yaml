@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-default-sa
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+    workflows.argoproj.io/rbac-rule: 'true'
+    workflows.argoproj.io/rbac-rule-precedence: '0'
+secrets:
+  - name: argo-default-sa
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argo-default-sa
+  annotations:
+    kubernetes.io/service-account.name: argo-default-sa
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argo-default-sa
+  namespace: argo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argo-view
+subjects:
+  - kind: ServiceAccount
+    name: argo-default-sa
+    namespace: argo

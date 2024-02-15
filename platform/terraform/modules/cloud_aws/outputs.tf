@@ -53,6 +53,10 @@ output "secret_manager_irsa_role" {
   description = "AWS Secretsmanager IAM Role ARN"
   value       = module.secret_manager_irsa_role.iam_role_arn
 }
+output "cluster_autoscaler_irsa_role" {
+  description = "Cluster Autoscaler IAM Role ARN"
+  value       = module.cluster_autoscaler_irsa_role.iam_role_arn
+}
 
 ################################################################################
 # Cluster
@@ -86,6 +90,7 @@ output "cluster_name" {
 output "cluster_oidc_issuer_url" {
   description = "The URL on the EKS cluster for the OpenID Connect identity provider"
   value       = module.eks.cluster_oidc_issuer_url
+  sensitive   = true
 }
 
 output "cluster_platform_version" {
@@ -101,6 +106,11 @@ output "cluster_status" {
 output "cluster_primary_security_group_id" {
   description = "Cluster security group that was created by Amazon EKS for the cluster. Managed node groups use this security group for control-plane-to-data-plane communication. Referred to as 'Cluster security group' in the EKS console"
   value       = module.eks.cluster_primary_security_group_id
+}
+
+output "cluster_node_groups" {
+  value       = var.node_groups
+  description = "Cluster node groups"
 }
 
 ################################################################################

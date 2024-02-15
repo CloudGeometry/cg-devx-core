@@ -157,9 +157,6 @@ def check_installation_presence():
     if not os.path.exists(LOCAL_FOLDER):
         raise click.ClickException("CG DevX metadata does not exist on this machine")
 
-    if not os.path.exists(LOCAL_GITOPS_FOLDER):
-        raise click.ClickException("GitOps repo does not exist")
-
 
 def initialize_gitops_repository(
         state_store: StateStore, logger: Logger
@@ -187,7 +184,8 @@ def initialize_gitops_repository(
         git_man=git_man,
         author_name=state_store.internals["GIT_USER_NAME"],
         author_email=state_store.internals["GIT_USER_EMAIL"],
-        key_path=state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
+        key_path=state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+        repo_remote_url=state_store.parameters.get("<GIT_REPOSITORY_GIT_URL>")
     )
     gor.update()
     logger.info("GitOps repository initialized.")
@@ -255,7 +253,7 @@ def create_and_open_pull_request(
 def preprocess_workload_names(
         logger: Logger,
         wl_name: str, wl_repo_name: Optional[str] = None, wl_gitops_repo_name: Optional[str] = None
-                              ) -> tuple[str, str, str]:
+) -> tuple[str, str, str]:
     """
     Process and normalize workload names to a standard format.
 

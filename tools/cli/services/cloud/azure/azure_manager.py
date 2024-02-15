@@ -239,6 +239,30 @@ class AzureManager(CloudProviderManager):
               }}'''.format(subscription_id=self._azure_sdk.subscription_id, resource_group=location)
 
     @trace()
+    def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
+        autoscaling_groups = ""
+        vmss_list = self._azure_sdk.get_vmss(f"{cluster_name}-vmss-rg")
+
+        if not len(vmss_list):
+            raise Exception("Could not find vmss")
+
+        for node in node_groups:
+            vmss_name = [vmss for vmss in vmss_list if vmss.startswith(f'aks-{node["name"]}-')][0]
+            autoscaling_groups += f'''
+          - name: {vmss_name}
+            minSize: {node["min_size"]}
+            maxSize: {node["max_size"]}'''
+
+        tenant_id = self._azure_sdk.get_tenant_id()
+        return f'''autoscalingGroups: {autoscaling_groups}
+        azureClientID: "<CLUSTER_AUTOSCALER_IAM_ROLE_RN>"
+        azureResourceGroup: {cluster_name}-vmss-rg
+        azureSubscriptionID: {self._azure_sdk.subscription_id}
+        azureTenantID: {tenant_id}
+        azureUseWorkloadIdentityExtension: true
+        azureVMType: "vmss"'''
+
+    @trace()
     def create_iac_pr_automation_config_snippet(self):
         return '''# azure specific section
       ARM_USE_AKS_WORKLOAD_IDENTITY       = true,

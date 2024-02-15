@@ -1,6 +1,7 @@
 import time
 
 import click
+from git import InvalidGitRepositoryError
 
 from common.const.const import GITOPS_REPOSITORY_MAIN_BRANCH, WL_PR_BRANCH_NAME_PREFIX
 from common.custom_excpetions import GitBranchAlreadyExists, PullRequestCreationError
@@ -59,8 +60,10 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity:
         wl_gitops_repo_name=wl_gitops_repo_name
     )
     click.echo("2/7: Workload names processed.")
-
-    git_man, gor = initialize_gitops_repository(state_store=state_store, logger=logger)
+    try:
+        git_man, gor = initialize_gitops_repository(state_store=state_store, logger=logger)
+    except InvalidGitRepositoryError:
+        raise click.ClickException("GitOps repo does not exist")
     click.echo("3/7: GitOps repository initialized.")
 
     try:
@@ -94,6 +97,7 @@ def create(wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, verbosity:
     click.echo(f"6/7: Pull request for branch '{branch_name}' created and opened in the web browser.")
 
     gor.switch_to_branch(branch_name=GITOPS_REPOSITORY_MAIN_BRANCH)
+    gor.delete_branch(branch_name)
     click.echo(f"7/7: Switched to branch '{GITOPS_REPOSITORY_MAIN_BRANCH}'.")
     click.echo(f"Workload GitOps code creation completed in {time.time() - func_start_time:.2f} seconds.")
 

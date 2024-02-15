@@ -3,6 +3,7 @@ import shutil
 import time
 
 import click
+from git import InvalidGitRepositoryError
 
 from common.const.common_path import LOCAL_WORKLOAD_TEMP_FOLDER
 from common.const.const import GITOPS_REPOSITORY_MAIN_BRANCH, WL_PR_BRANCH_NAME_PREFIX, WL_GITOPS_REPOSITORY_BRANCH, \
@@ -104,8 +105,10 @@ def delete(
         wl_gitops_repo_name=wl_gitops_repo_name,
     )
     click.echo(f"3/{logging_total_steps}: Workload names processed.")
-
-    git_man, gor = initialize_gitops_repository(state_store=state_store, logger=logger)
+    try:
+        git_man, gor = initialize_gitops_repository(state_store=state_store, logger=logger)
+    except InvalidGitRepositoryError:
+        raise click.ClickException("GitOps repo does not exist")
     click.echo(f"4/{logging_total_steps}: GitOps repository initialized.")
 
     try:
@@ -154,6 +157,7 @@ def delete(
     click.echo(f"{7 if destroy_resources else 6}/{logging_total_steps}: Pull request created and opened.")
 
     gor.switch_to_branch()
+    gor.delete_branch(branch_name)
 
     click.echo(f"Deleting workload GitOps code completed in {time.time() - func_start_time:.2f} seconds.")
 
