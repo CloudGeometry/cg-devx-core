@@ -91,3 +91,8 @@ variable "enable_native_auto_scaling" {
   type        = bool
   default     = false
 }
+
+variable "domain_name" {
+  type        = string
+  description = "Specifies the platform domain name"
+}

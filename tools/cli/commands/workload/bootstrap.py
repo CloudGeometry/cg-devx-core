@@ -138,6 +138,7 @@ def bootstrap(
         git_runner_group_name = state_store.parameters["<GIT_RUNNER_GROUP_NAME>"]
         git_organisation_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
         cluster_name = state_store.parameters["<PRIMARY_CLUSTER_NAME>"]
+        domain_name = state_store.parameters["<DOMAIN_NAME>"]
 
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
@@ -200,6 +201,7 @@ def bootstrap(
         "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
         "<TERRAFORM_VERSION>": TERRAFORM_VERSION,
         "<CLUSTER_NAME>": cluster_name,
+        "<DOMAIN_NAME>": domain_name,
     }
 
     # set cloud provider specific params
