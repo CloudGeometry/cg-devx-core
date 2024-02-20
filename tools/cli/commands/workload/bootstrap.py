@@ -142,7 +142,7 @@ def bootstrap(
         cloud_region = state_store.parameters["<CLOUD_REGION>"]
         owner_email = state_store.parameters["<OWNER_EMAIL>"]
         ci_iam_role_rn = state_store.parameters["<CI_IAM_ROLE_RN>"]
-        # cloud_account = state_store.parameters["<CLOUD_ACCOUNT>"]
+        cloud_account = state_store.parameters["<CLOUD_ACCOUNT>"]
 
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
@@ -211,7 +211,7 @@ def bootstrap(
         "<OWNER_EMAIL>": owner_email,
         "<REGISTRY_URL>": registry_url,
         "<CI_IAM_ROLE_RN>": ci_iam_role_rn,
-        # "<CLOUD_ACCOUNT>": cloud_account,
+        "<CLOUD_ACCOUNT>": cloud_account,
     }
 
     # set cloud provider specific params
