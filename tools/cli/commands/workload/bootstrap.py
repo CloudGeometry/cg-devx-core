@@ -139,6 +139,10 @@ def bootstrap(
         git_organisation_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
         cluster_name = state_store.parameters["<PRIMARY_CLUSTER_NAME>"]
         domain_name = state_store.parameters["<DOMAIN_NAME>"]
+        cloud_region = state_store.parameters["<CLOUD_REGION>"]
+        owner_email = state_store.parameters["<OWNER_EMAIL>"]
+        ci_iam_role_rn = state_store.parameters["<CI_IAM_ROLE_RN>"]
+        # cloud_account = state_store.parameters["<CLOUD_ACCOUNT>"]
 
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
@@ -202,6 +206,12 @@ def bootstrap(
         "<TERRAFORM_VERSION>": TERRAFORM_VERSION,
         "<CLUSTER_NAME>": cluster_name,
         "<DOMAIN_NAME>": domain_name,
+        "<TF_BACKEND_STORAGE_NAME>": tf_backend_storage_name,
+        "<CLOUD_REGION>": cloud_region,
+        "<OWNER_EMAIL>": owner_email,
+        "<REGISTRY_URL>": registry_url,
+        "<CI_IAM_ROLE_RN>": ci_iam_role_rn,
+        # "<CLOUD_ACCOUNT>": cloud_account,
     }
 
     # set cloud provider specific params
