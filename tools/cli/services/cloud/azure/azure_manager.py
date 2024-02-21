@@ -23,8 +23,14 @@ class AzureManager(CloudProviderManager):
         self._azure_sdk = AzureSdk(subscription_id, location)
 
     @property
-    def region(self):
+    def region(self) -> str:
+        """Azure geography location"""
         return self._azure_sdk.location
+
+    @property
+    def account(self) -> str:
+        """Azure tenant id"""
+        return self._azure_sdk.get_tenant_id()
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str):
