@@ -35,6 +35,7 @@ IAM roles for core components created during the setup process
 - `EXTERNAL_DNS_IAM_ROLE_RN` - External DNS IAM role for a K8s service account
 - `IAC_PR_AUTOMATION_IAM_ROLE_RN` - IaC PR automation IAM role for a K8s service account
 - `SECRET_MANAGER_IAM_ROLE_RN` - Secrets Manager (Vault) IAM role for a K8s service account
+- `CLUSTER_AUTOSCALER_IAM_ROLE_RN` - Cluster Autoscaler IAM role for a K8s service account
 
 ### Ingress
 

@@ -85,3 +85,9 @@ variable "cluster_ssh_public_key" {
   type        = string
   default     = ""
 }
+
+variable "enable_native_auto_scaling" {
+  description = "Enables AKS native autoscaling feature."
+  type        = bool
+  default     = false
+}

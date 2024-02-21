@@ -1,21 +1,36 @@
+---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: argo
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "10"
+    argocd.argoproj.io/sync-wave: '10'
 spec:
   project: core
   source:
     repoURL: https://argoproj.github.io/argo-helm
-    targetRevision: 0.36.1
+    targetRevision: 0.40.6
     helm:
-      values: |-
+      valuesObject:
+        singleNamespace: false
         nameOverride: argo
+        controller:
+          rbac:
+            create: true
+          workflowNamespaces: [argo]
+          image:
+            registry: "<REGISTRY_INGRESS_URL>/quay-proxy"
+            repository: "argoproj/workflow-controller"
         images:
           pullPolicy: IfNotPresent
+          pullSecrets:
+            - name: proxy-docker-config
         executor:
+          image:
+            registry: "<REGISTRY_INGRESS_URL>/quay-proxy"
+            repository: "argoproj/argoexec"
+            pullPolicy: Always
           resources:
             requests:
               cpu: 200m
@@ -23,30 +38,38 @@ spec:
             limits:
               cpu: 1
               memory: 1024Mi
+        workflow:
+          serviceAccount:
+            create: true
+          rbac:
+            create: true
         server:
+          image:
+            registry: "<REGISTRY_INGRESS_URL>/quay-proxy"
+            repository: "argoproj/argocli"
           authMode: sso
+          # secure: false
           serviceAccount:
             create: true
             name: argo-server
             annotations:
               <K8S_ROLE_MAPPING>: "<CI_IAM_ROLE_RN>"
-          extraArgs:
-          - --secure
-          - --auth-mode=sso
+          rbac:
+            create: true
+          extraEnv:
+            - name: SSO_DELEGATE_RBAC_TO_NAMESPACE
+              value: 'true'
           ingress:
             enabled: true
             ingressClassName: nginx
             annotations:
-              cert-manager.io/cluster-issuer: "letsencrypt-prod"
-            hosts:
-              - <CI_INGRESS_URL>
-            paths: 
-              - /
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+            hosts: [<CI_INGRESS_ROLE>]
+            paths: [/]
             pathType: Prefix
             tls:
               - secretName: argo-tls
-                hosts:
-                  - <CI_INGRESS_URL>
+                hosts: [<CI_INGRESS_ROLE>]
           sso:
             enabled: true
             issuer: https://<OIDC_PROVIDER_URL>
@@ -57,13 +80,7 @@ spec:
               name: argo-secrets
               key: client-secret
             redirectUrl: https://<CI_OAUTH_CALLBACK_URL>
-            scopes:
-              - email
-              - openid
-              - groups
-              - user
-              - profile
-            # RBAC Config. >= v2.12
+            scopes: [email, openid, groups, user, profile]
             rbac:
               enabled: true
         useDefaultArtifactRepo: true
@@ -73,13 +90,7 @@ spec:
           s3:
             insecure: false
             bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
-            keyFormat: "argo-workflows/artifacts\
-              /{{workflow.creationTimestamp.Y}}\
-              /{{workflow.creationTimestamp.m}}\
-              /{{workflow.creationTimestamp.d}}\
-              /{{workflow.uid}}\
-              /{{workflow.name}}\
-              /{{pod.name}}"
+            keyFormat: argo-workflows/artifacts/{{workflow.creationTimestamp.Y}}/{{workflow.creationTimestamp.m}}/{{workflow.creationTimestamp.d}}/{{workflow.uid}}/{{workflow.name}}/{{pod.name}}
             endpoint: s3.amazonaws.com
             region: <CLOUD_REGION>
             useSDKCreds: true
@@ -93,5 +104,4 @@ spec:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+    syncOptions: [CreateNamespace=true]

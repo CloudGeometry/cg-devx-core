@@ -178,3 +178,7 @@ class AWSManager(CloudProviderManager):
     def create_iac_pr_automation_config_snippet(self):
         return '''# aws specific section
       # ----'''
+
+    @trace()
+    def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
+        return '''awsRegion: <CLOUD_REGION>'''

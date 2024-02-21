@@ -1,10 +1,14 @@
+################################################################################
 # network
+################################################################################
 output "network_id" {
   value       = module.hosting-provider.network_id
   description = "Platform primary K8s cluster network ID"
 }
 
+################################################################################
 # IAM roles
+################################################################################
 output "iam_ci_role" {
   value       = module.hosting-provider.iam_ci_irsa_role
   description = "Continuous Integration IAM role for K8s service account"
@@ -25,8 +29,14 @@ output "secret_manager_role" {
   value       = module.hosting-provider.secret_manager_irsa_role
   description = "Secrets Manager IAM role for a K8s service account"
 }
+output "cluster_autoscaler_role" {
+  value       = module.hosting-provider.cluster_autoscaler_irsa_role
+  description = "Secrets Manager IAM role for a K8s service account"
+}
 
+################################################################################
 # cluster
+################################################################################
 output "cluster_endpoint" {
   value       = module.hosting-provider.cluster_endpoint
   description = "K8s cluster admin API endpoint"
@@ -37,18 +47,14 @@ output "cluster_certificate_authority_data" {
   description = "K8s cluster Certificate Authority certificate data"
   sensitive   = true
 }
-
-# secret manager
-output "secret_manager_seal_key" {
-  value       = module.hosting-provider.secret_manager_unseal_key
-  description = "Secret Manager seal key"
+output "cluster_oidc_issuer_url" {
+  value       = module.hosting-provider.cluster_oidc_issuer_url
+  description = "The URL on the K8s cluster for the OpenID Connect identity provider"
   sensitive   = true
 }
-
-# artifact storage
-output "artifact_storage" {
-  value       = module.hosting-provider.artifacts_storage
-  description = "Continuous Integration Artifact Repository storage backend"
+output "cluster_node_groups" {
+  value       = module.hosting-provider.cluster_node_groups
+  description = "K8s cluster node groups"
 }
 
 # Output part for Azure module only:
@@ -63,4 +69,20 @@ output "cluster_oidc_provider_arn" {
   value       = module.hosting-provider.cluster_oidc_provider_arn
   description = "Cluster OIDC provider"
   sensitive   = true
+}
+################################################################################
+# secret manager
+################################################################################
+output "secret_manager_seal_key" {
+  value       = module.hosting-provider.secret_manager_unseal_key
+  description = "Secret Manager seal key"
+  sensitive   = true
+}
+
+################################################################################
+# artifact storage
+################################################################################
+output "artifact_storage" {
+  value       = module.hosting-provider.artifacts_storage
+  description = "Continuous Integration Artifact Repository storage backend"
 }

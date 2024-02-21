@@ -4,13 +4,17 @@ output "kube_config_raw" {
   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
 }
 
+################################################################################
 # network
+################################################################################
 output "network_id" {
   value       = azurerm_virtual_network.vnet.id
   description = "Platform primary K8s cluster network ID"
 }
 
+################################################################################
 # IAM roles
+################################################################################
 output "iam_ci_irsa_role" {
   value       = module.ci_sa.app_client_id
   description = "Continuous Integration IAM role for K8s service account"
@@ -32,26 +36,49 @@ output "secret_manager_irsa_role" {
   description = "Secrets Manager IAM role for a K8s service account"
 }
 
+output "cluster_autoscaler_irsa_role" {
+  description = "Cluster Autoscaler IAM Role ARN"
+  value       = module.cluster_autoscaler_sa.app_client_id
+}
+
+################################################################################
 # cluster
+################################################################################
 output "cluster_endpoint" {
   value       = azurerm_kubernetes_cluster.aks_cluster.kube_admin_config.0.host
   description = "K8s cluster admin API endpoint"
   sensitive   = true
 }
+
 output "cluster_certificate_authority_data" {
   value       = azurerm_kubernetes_cluster.aks_cluster.kube_admin_config.0.cluster_ca_certificate
   description = "K8s cluster Certificate Authority certificate data"
   sensitive   = true
 }
 
+output "cluster_oidc_issuer_url" {
+  value       = azurerm_kubernetes_cluster.aks_cluster.oidc_issuer_url
+  description = "Cluster OIDC provider"
+  sensitive   = true
+}
+
+output "cluster_node_groups" {
+  value       = var.node_groups
+  description = "Cluster node groups"
+}
+
+################################################################################
 # secret manager
+################################################################################
 output "secret_manager_unseal_key" {
   value       = azurerm_key_vault_key.secret_manager_unseal_kms_key.name
   description = "Secret Manager seal key"
   sensitive   = true
 }
 
+################################################################################
 # artifact storage
+################################################################################
 output "artifacts_storage" {
   value       = azurerm_storage_container.artifacts_repository.name
   description = "Continuous Integration Artifact Repository storage backend"
