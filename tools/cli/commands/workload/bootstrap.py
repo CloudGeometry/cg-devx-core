@@ -13,7 +13,7 @@ from common.enums.cloud_providers import CloudProviders
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.command_utils import init_cloud_provider, preprocess_workload_names, \
-    init_git_provider
+    init_git_provider, construct_wl_iam_role
 from services.wl_template_manager import WorkloadManager
 
 
@@ -200,13 +200,10 @@ def bootstrap(
         "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
         "<TERRAFORM_VERSION>": TERRAFORM_VERSION,
         "<CLUSTER_NAME>": cluster_name,
+        "<WL_IAM_ROLE_RN>": construct_wl_iam_role(
+            state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
+        )
     }
-
-    if state_store.cloud_provider == CloudProviders.AWS:
-        wl_gitops_params[
-            "<WL_IAM_ROLE_RN>"] = f'arn:aws:iam::{cloud_account}:role/{cluster_name}-{wl_name}-{wl_svc_name}-role'
-    else:
-        wl_gitops_params["<WL_IAM_ROLE_RN>"] = "<set workload role mapping here>"
 
     # set cloud provider specific params
     cloud_provider = state_store.parameters["<CLOUD_PROVIDER>"]

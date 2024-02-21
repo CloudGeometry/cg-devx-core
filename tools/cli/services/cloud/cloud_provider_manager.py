@@ -7,10 +7,12 @@ class CloudProviderManager(ABC):
 
     @property
     def region(self) -> str:
+        """Cloud provider geographic area"""
         pass
 
     @property
     def account(self) -> str:
+        """Cloud provider tenant"""
         pass
 
     @classmethod
