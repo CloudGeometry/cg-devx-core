@@ -11,7 +11,7 @@ from alive_progress import alive_bar
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
-    TERRAFORM_VERSION
+    TERRAFORM_VERSION, GITHUB_TF_REQUIRED_PROVIDER_VERSION, GITLAB_TF_REQUIRED_PROVIDER_VERSION
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE, HARBOR_NAMESPACE, SONARQUBE_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVIDER, CLOUD_ACCOUNT_ACCESS_KEY, \
@@ -26,7 +26,7 @@ from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.tracing_decorator import trace
 from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
-    set_envs, unset_envs, wait, wait_http_endpoint_readiness
+    set_envs, unset_envs, wait, wait_http_endpoint_readiness, prepare_git_provider_env_vars
 from common.utils.generators import random_string_generator
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
@@ -151,6 +151,9 @@ def setup(
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.parameters["<GIT_USER_EMAIL>"] = git_user_email
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
+        p.fragments["# <GIT_REQUIRED_PROVIDER>"] = git_man.create_tf_required_provider_snippet()
+        p.parameters["<GITHUB_PROVIDER_VERSION>"] = GITHUB_TF_REQUIRED_PROVIDER_VERSION
+        p.parameters["<GITLAB_PROVIDER_VERSION>"] = GITLAB_TF_REQUIRED_PROVIDER_VERSION
 
         git_subscription_plan = git_man.get_organization_plan()
         p.parameters["<GIT_SUBSCRIPTION_PLAN>"] = str(bool(git_subscription_plan)).lower()
@@ -292,6 +295,7 @@ def setup(
 
     # VCS provisioning
     cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
+    git_provider_env_vars = prepare_git_provider_env_vars(p)
 
     # VCS section
     if not p.has_checkpoint("vcs-tf"):
@@ -299,8 +303,7 @@ def setup(
         # vcs env vars
         vcs_tf_env_vars = {
             **cloud_provider_auth_env_vars,
-            **{"GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-               "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME)}
+            **git_provider_env_vars
         }
 
         # set envs as required by tf

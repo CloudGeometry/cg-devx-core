@@ -1,6 +1,17 @@
 variable "atlantis_repo_webhook_secret" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "atlantis_url" {
   type    = string
   default = ""
+}
+
+variable "gitops_repo_name" {
+  type    = string
+  default = "gitops"
 }
 
 variable "vcs_bot_ssh_public_key" {
@@ -8,8 +19,24 @@ variable "vcs_bot_ssh_public_key" {
   default = ""
 }
 
+variable "vcs_subscription_plan" {
+  description = "True for advanced github/gitlab plan. False for free tier"
+  type        = bool
+  default     = false
+}
+
+variable "vcs_owner" {
+  type    = string
+  default = ""
+}
+
+variable "cluster_name" {
+  type    = string
+  default = ""
+}
+
 variable "workloads" {
-  description = "Workloads configuration"
+  description = "workloads configuration"
   type = map(object({
     description = optional(string, "")
     repos = map(object({

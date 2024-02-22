@@ -1,4 +1,5 @@
 import json
+import textwrap
 from urllib.error import HTTPError
 
 import requests
@@ -84,6 +85,24 @@ class GitHubProviderManager(GitProviderManager):
     @trace()
     def create_tf_module_snippet(self):
         return 'provider "github" {}'
+
+    @trace()
+    def create_tf_required_provider_snippet(self) -> str:
+        """
+        Generates a multiline string containing a Terraform configuration snippet
+
+        This function creates a configuration snippet for the GitHub provider, which includes
+        details such as the source and version of the provider.
+
+        :return: A multiline string containing the GitHub provider configuration snippet.
+        :rtype: str
+        """
+        return textwrap.dedent("""\
+        github = {
+              # https://registry.terraform.io/providers/integrations/github/latest/docs
+              source  = "integrations/github"
+              version = "~> <GITHUB_PROVIDER_VERSION>"
+            }""")
 
     @trace()
     def create_runner_group_snippet(self) -> str:
