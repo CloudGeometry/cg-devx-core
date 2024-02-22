@@ -144,6 +144,7 @@ def bootstrap(
         owner_email = state_store.parameters["<OWNER_EMAIL>"]
         ci_iam_role_rn = state_store.parameters["<CI_IAM_ROLE_RN>"]
 
+
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
         error_message = f'Configuration loading failed due to missing key: {e}. ' \
