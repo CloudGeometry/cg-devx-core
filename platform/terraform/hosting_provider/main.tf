@@ -7,6 +7,7 @@ locals {
   cluster_name = "<PRIMARY_CLUSTER_NAME>"
   region       = "<CLOUD_REGION>"
   email        = ["<OWNER_EMAIL>"]
+  domain_name  = "<DOMAIN_NAME>"
   tags         = {
     ClusterName   = local.cluster_name
     ProvisionedBy = "CGDevX"
@@ -28,4 +29,5 @@ module "hosting-provider" {
   cluster_ssh_public_key = var.cluster_ssh_public_key
   tags                   = local.tags
   cluster_node_labels    = local.labels
+  domain_name            = local.domain_name
 }

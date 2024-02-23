@@ -64,12 +64,12 @@ spec:
             ingressClassName: nginx
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
-            hosts: [<CI_INGRESS_ROLE>]
+            hosts: [<CI_INGRESS_URL>]
             paths: [/]
             pathType: Prefix
             tls:
               - secretName: argo-tls
-                hosts: [<CI_INGRESS_ROLE>]
+                hosts: [<CI_INGRESS_URL>]
           sso:
             enabled: true
             issuer: https://<OIDC_PROVIDER_URL>

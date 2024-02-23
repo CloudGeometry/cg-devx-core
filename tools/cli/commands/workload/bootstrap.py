@@ -139,6 +139,11 @@ def bootstrap(
         git_organisation_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
         cluster_name = state_store.parameters["<PRIMARY_CLUSTER_NAME>"]
         cloud_account = state_store.internals["CLOUD_ACCOUNT"]
+        domain_name = state_store.parameters["<DOMAIN_NAME>"]
+        cloud_region = state_store.parameters["<CLOUD_REGION>"]
+        owner_email = state_store.parameters["<OWNER_EMAIL>"]
+        ci_iam_role_rn = state_store.parameters["<CI_IAM_ROLE_RN>"]
+
 
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
@@ -200,6 +205,13 @@ def bootstrap(
         "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
         "<TERRAFORM_VERSION>": TERRAFORM_VERSION,
         "<CLUSTER_NAME>": cluster_name,
+        "<DOMAIN_NAME>": domain_name,
+        "<TF_BACKEND_STORAGE_NAME>": tf_backend_storage_name,
+        "<CLOUD_REGION>": cloud_region,
+        "<OWNER_EMAIL>": owner_email,
+        "<REGISTRY_URL>": registry_url,
+        "<CI_IAM_ROLE_RN>": ci_iam_role_rn,
+        "<CLOUD_ACCOUNT>": cloud_account,
         "<WL_IAM_ROLE_RN>": construct_wl_iam_role(
             state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
         )
