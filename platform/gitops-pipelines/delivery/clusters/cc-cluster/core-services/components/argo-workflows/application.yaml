@@ -10,9 +10,18 @@ spec:
   project: core
   source:
     repoURL: https://argoproj.github.io/argo-helm
-    targetRevision: 0.40.6
+    targetRevision: 0.40.11
     helm:
       valuesObject:
+        workflowDefaults:
+          spec:
+            podGC:
+              strategy: 
+                strategy: OnWorkflowSuccess
+            ttlStrategy:
+              secondsAfterCompletion: 3600  
+              secondsAfterSuccess: 600  
+              secondsAfterFailure: 1440 
         singleNamespace: false
         nameOverride: argo
         controller:
@@ -26,20 +35,27 @@ spec:
           pullPolicy: IfNotPresent
           pullSecrets:
             - name: proxy-docker-config
-        executor:
-          image:
-            registry: "<REGISTRY_INGRESS_URL>/quay-proxy"
-            repository: "argoproj/argoexec"
-            pullPolicy: Always
+        mainContainer:
           resources:
             requests:
               cpu: 200m
               memory: 256Mi
+        executor:
+          image:
+            registry: "<REGISTRY_INGRESS_URL>/quay-proxy"
+            repository: "argoproj/argoexec"
+            pullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
             limits:
-              cpu: 1
-              memory: 1024Mi
+              cpu: 200m 
+              memory: 1Gi
         workflow:
           serviceAccount:
+            pullSecrets:
+              - name: proxy-docker-config
             create: true
           rbac:
             create: true
@@ -48,7 +64,7 @@ spec:
             registry: "<REGISTRY_INGRESS_URL>/quay-proxy"
             repository: "argoproj/argocli"
           authMode: sso
-          # secure: false
+          secure: false
           serviceAccount:
             create: true
             name: argo-server

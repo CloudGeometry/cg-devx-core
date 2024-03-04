@@ -13,7 +13,6 @@ spec:
             path: /src
             git:
               repo: '{{workflow.parameters.gitops-repo}}'
-         # revision: "{{workflow.parameters.tag}}" 
               sshPrivateKeySecret:
                 name: ci-secrets
                 key: SSH_PRIVATE_KEY

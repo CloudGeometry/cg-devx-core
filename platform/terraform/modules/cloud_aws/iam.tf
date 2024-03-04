@@ -49,6 +49,14 @@ module "efs_csi_irsa_role" {
   }
 
 }
+
+locals {
+  ci_sa_workloads_list = [
+    for key, value in var.workloads : "wl-${key}-dev:argo-workflow"
+  ]
+}
+
+
 # Cloud Native CI
 module "iam_ci_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
@@ -61,7 +69,7 @@ module "iam_ci_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["argo:argo"]
+      namespace_service_accounts = concat(["argo:argo-workflow"], local.workloads_list)
     }
 
   }
