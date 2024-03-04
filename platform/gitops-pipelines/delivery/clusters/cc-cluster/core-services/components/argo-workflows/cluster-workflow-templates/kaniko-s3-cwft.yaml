@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: kaniko-s3-cwft
+spec:
+  templates:
+    - name: kaniko
+      container:
+        image: '{{workflow.parameters.gcr-registry-proxy}}/kaniko-project/executor'
+        imagePullPolicy: IfNotPresent
+        args:
+          - --dockerfile={{workflow.parameters.dockerfile}}
+          - --context=dir:///workspace/{{workflow.parameters.build-context}}
+          - --no-push
+          - --tar-path=/tmp/{{workflow.parameters.wl-service-name}}.tar
+          - --registry-mirror={{workflow.parameters.kaniko-registry-mirror}}
+          - --snapshot-mode=time
+          - --use-new-run
+          - --compressed-caching=false
+          - --cache={{workflow.parameters.kaniko-cache}}
+          - --cache-run-layers
+          - --cache-repo={{workflow.parameters.kaniko-cache-repo}}/kaniko-cache/{{workflow.parameters.workload-name}}-{{workflow.parameters.wl-service-name}}
+        volumeMounts:
+          - name: kaniko-secret
+            mountPath: /kaniko/.docker
+          - name: build
+            mountPath: /workspace
+      outputs:
+        artifacts:
+          - name: tar-build
+            path: /tmp/{{workflow.parameters.wl-service-name}}.tar
+            s3:
+              key: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{workflow.parameters.wl-service-name}}-tar"
+            artifactGC:
+              strategy: Never
