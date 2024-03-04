@@ -44,7 +44,7 @@ spec:
           image:
             registry: "<REGISTRY_INGRESS_URL>/quay-proxy"
             repository: "argoproj/argoexec"
-            pullPolicy: Always
+            pullPolicy: IfNotPresent
           resources:
             requests:
               cpu: 100m
