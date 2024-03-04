@@ -103,3 +103,11 @@ variable "domain_name" {
   type        = string
   description = "Specifies the platform domain name"
 }
+
+variable "workloads" {
+  description = "Workloads configuration"
+  type        = map(object({
+    description = optional(string, "")
+  }))
+  default = {}
+}

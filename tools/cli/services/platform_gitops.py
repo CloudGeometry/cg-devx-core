@@ -7,7 +7,7 @@ from ghrepo import GHRepo
 from git import InvalidGitRepositoryError, Repo, Actor, NoSuchPathError
 
 from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
-    LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER
+    LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER, LOCAL_TF_FOLDER_HOSTING_PROVIDER
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
 from common.logging_config import logger
 from common.tracing_decorator import trace
@@ -172,6 +172,10 @@ class PlatformGitOpsRepo:
         self._add_wl_vars(LOCAL_TF_FOLDER_CORE_SERVICES, wl_name, {
             "description": f"CG DevX {wl_name} workload definition"
         })
+        # hosting provider
+        self._add_wl_vars(LOCAL_TF_FOLDER_HOSTING_PROVIDER, wl_name, {
+            "description": f"CG DevX {wl_name} workload definition"
+        })
 
         # prepare ArgoCD manifest
         wl_gitops_repo = GHRepo(self._git_man.organization, wl_gitops_repo_name)
@@ -203,6 +207,8 @@ class PlatformGitOpsRepo:
         self._rm_wl_vars(LOCAL_TF_FOLDER_SECRETS_MANAGER, wl_name)
         # core services
         self._rm_wl_vars(LOCAL_TF_FOLDER_CORE_SERVICES, wl_name)
+        # hosting provider
+        self._rm_wl_vars(LOCAL_TF_FOLDER_HOSTING_PROVIDER, wl_name)
 
         # delete ArgoCD manifest
         wl_argo_manifest = LOCAL_CC_CLUSTER_WORKLOAD_FOLDER / f"{wl_name}.yaml"
