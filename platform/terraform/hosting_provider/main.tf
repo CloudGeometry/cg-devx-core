@@ -30,4 +30,5 @@ module "hosting-provider" {
   tags                   = local.tags
   cluster_node_labels    = local.labels
   domain_name            = local.domain_name
+  workloads              = var.workloads
 }
