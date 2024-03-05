@@ -69,7 +69,7 @@ module "iam_ci_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = concat(["argo:argo-workflow"], local.workloads_list)
+      namespace_service_accounts = concat(["argo:argo-workflow"], local.ci_sa_workloads_list)
     }
 
   }
