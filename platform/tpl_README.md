@@ -30,7 +30,7 @@ folders.
 
 The `main` branch's registry directory represents the gitops desired state for all apps registered with kubernetes. Argo
 CD will automatically apply your desired state to kubernetes through. You can see the Sync status of all of your apps
-in [argo cd](https://argocd.cgdevx-demo.demoapps.click).
+in [argo cd](https://<CD_INGRESS_URL>).
 
 ## Terraform infrastructure as code
 
