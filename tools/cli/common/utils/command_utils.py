@@ -23,8 +23,10 @@ from common.state_store import StateStore
 from services.cloud.aws.aws_manager import AWSManager
 from services.cloud.azure.azure_manager import AzureManager
 from services.cloud.cloud_provider_manager import CloudProviderManager
+from services.cloud.gcp.gcp_manager import GcpManager
 from services.dns.azure_dns.azure_dns import AzureDNSManager
 from services.dns.dns_provider_manager import DNSManager
+from services.dns.gcp_dns.gcp_dns import GcpDnsManager
 from services.dns.route53.route53 import Route53Manager
 from services.platform_gitops import PlatformGitOpsRepo
 from services.vcs.git_provider_manager import GitProviderManager
@@ -73,6 +75,16 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
         )
         domain_manager: DNSManager = AzureDNSManager(state.get_input_param(CLOUD_PROFILE))
         state.parameters["<AZ_SUBSCRIPTION_ID>"] = subscription_id
+    elif state.cloud_provider == CloudProviders.GCP:
+        if not GcpManager.detect_cli_presence():
+            raise click.ClickException("Cloud CLI is missing")
+
+        cloud_manager: GcpManager = GcpManager(
+            project_id=state.get_input_param(CLOUD_PROFILE),
+            location=state.get_input_param(CLOUD_REGION)
+        )
+        domain_manager: DNSManager = GcpDnsManager(project_id=state.get_input_param(CLOUD_PROFILE))
+        state.parameters["<GCP_PROJECT_ID>"] = state.get_input_param(CLOUD_PROFILE)
 
     return cloud_manager, domain_manager
 

@@ -25,7 +25,7 @@ module "vpc" {
   }
 
   intra_subnet_tags = {
-    "Tier" = "intra"
+    "Tier" = "infra"
   }
 
 }

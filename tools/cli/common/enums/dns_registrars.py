@@ -9,6 +9,7 @@ class DnsRegistrars(str, enum.Enum):
 
     Route53 = 'route53'
     AzureDNS = 'azure_dns'
+    GoogleDNS = 'google_dns'
 
     @classmethod
     def has_value(cls, value) -> bool:

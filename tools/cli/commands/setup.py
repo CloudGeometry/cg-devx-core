@@ -98,7 +98,7 @@ def setup(
             p = StateStore(d)
 
         except yaml.YAMLError as e:
-            raise click.ClickException(e)
+            raise click.ClickException(str(e))
     else:
         # TODO: merge file with param override
         p = StateStore({
@@ -170,7 +170,7 @@ def setup(
     # end preflight check section
     else:
         click.echo("1/12: Skipped pre-flight checks.")
-
+    return
     dep_man: DependencyManager = DependencyManager()
 
     if not p.has_checkpoint("dependencies"):
