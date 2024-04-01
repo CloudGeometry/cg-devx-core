@@ -8,15 +8,14 @@ import click
 from git import InvalidGitRepositoryError
 
 from common.const.common_path import LOCAL_WORKLOAD_TEMP_FOLDER
-from common.const.const import GITOPS_REPOSITORY_MAIN_BRANCH, WL_PR_BRANCH_NAME_PREFIX, WL_GITOPS_REPOSITORY_BRANCH, \
-    WL_GITOPS_REPOSITORY_URL
+from common.const.const import GITOPS_REPOSITORY_MAIN_BRANCH, WL_PR_BRANCH_NAME_PREFIX
 from common.const.parameter_names import GIT_ACCESS_TOKEN, GIT_ORGANIZATION_NAME
 from common.custom_excpetions import GitBranchAlreadyExists, PullRequestCreationError
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.command_utils import prepare_cloud_provider_auth_env_vars, set_envs, \
-    check_installation_presence, initialize_gitops_repository, create_and_setup_branch, \
-    create_and_open_pull_request, preprocess_workload_names
+  check_installation_presence, initialize_gitops_repository, create_and_setup_branch, \
+  create_and_open_pull_request, preprocess_workload_names
 from services.platform_gitops import PlatformGitOpsRepo
 from services.tf_wrapper import TfWrapper
 from services.wl_template_manager import WorkloadManager
@@ -54,22 +53,6 @@ from services.wl_template_manager import WorkloadManager
     default=False
 )
 @click.option(
-    '--workload-gitops-template-url',
-    '-wlgu',
-    'wl_gitops_template_url',
-    help='Workload GitOps repository template',
-    type=click.STRING,
-    default=WL_GITOPS_REPOSITORY_URL
-)
-@click.option(
-    '--workload-gitops-template-branch',
-    '-wlgb',
-    'wl_gitops_template_branch',
-    help='Workload GitOps repository template branch',
-    type=click.STRING,
-    default=WL_GITOPS_REPOSITORY_BRANCH
-)
-@click.option(
     '--verbosity',
     type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], case_sensitive=False),
     default='CRITICAL',
@@ -80,8 +63,6 @@ def delete(
         delete_all: bool,
         wl_gitops_repo_name: str,
         destroy_resources: bool,
-        wl_gitops_template_url: str,
-        wl_gitops_template_branch: str,
         verbosity: str
 ):
     """
@@ -95,8 +76,6 @@ def delete(
         delete_all (bool): If set to True, all workloads will be deleted, ignoring wl_names.
         wl_gitops_repo_name (str): Name of the GitOps repository associated with the workload.
         destroy_resources (bool): Flag indicating whether to destroy resources defined in the workload's IaC.
-        wl_gitops_template_url (str): URL of the GitOps repository template.
-        wl_gitops_template_branch (str): Branch of the GitOps repository template.
         verbosity (str): Logging level.
 
     Raises:
@@ -155,9 +134,7 @@ def delete(
             wl_gitops_manager = WorkloadManager(
                 org_name=state_store.parameters["<GIT_ORGANIZATION_NAME>"],
                 repo_name=wl_gitops_repo_name,
-                key_path=state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
-                template_url=wl_gitops_template_url,
-                template_branch=wl_gitops_template_branch
+                key_path=state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
             )
 
             wl_gitops_repo_folder = wl_gitops_manager.clone_wl()
