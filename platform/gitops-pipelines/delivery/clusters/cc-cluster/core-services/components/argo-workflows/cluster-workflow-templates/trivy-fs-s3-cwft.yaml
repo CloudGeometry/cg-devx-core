@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: trivy-fs-s3-cwft
+spec:
+  templates:
+    - name: trivy-fs-scan
+      inputs:
+        artifacts:
+          - name: git-src
+            path: /src
+            git:
+              repo: '{{workflow.parameters.repo}}'
+              revision: '{{workflow.parameters.tag}}'
+              sshPrivateKeySecret:
+                name: ci-secrets
+                key: SSH_PRIVATE_KEY
+              depth: 1
+      container:
+        image: '{{workflow.parameters.dockerhub-registry-proxy}}/aquasec/trivy'
+        imagePullPolicy: IfNotPresent
+        args:
+          - fs
+          - '-o'
+          - '/trivy-fs-report.sarif'
+          - '-f' 
+          - 'sarif'
+          - '--no-progress'
+          - '/src/{{workflow.parameters.wl-service-dir}}'
+      outputs:
+        artifacts:
+          - name: trivy-fs-report-sarif 
+            path: /trivy-fs-report.sarif 
+            s3:
+              key: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{workflow.parameters.wl-service-name}}-trivy-fs-report-sarif"
