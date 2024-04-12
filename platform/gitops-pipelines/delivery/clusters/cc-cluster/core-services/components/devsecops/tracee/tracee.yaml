@@ -18,8 +18,9 @@ spec:
     targetRevision: 0.15.1
     helm:
       releaseName: tracee
-      # values: |
-      #   example: value
+      values: |
+        config:
+          metrics: true
   syncPolicy:
     automated:
       prune: true
