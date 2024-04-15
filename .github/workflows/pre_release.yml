@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install poetry
-        run: pip install poetry${{ inputs.POETRY_VERSION }}
+        run: pip install poetry==${{ inputs.POETRY_VERSION }}
         shell: bash
       - name: Set up Python ${{ inputs.PYTHON_VERSION }}
         uses: actions/setup-python@v4
