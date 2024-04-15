@@ -1,26 +1,22 @@
 name: Publish to Test PyPI
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*.*.*"
-
-inputs:
-  PYTHON_VERSION:
-    description: "Python Version"
-    required: false
-    default: "3.10.13"
-  # PUBLISH_REGISTRY_PASSWORD:
-  #   description: "Password for the user to publish to PyPI. May also be a Token - requires the `PUBLISH_REGISTRY_USERNAME` to be `__token__`"
-  #   required: true
-  # PUBLISH_REGISTRY_USERNAME:
-  #   description: "The username for the registry. Defaults to __token__"
-  #   required: false
-  #   default: "__token__"
-  POETRY_VERSION:
-    description: "The version of Poetry to use"
-    required: true
-    default: "1.8.2"
+    inputs:
+      PYTHON_VERSION:
+        description: "Python Version"
+        required: false
+        default: "3.10.13"
+      # PUBLISH_REGISTRY_PASSWORD:
+      #   description: "Password for the user to publish to PyPI. May also be a Token - requires the `PUBLISH_REGISTRY_USERNAME` to be `__token__`"
+      #   required: true
+      # PUBLISH_REGISTRY_USERNAME:
+      #   description: "The username for the registry. Defaults to __token__"
+      #   required: false
+      #   default: "__token__"
+      POETRY_VERSION:
+        description: "The version of Poetry to use"
+        required: false
+        default: "1.8.2"
 
 defaults:
  run:
