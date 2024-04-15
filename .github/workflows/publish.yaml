@@ -16,5 +16,5 @@ jobs:
           repository_name: "cg-devx-core"
           repository_url: "https://test.pypi.org/legacy/"
           package_directory: "tools"
-          poetry_publish_options: "--build"
+          poetry_publish_options: "run build"
           python_version: "3.10.13"
