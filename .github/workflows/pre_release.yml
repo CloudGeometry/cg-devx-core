@@ -10,10 +10,6 @@ inputs:
     description: "Python Version"
     required: false
     default: "3.10.13"
-  PACKAGE_DIRECTORY:
-    description: "Directory of the package"
-    required: false
-    default: "./tools"
   # PUBLISH_REGISTRY_PASSWORD:
   #   description: "Password for the user to publish to PyPI. May also be a Token - requires the `PUBLISH_REGISTRY_USERNAME` to be `__token__`"
   #   required: true
@@ -28,7 +24,7 @@ inputs:
 
 defaults:
  run:
-  working-directory: ./${{ inputs.PACKAGE_DIRECTORY }}
+  working-directory: ./tools
 
 jobs:
   test_pypi_release:
