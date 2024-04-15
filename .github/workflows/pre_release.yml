@@ -6,13 +6,6 @@ on:
         description: "Python Version"
         required: false
         default: "3.10.13"
-      # PUBLISH_REGISTRY_PASSWORD:
-      #   description: "Password for the user to publish to PyPI. May also be a Token - requires the `PUBLISH_REGISTRY_USERNAME` to be `__token__`"
-      #   required: true
-      # PUBLISH_REGISTRY_USERNAME:
-      #   description: "The username for the registry. Defaults to __token__"
-      #   required: false
-      #   default: "__token__"
       POETRY_VERSION:
         description: "The version of Poetry to use"
         required: false
@@ -34,10 +27,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.PYTHON_VERSION }}
-          cache: poetry
-          check-latest: true
       - run: poetry install
       - run: poetry config repositories.testpypi https://test.pypi.org/legacy/
-      - run: poetry config pypi-token.testpypi ${{ secrets.PYPI_TOKEN }}
+      - run: poetry config pypi-token.testpypi ${{ secrets.TEST_PYPI_TOKEN }}
       - name: Publish package
         run: poetry publish --build -r testpypi
