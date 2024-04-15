@@ -130,6 +130,7 @@ def setup(
     cloud_man, dns_man = init_cloud_provider(p)
 
     p.parameters["<CLOUD_REGION>"] = cloud_man.region
+    p.internals["CLOUD_ACCOUNT"] = cloud_man.account
 
     git_man = init_git_provider(p)
 

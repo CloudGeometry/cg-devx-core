@@ -19,8 +19,14 @@ class AWSManager(CloudProviderManager):
         self._aws_sdk = AwsSdk(region, profile, key, secret)
 
     @property
-    def region(self):
+    def region(self) -> str:
+        """AWS region"""
         return self._aws_sdk.region
+
+    @property
+    def account(self) -> str:
+        """AWS account id"""
+        return self._aws_sdk.account_id
 
     @classmethod
     def detect_cli_presence(cls) -> bool:

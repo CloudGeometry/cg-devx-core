@@ -10,7 +10,7 @@ resource "aws_iam_policy" "ci" {
       {
         "Action" : "s3:*",
         "Effect" : "Allow",
-        "Resource" : module.artifacts_repository.s3_bucket_arn
+        "Resource" : [ module.artifacts_repository.s3_bucket_arn, "${module.artifacts_repository.s3_bucket_arn}/*" ]
       }
     ]
   })
