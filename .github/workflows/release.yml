@@ -37,6 +37,8 @@ jobs:
         run: |
           poetry version ${{ inputs.RELEASE_TAG }}
           git add ./pyproject.toml
+          git config --global user.name "PyPI Poetry Publish Bot"
+          git config --global user.email "pypibot@cloudgeometry.io"
           git commit -m "Change version to ${{ inputs.RELEASE_TAG }}" --allow-empty
           git push origin
         shell: bash
