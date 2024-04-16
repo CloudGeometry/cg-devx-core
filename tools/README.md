@@ -101,3 +101,5 @@ Are command specific and could be supplied via command lime, environment variabl
 For more details,
 please check CG DevX quickstart [commands](cli/commands/README.md)
 and [workload commands](cli/commands/workload/README.md)
+
+# generateReleaseNotes
