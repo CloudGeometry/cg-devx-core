@@ -38,8 +38,10 @@ jobs:
       - run: poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
       - name: Publish package
         run: poetry publish --build
+      - name: Build binary
+        run: poetry run build
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "dist/cgdevxcli"
+          commit: main
           tag: ${{ inputs.RELEASE_TAG }}
-          commit: true
