@@ -11,5 +11,3 @@ The **Platform** definition has three main parts
   user management. This folder will be added to the user's GitOps repository.
 - `installation-manifests` installation manifests used during setup process. This folder will not be added to the user's
   GitOps repository.
-
-# generateReleaseNotes
