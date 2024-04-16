@@ -10,7 +10,7 @@ below:
 ```
 export VAULT_ADDR="https://vault.vault.svc.cluster.local:8200"
 export VAULT_TOKEN="REPLACE_ME_WITH_VAULT_TOKEN"
-export GITLAB_OWNER="YourGitlabOrgHere"
+export GITLAB_OWNER="YourGitlabRootGroupHere"
 export GITLAB_TOKEN="YourVCSToken"
 
 ```
