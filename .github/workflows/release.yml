@@ -10,6 +10,11 @@ on:
         description: "The version of Poetry to use"
         required: false
         default: "1.8.2"
+      RELEASE_TAG:
+        description: "The new version should be a valid PEP 440 string"
+        required: true
+        default: "0.0.1"
+
 
 defaults:
  run:
@@ -28,7 +33,13 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.PYTHON_VERSION }}
+      - run: poetry version ${{ inputs.RELEASE_TAG }}
       - run: poetry install
       - run: poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
       - name: Publish package
         run: poetry publish --build
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/cgdevxcli"
+          tag: ${{ inputs.RELEASE_TAG }}
+          commit: true
