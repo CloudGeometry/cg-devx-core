@@ -51,5 +51,6 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           artifacts: "tools/dist/cgdevxcli"
+          generateReleaseNotes: true
           commit: main
           tag: ${{ inputs.RELEASE_TAG }}
