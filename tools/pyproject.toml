@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "cg-devx-core"
-version = "0.1.0"
+name = "cgdevxcli"
+version = "0.3.0"
 description = ""
 authors = ["Alexander Ulyanov <alexu@cloudgeometry.io>", "Mikhail Turetskii <mturetsky@cloudgeometry.io>"]
 readme = "README.md"
