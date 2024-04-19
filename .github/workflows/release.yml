@@ -1,0 +1,45 @@
+name: Publish to PyPI
+on:
+  workflow_dispatch:
+    inputs:
+      PYTHON_VERSION:
+        description: "Python Version"
+        required: false
+        default: "3.10.13"
+      POETRY_VERSION:
+        description: "The version of Poetry to use"
+        required: false
+        default: "1.8.2"
+      RELEASE_TAG:
+        description: "The new version should be a valid PEP 440 string"
+        required: true
+        default: "0.0.1"
+defaults:
+ run:
+  working-directory: ./tools
+jobs:
+  pypi_release:
+    name: Builds Using Poetry and Publishes to PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install poetry
+        run: pip install poetry==${{ inputs.POETRY_VERSION }}
+        shell: bash
+      - name: Set up Python ${{ inputs.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.PYTHON_VERSION }}
+      - run: poetry version ${{ inputs.RELEASE_TAG }}
+      - run: poetry install
+      - run: poetry config pypi-token.pypi "${{ secrets.PYPI_TOKEN }}"
+      - name: Publish package
+        run: poetry publish --build
+      - name: Build binary
+        run: poetry run build
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "tools/dist/cgdevxcli"
+          generateReleaseNotes: true
+          commit: main
+          tag: ${{ inputs.RELEASE_TAG }}
