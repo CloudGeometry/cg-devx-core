@@ -115,7 +115,7 @@ comments section.
 When executed with `--destroy-resources` flag it will also destroy all the resources created for a specific workload.
 Please note that workload GitOps repository name should match one for workload.
 When executing with `--destroy-resources` flag enabled it **must** be executed by cluster owner.
-Under the hood, it will execute tf destroy locally, and tf state storage is protected and accessible only by the owner. 
+Under the hood, it will execute tf destroy locally, and tf state storage is protected and accessible only by the owner.
 
 
 > **NOTE!**: this process is irreversible
@@ -126,7 +126,8 @@ Under the hood, it will execute tf destroy locally, and tf state storage is prot
 
 | Name (short, full)                        | Type                                    | Description                                       |
 |-------------------------------------------|-----------------------------------------|---------------------------------------------------|
-| -wl, --workload-name                      | TEXT                                    | Workload name                                     |
+| -wl, --workload-names                     | TEXT                                    | Workload name(s), could be multiple args          |
+| --all                                     | Flag                                    | Destroy all existing workloads                    |
 | -wldr, --destroy-resources                | Flag                                    | Destroy workload resources                        |
 | -wlgrn, --workload-gitops-repository-name | TEXT                                    | Name for Workload GitOps repository               |
 | --verbosity                               | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
