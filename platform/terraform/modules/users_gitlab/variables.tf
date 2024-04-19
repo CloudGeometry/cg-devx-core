@@ -15,5 +15,4 @@ variable "users" {
 
 variable "vcs_owner" {
   type    = string
-  default = ""
 }
