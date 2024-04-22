@@ -143,6 +143,8 @@ def bootstrap(
         cloud_region = state_store.parameters["<CLOUD_REGION>"]
         owner_email = state_store.parameters["<OWNER_EMAIL>"]
         ci_iam_role_rn = state_store.parameters["<CI_IAM_ROLE_RN>"]
+        artifact_store = state_store.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"]
+        ci_ingress_url = state_store.parameters["<CI_INGRESS_URL>"]
 
 
         click.echo("1/11: Configuration loaded.")
@@ -179,6 +181,7 @@ def bootstrap(
         "<WL_GITOPS_REPO_NAME>": wl_gitops_repo_name,
         "<GIT_ORGANIZATION_NAME>": git_organisation_name,
         "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
+        "<CI_INGRESS_URL>": ci_ingress_url,
     }
 
     wl_gitops_params = {
@@ -214,7 +217,8 @@ def bootstrap(
         "<CLOUD_ACCOUNT>": cloud_account,
         "<WL_IAM_ROLE_RN>": construct_wl_iam_role(
             state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
-        )
+        ),
+      "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store
     }
 
     # set cloud provider specific params

@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: crane-img-tag-cwft
+spec:
+  templates:
+    - name: crane-img-tag
+      inputs:
+        parameters:
+          - name: wl-service-name
+      script:
+        env:
+          - name: TAG
+            value: "{{workflow.parameters.tag}}"
+          - name: SERVICE_IMG_REPO
+            value: "{{workflow.parameters.registry}}/{{workflow.parameters.workload-name}}/{{inputs.parameters.wl-service-name}}"
+        image: '{{workflow.parameters.gcr-registry-proxy}}/go-containerregistry/crane/debug'
+        imagePullPolicy: IfNotPresent
+        command: [sh]
+        source: |
+          IMG_TAGS=$(crane ls $SERVICE_IMG_REPO) || exit 1 
+          if [ "$(echo $IMG_TAGS | grep $TAG)" ]
+            then
+              echo "Tag $TAG already exists."
+              exit 0
+            else
+              TAG_LATEST=$(echo $IMG_TAGS | sed -r 's/ /\n/g' | sort  -V | tail -1)
+              crane tag $SERVICE_IMG_REPO:$TAG_LATEST $TAG && echo "Image $SERVICE_IMG_REPO tagged SUCCESSFULLY."
+          fi
+        volumeMounts:
+          - name: crane-secret
+            mountPath: /root/.docker

@@ -1,0 +1,54 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: build-chain-p-cwft
+spec:
+  volumes:
+    - name: kaniko-secret
+      secret:
+        secretName: proxy-docker-config
+        items:
+          - key: .dockerconfigjson
+            path: config.json
+  imagePullPolicy: IfNotPresent
+  imagePullSecrets: 
+    - name: proxy-docker-config
+  entrypoint: ci-sequence
+  onExit: exit-handler
+  templates:
+    - name: ci-sequence
+      dag:
+        tasks:
+        - name: kaniko
+          templateRef: 
+            name: kaniko-s3-p-cwft
+            template: kaniko
+            clusterScope: true
+        - name: trivy-fs-scan
+          templateRef:
+            name: trivy-fs-s3-cwft
+            template: trivy-fs-scan
+            clusterScope: true
+        - name: megalinter
+          templateRef:
+            name: megalinter-cwft
+            template: megalinter
+            clusterScope: true
+    - name: exit-handler
+      steps:
+        - - name: terminator
+            template: flow-terminator
+            when: "{{workflow.status}} != Succeeded"
+    - name: flow-terminator
+      container:
+        image: '{{workflow.parameters.dockerhub-registry-proxy}}/argoproj/argocli'
+        command:
+          - argo
+        args:
+          - terminate
+          - -l
+          - stage=service-build,service!={{workflow.parameters.wl-service-name}},workflows.argoproj.io/completed!=true
+
+
+

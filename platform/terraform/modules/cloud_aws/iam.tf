@@ -69,7 +69,7 @@ module "iam_ci_role" {
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = concat(["argo:argo-workflow"], local.ci_sa_workloads_list)
+      namespace_service_accounts = concat(["argo:argo-workflow", "argo:argo-server"], local.ci_sa_workloads_list)
     }
 
   }
@@ -77,8 +77,8 @@ module "iam_ci_role" {
 
 # IaC PR automation
 module "iac_pr_automation_irsa_role" {
-  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name      = "${local.name}-iac_pr_automation-role"
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-iac_pr_automation-role"
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
@@ -98,7 +98,7 @@ module "cert_manager_irsa_role" {
   role_name                  = "${local.name}-cert-manager-role"
   attach_cert_manager_policy = true
   #  cert_manager_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
-  oidc_providers             = {
+  oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["cert-manager:cert-manager"]
@@ -124,8 +124,8 @@ module "external_dns_irsa_role" {
 }
 # secret_manager
 module "secret_manager_irsa_role" {
-  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name      = "${local.name}-secret_manager-role"
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-secret_manager-role"
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn

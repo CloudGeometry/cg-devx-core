@@ -2,14 +2,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ClusterWorkflowTemplate
 metadata:
-  name: git-clone-cwft
+  name: kaniko-s3-p-cwft
 spec:
   templates:
-    - name: git-clone
+    - name: kaniko
+      archiveLocation:
+        archiveLogs: true
       inputs:
         artifacts:
           - name: git-src
-            path: /src
+            path: /build
             git:
               repo: '{{workflow.parameters.repo}}'
               revision: '{{workflow.parameters.tag}}'
@@ -17,8 +19,9 @@ spec:
                 name: ci-secrets
                 key: SSH_PRIVATE_KEY
               depth: 1
+
       script:
-        image: '{{workflow.parameters.dockerhub-registry-proxy}}/alpine/git'
+        image: '{{workflow.parameters.gcr-registry-proxy}}/kaniko-project/executor:debug'
         imagePullPolicy: IfNotPresent
         env:
           - name: WL_SERVICE
@@ -29,14 +32,11 @@ spec:
             value: '{{workflow.parameters.kaniko-registry-mirror}}'
           - name: DOCKERHUB_REGISTRY_PROXY
             value: '{{workflow.parameters.dockerhub-registry-proxy}}'
-
-          
         command: [sh]
         source: |
           DOCKERHUB_PROXY_PREFIX=`basename $DOCKERHUB_REGISTRY_PROXY`
           echo "WL_SERVICE: $WL_SERVICE"
           echo "Dockerfile-parameter {{workflow.parameters.dockerfile}}"
-          cp -r /src/.  /build/  && echo "Copy successful."
           echo "REGISTRY_MIRROR: $REGISTRY_MIRROR"
           if [ $REGISTRY_MIRROR != NOMIRROR ]
           then
@@ -44,6 +44,28 @@ spec:
             sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/\1/;s/FROM\s+(\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/library\/\1/" Dockerfile
             cat Dockerfile
           fi
+          cd /build
+          executor \
+          --dockerfile={{workflow.parameters.dockerfile}} \
+          --context=dir:///build/{{workflow.parameters.build-context}} \
+          --no-push \
+          --tar-path=/tmp/{{workflow.parameters.wl-service-name}}.tar \
+          --registry-mirror={{workflow.parameters.kaniko-registry-mirror}} \
+          --snapshot-mode=time \
+          --use-new-run \
+          --compressed-caching=false \
+          --cache={{workflow.parameters.kaniko-cache}} \
+          --cache-run-layers \
+          --cache-repo={{workflow.parameters.kaniko-cache-repo}}/kaniko-cache/{{workflow.parameters.workload-name}}-{{workflow.parameters.wl-service-name}} 
         volumeMounts:
-          - mountPath: /build
-            name: build
+          - name: kaniko-secret
+            mountPath: /kaniko/.docker
+      outputs:
+        artifacts:
+          - name: tar-build
+            path: /tmp/{{workflow.parameters.wl-service-name}}.tar
+            s3:
+              key: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{workflow.parameters.wl-service-name}}-tar"
+            artifactGC:
+              strategy: Never
+

@@ -13,18 +13,18 @@ spec:
     targetRevision: 0.40.11
     helm:
       valuesObject:
-        workflowDefaults:
-          spec:
-            podGC:
-              strategy: 
-                strategy: OnWorkflowSuccess
-            ttlStrategy:
-              secondsAfterCompletion: 3600  
-              secondsAfterSuccess: 600  
-              secondsAfterFailure: 1440 
+         
         singleNamespace: false
         nameOverride: argo
         controller:
+          workflowDefaults:
+            spec:
+              podGC:
+                strategy: OnWorkflowSuccess
+              ttlStrategy:
+                secondsAfterCompletion: 43200
+                secondsAfterSuccess: 1800
+                secondsAfterFailure: 21600
           rbac:
             create: true
           workflowNamespaces: [argo]
