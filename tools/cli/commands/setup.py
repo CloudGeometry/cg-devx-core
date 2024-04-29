@@ -4,7 +4,6 @@ import webbrowser
 
 import click
 import hvac
-import portforward
 import yaml
 from alive_progress import alive_bar
 
@@ -28,6 +27,7 @@ from common.tracing_decorator import trace
 from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
     set_envs, unset_envs, wait, wait_http_endpoint_readiness, prepare_git_provider_env_vars
 from common.utils.generators import random_string_generator
+from common.utils.k8s_utils import find_pod_by_name_fragment, get_kr8s_pod_instance_by_name
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
 from services.dns.dns_provider_manager import DNSManager
@@ -556,13 +556,21 @@ def setup(
             p.internals["ARGOCD_PASSWORD"] = argo_pas
 
             # get argocd auth token
-            with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                     config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
-                                     log_level=portforward.LogLevel.ERROR):
+            k8s_pod = find_pod_by_name_fragment(
+                kube_config_path=p.internals["KCTL_CONFIG_PATH"],
+                name_fragment="argocd-server",
+                namespace=ARGOCD_NAMESPACE
+            )
+            kr8s_pod = get_kr8s_pod_instance_by_name(
+                pod_name=k8s_pod.metadata.name,
+                namespace=ARGOCD_NAMESPACE,
+                kubeconfig=p.internals["KCTL_CONFIG_PATH"]
+            )
+            with kr8s_pod.portforward(remote_port=8080, local_port=8080):
+                # Make an API request to the forwarded port
                 argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
                 p.internals["ARGOCD_TOKEN"] = argocd_token
             bar()
-
             # create argocd "core" project
             # TODO: explicitly whitelist project repositories
             cd_man.create_project(argocd_core_project_name, [
