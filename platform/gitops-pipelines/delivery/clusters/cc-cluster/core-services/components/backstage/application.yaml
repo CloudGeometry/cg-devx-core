@@ -13,6 +13,13 @@ spec:
     targetRevision: 1.6.0
     helm:
       values: |-
+        commonLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: developer-portal.backstage
+          cg-devx.metadata.chart-version: 1.6.0
+          # this helm chart always uses the latest docker image
+          cg-devx.metadata.version: latest
         global:
           imageRegistry: ""
           imagePullSecrets: []
@@ -32,7 +39,7 @@ spec:
         ingress:
           enabled: true
           className: "nginx"
-          annotations: 
+          annotations:
             cert-manager.io/cluster-issuer: "letsencrypt-prod"
             nginx.ingress.kubernetes.io/enable-cors: "true"
             nginx.ingress.kubernetes.io/cors-allow-origin: "https://<PORTAL_INGRESS_URL>"
@@ -89,7 +96,7 @@ spec:
                   host: ${BACKSTAGE_POSTGRESQL_SERVICE_HOST}
                   port: ${BACKSTAGE_POSTGRESQL_SERVICE_PORT}
                   user: ${POSTGRES_USER}
-                  password: ${POSTGRES_PASSWORD}  
+                  password: ${POSTGRES_PASSWORD}
             techdocs:
               builder: 'local'
               publisher:

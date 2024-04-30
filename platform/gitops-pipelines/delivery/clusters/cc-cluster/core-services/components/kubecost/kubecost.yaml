@@ -23,6 +23,13 @@ spec:
           prometheus:
             enabled: false
             fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+          additionalLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: cost-management.kubecost
+            cg-devx.metadata.chart-version: 1.103.3
+            cg-devx.metadata.version: 1.103.3
+
   syncPolicy:
     automated:
       prune: true

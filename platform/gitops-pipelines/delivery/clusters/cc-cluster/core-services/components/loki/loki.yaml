@@ -33,6 +33,12 @@ spec:
               kvstore:
                 store: inmemory
             enable_api: true
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: log-management.loki
+            cg-devx.metadata.chart-version: 5.36.3
+            cg-devx.metadata.version: 2.9.2
         singleBinary:
           persistence:
             size: "50Gi"

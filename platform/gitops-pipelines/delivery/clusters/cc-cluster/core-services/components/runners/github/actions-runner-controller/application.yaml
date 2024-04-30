@@ -12,10 +12,15 @@ spec:
     targetRevision: 0.20.2
     helm:
       values: |-
-        labels: {}
+        labels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: code-quality.sonarqube
+          cg-devx.metadata.chart-version: 0.20.2
+          cg-devx.metadata.version: 0.25.2
 
         replicaCount: 1
- 
+
         webhookPort: 9443
         syncPeriod: 1m
         defaultScaleDownDelay: 10m

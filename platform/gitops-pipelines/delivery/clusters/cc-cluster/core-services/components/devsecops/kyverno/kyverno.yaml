@@ -16,8 +16,13 @@ spec:
     targetRevision: v3.0.0
     helm:
       releaseName: kyverno
-      # values: |
-      #   example: value
+      values: |
+        commonLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: policy-engine.kyverno
+          cg-devx.metadata.chart-version: 3.0.0
+          cg-devx.metadata.version: 1.10.0
   syncPolicy:
     automated:
       prune: true

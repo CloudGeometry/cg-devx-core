@@ -20,6 +20,12 @@ spec:
             <K8S_ROLE_MAPPING>: "<EXTERNAL_DNS_IAM_ROLE_RN>"
         podLabels:
           # <ADDITIONAL_LABELS>
+        commonLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: external-dns
+          cg-devx.metadata.chart-version: 1.13.1
+          cg-devx.metadata.version: 0.13.6
         # <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>
         domainFilters:
           - <CC_CLUSTER_FQDN>
