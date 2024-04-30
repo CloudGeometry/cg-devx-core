@@ -184,3 +184,7 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
         return '''awsRegion: <CLOUD_REGION>'''
+
+    @trace()
+    def create_kubecost_annotation(self):
+        return '''amazon-web-services: true'''

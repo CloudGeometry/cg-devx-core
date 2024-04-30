@@ -40,10 +40,7 @@ spec:
           prometheusScrape: true
           config:
             services:
-              # enable only required cloud hosting
-              # google-cloud-services: false
-              # amazon-web-services: true
-              # azure-cloud-services: false
+              # <KUBECOST_CLOUD_PROVIDER_CONFIGURATION>
         serviceMonitor:
           enabled: true
           networkCosts:
