@@ -37,6 +37,7 @@ spec:
               enabled: true
         networkCosts:
           enabled: true
+          prometheusScrape: true
           config:
             services:
               # enable only required cloud hosting
