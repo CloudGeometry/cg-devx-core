@@ -54,6 +54,7 @@ module "eks" {
     # ami_type                              = "AL2_x86_64"
     # instance_types                        = module.instance_types
     attach_cluster_primary_security_group = true
+    disk_size                             = 50
     node_group_name                       = "${local.name}-node-group"
     use_custom_launch_template            = false
 
