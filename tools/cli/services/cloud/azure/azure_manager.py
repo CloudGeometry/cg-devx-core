@@ -277,3 +277,7 @@ class AzureManager(CloudProviderManager):
       ARM_CLIENT_ID                       = "<IAC_PR_AUTOMATION_IAM_ROLE_RN>",
       ARM_ACCESS_KEY                      = var.tf_backend_storage_access_key,
       # ----'''
+
+    @trace()
+    def create_kubecost_annotation(self):
+        return '''azure-cloud-services: true'''
