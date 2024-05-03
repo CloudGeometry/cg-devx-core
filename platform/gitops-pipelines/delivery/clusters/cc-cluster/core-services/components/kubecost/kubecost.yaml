@@ -51,6 +51,12 @@ spec:
               enabled: true
             datasources:
               enabled: false
+        # kubecostToken: "put your token here"
+        # generated at http://kubecost.com/install, used for alerts tracking and free trials
+        # productKey: # apply business or enterprise product license
+        #   key: ""
+        #   enabled: false
+        #   secretname: productkeysecret # create a secret out of a file named productkey.json of format { "key": "kc-b1325234" }
   syncPolicy:
     automated:
       prune: true
