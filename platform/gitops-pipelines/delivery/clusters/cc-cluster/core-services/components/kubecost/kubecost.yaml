@@ -24,7 +24,7 @@ spec:
             enabled: false
             fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
           grafana:
-            # disable embedded grafana when wil upgrade to v2.3
+            # disable embedded grafana when upgrading to v2.3
             # https://github.com/kubecost/cost-analyzer-helm-chart/issues/3219
             enabled: true
             domainName: <GRAFANA_INGRESS_URL>
