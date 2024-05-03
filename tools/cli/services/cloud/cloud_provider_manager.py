@@ -163,3 +163,11 @@ class CloudProviderManager(ABC):
         :return: Atlantis configuration section
         """
         pass
+
+    @abstractmethod
+    def create_kubecost_annotation(self):
+        """
+        Creates Cloud Provider specific configuration section for KubeCost
+        :return: KubeCost configuration section
+        """
+        pass

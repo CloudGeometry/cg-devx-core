@@ -38,7 +38,7 @@ variable "cluster_name" {
 
 variable "cluster_version" {
   type        = string
-  default     = "1.27"
+  default     = "1.29"
   description = "(Optional) Specifies the EKS Kubernetes version"
 }
 
@@ -57,7 +57,7 @@ variable "node_groups" {
     instance_types = optional(list(string), ["m5.large"])
     capacity_type  = optional(string, "on_demand")
     min_size       = optional(number, 3)
-    max_size       = optional(number, 5)
+    max_size       = optional(number, 6)
     desired_size   = optional(number, 4)
   }))
   default = [
@@ -66,7 +66,7 @@ variable "node_groups" {
       instance_types = ["m5.large"]
       capacity_type  = "on_demand"
       min_size       = 3
-      max_size       = 5
+      max_size       = 6
       desired_size   = 4
     }
   ]
