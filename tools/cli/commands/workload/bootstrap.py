@@ -146,7 +146,6 @@ def bootstrap(
         artifact_store = state_store.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"]
         ci_ingress_url = state_store.parameters["<CI_INGRESS_URL>"]
 
-
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
         error_message = f'Configuration loading failed due to missing key: {e}. ' \
@@ -218,7 +217,7 @@ def bootstrap(
         "<WL_IAM_ROLE_RN>": construct_wl_iam_role(
             state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
         ),
-      "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store
+        "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store
     }
 
     # set cloud provider specific params
@@ -235,8 +234,8 @@ def bootstrap(
     # Initialize WorkloadManager for the workload repository
     wl_manager = WorkloadManager(
         org_name=org_name,
-        repo_name=wl_repo_name,
-        key_path=key_path,
+        wl_repo_name=wl_repo_name,
+        ssh_pkey_path=key_path,
         template_url=wl_template_url,
         template_branch=wl_template_branch
     )
@@ -258,8 +257,8 @@ def bootstrap(
     # Initialize WorkloadManager for the GitOps repository
     wl_gitops_manager = WorkloadManager(
         org_name=org_name,
-        repo_name=wl_gitops_repo_name,
-        key_path=key_path,
+        wl_repo_name=wl_gitops_repo_name,
+        ssh_pkey_path=key_path,
         template_url=wl_gitops_template_url,
         template_branch=wl_gitops_template_branch
     )

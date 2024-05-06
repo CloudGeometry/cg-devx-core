@@ -14,8 +14,8 @@ from common.custom_excpetions import GitBranchAlreadyExists, PullRequestCreation
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.command_utils import prepare_cloud_provider_auth_env_vars, set_envs, \
-  check_installation_presence, initialize_gitops_repository, create_and_setup_branch, \
-  create_and_open_pull_request, preprocess_workload_names
+    check_installation_presence, initialize_gitops_repository, create_and_setup_branch, \
+    create_and_open_pull_request, preprocess_workload_names
 from services.platform_gitops import PlatformGitOpsRepo
 from services.tf_wrapper import TfWrapper
 from services.wl_template_manager import WorkloadManager
@@ -133,8 +133,8 @@ def delete(
             # and call tf destroy while pointing to remote state
             wl_gitops_manager = WorkloadManager(
                 org_name=state_store.parameters["<GIT_ORGANIZATION_NAME>"],
-                repo_name=wl_gitops_repo_name,
-                key_path=state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"]
+                wl_repo_name=wl_gitops_repo_name,
+                ssh_pkey_path=state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
             )
 
             wl_gitops_repo_folder = wl_gitops_manager.clone_wl()
