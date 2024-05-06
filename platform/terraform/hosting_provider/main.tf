@@ -9,16 +9,16 @@ locals {
   email        = ["<OWNER_EMAIL>"]
   domain_name  = "<DOMAIN_NAME>"
   tags = {
-    cg-devx.cost-allocation.cost-center = "platform"
-    cg-devx.metadata.cluster-name       = local.cluster_name
-    cg-devx.metadata.owner              = "${local.cluster_name}-admin"
-    provisioned-by                      = "cg-devx"
+    "cg-devx.cost-allocation.cost-center" = "platform"
+    "cg-devx.metadata.cluster-name"       = local.cluster_name
+    "cg-devx.metadata.owner"              = "${local.cluster_name}-admin"
+    "provisioned-by"                      = "cg-devx"
   }
   labels = {
-    cg-devx.cost-allocation.cost-center = "platform"
-    cg-devx.metadata.cluster-name       = local.cluster_name
-    cg-devx.metadata.owner              = "${local.cluster_name}-admin"
-    provisioned-by                      = "cg-devx"
+    "cg-devx.cost-allocation.cost-center" = "platform"
+    "cg-devx.metadata.cluster-name"       = local.cluster_name
+    "cg-devx.metadata.owner"              = "${local.cluster_name}-admin"
+    "provisioned-by"                      = "cg-devx"
   }
 }
 
