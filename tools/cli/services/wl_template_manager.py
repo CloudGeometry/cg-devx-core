@@ -7,6 +7,7 @@ from ghrepo import GHRepo
 from git import Repo, GitError, Actor
 
 from common.const.common_path import LOCAL_WORKLOAD_TEMP_FOLDER
+from common.const.const import WL_REPOSITORY_BRANCH, WL_REPOSITORY_URL
 from common.custom_excpetions import RepositoryNotInitializedError
 from common.logging_config import logger
 from common.tracing_decorator import trace
@@ -18,18 +19,18 @@ class WorkloadManager:
     def __init__(
             self,
             org_name: str,
-            repo_name: str,
-            key_path: str,
-            template_url: Optional[str] = None,
-            template_branch: Optional[str] = None
+            wl_repo_name: str,
+            ssh_pkey_path: str,
+            template_url: Optional[str] = WL_REPOSITORY_URL,
+            template_branch: Optional[str] = WL_REPOSITORY_BRANCH
     ):
-        self._url = template_url
+        self._template_url = template_url
         self._branch = template_branch
         self._git_org_name = org_name
-        self.repo_name = repo_name
-        self.key_path = key_path
-        self.wl_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / repo_name
-        self.template_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / GHRepo.parse(self._url).name
+        self.wl_repo_name = wl_repo_name
+        self.ssh_pkey_path = ssh_pkey_path
+        self.wl_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / wl_repo_name
+        self.template_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / GHRepo.parse(self._template_url).name
         self.wl_repo = None
         self.template_repo = None
 
@@ -39,7 +40,7 @@ class WorkloadManager:
         Clone the Git repository template.
         """
         self._prepare_clone_folder(folder=self.template_repo_folder)
-        self._clone_repository(url=self._url, branch=self._branch, folder=self.template_repo_folder)
+        self._clone_repository(url=self._template_url, branch=self._branch, folder=self.template_repo_folder)
         return self.template_repo_folder
 
     @trace()
@@ -47,7 +48,7 @@ class WorkloadManager:
         """
         Clone the workload Git repository.
         """
-        wl_repo_url = GHRepo(owner=self._git_org_name, name=self.repo_name).ssh_url
+        wl_repo_url = GHRepo(owner=self._git_org_name, name=self.wl_repo_name).ssh_url
         self._prepare_clone_folder(folder=self.wl_repo_folder)
         self.wl_repo = self._clone_repository(url=wl_repo_url, folder=self.wl_repo_folder)
         return self.wl_repo_folder
@@ -88,11 +89,11 @@ class WorkloadManager:
             logger.info("No parameters provided for parameterization. Skipping process.")
             return
 
-        logger.info(f"Parameterizing workload repository '{self.repo_name}' with provided parameters.")
+        logger.info(f"Parameterizing workload repository '{self.wl_repo_name}' with provided parameters.")
         try:
             # Processing each file in the repository and replacing placeholders
             self._replace_placeholders_in_folder(folder=self.wl_repo_folder, params=params)
-            logger.info(f"Parameterization of repository '{self.repo_name}' completed successfully.")
+            logger.info(f"Parameterization of repository '{self.wl_repo_name}' completed successfully.")
         except GitError as git_err:
             logger.error(f"Git error during parameterization: {git_err}")
             raise
@@ -116,7 +117,7 @@ class WorkloadManager:
             logger.error("Workload repository is not initialized. Please clone it first.")
             raise RepositoryNotInitializedError("Workload repository not initialized")
 
-        logger.info(f"Uploading changes to the repository '{self.repo_name}'.")
+        logger.info(f"Uploading changes to the repository '{self.wl_repo_name}'.")
 
         try:
             self.wl_repo.git.add(all=True)
@@ -145,7 +146,7 @@ class WorkloadManager:
     def update(self):
         if not self.wl_repo:
             self.wl_repo = Repo(self.wl_repo_folder)
-        with self.wl_repo.git.custom_environment(GIT_SSH_COMMAND=f"ssh -o StrictHostKeyChecking=no -i {self.key_path}"):
+        with self.wl_repo.git.custom_environment(GIT_SSH_COMMAND=f"ssh -o StrictHostKeyChecking=no -i {self.ssh_pkey_path}"):
             # clean stale branches
             self.wl_repo.remotes.origin.fetch(prune=True)
             self.wl_repo.heads.main.checkout()
@@ -281,7 +282,7 @@ class WorkloadManager:
         clone_kwargs = {
             "url": url,
             "to_path": folder,
-            "env": {"GIT_SSH_COMMAND": f"ssh -o StrictHostKeyChecking=no -i {self.key_path}"}
+            "env": {"GIT_SSH_COMMAND": f"ssh -o StrictHostKeyChecking=no -i {self.ssh_pkey_path}"}
         }
 
         if branch:
