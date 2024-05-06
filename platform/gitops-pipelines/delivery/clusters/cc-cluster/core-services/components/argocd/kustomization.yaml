@@ -2,17 +2,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: argocd
 
-commonLabels:
-  cg-devx.cost-allocation.cost-center: platform
-  cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
-  cg-devx.metadata.service: continuous-delivery.argocd
-  cg-devx.metadata.version: 2.8.4
-
 resources:
 - github.com:argoproj/argo-cd.git/manifests/ha/cluster-install?ref=v2.8.4
 - argocd-ui-ingress.yaml
 - externalsecrets.yaml
 - argocd-oidc-restart-job.yaml
+
+transformers:
+  - label-transformer.yaml
 
 patches:
 - path: argocd-cm.yaml

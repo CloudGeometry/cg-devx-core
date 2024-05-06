@@ -18,8 +18,7 @@ spec:
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: developer-portal.backstage
           cg-devx.metadata.chart-version: 1.6.0
-          # this helm chart always uses the latest docker image
-          cg-devx.metadata.version: latest
+          cg-devx.metadata.version: 1.17.0-next.2
         global:
           imageRegistry: ""
           imagePullSecrets: []
@@ -27,7 +26,6 @@ spec:
         nameOverride: ""
         fullnameOverride: ""
         clusterDomain: cluster.local
-        commonLabels: {}
         commonAnnotations: {}
         extraDeploy: []
         diagnosticMode:
@@ -55,7 +53,7 @@ spec:
           image:
             registry: ghcr.io
             repository: backstage/backstage
-            tag: latest
+            tag: 1.17.0-next.2
             pullPolicy: Always
             pullSecrets: []
             debug: false
@@ -106,7 +104,6 @@ spec:
           nodeSelector: {}
           tolerations: []
           podAnnotations: {}
-          podLabels: {}
           annotations: {}
         service:
           type: ClusterIP

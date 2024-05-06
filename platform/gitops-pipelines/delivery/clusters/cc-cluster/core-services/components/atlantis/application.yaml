@@ -31,9 +31,13 @@ spec:
           annotations:
             <K8S_ROLE_MAPPING>: "<IAC_PR_AUTOMATION_IAM_ROLE_RN>"
         podTemplate:
-          labels: {
+          labels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: atlantis
+            cg-devx.metadata.chart-version: 4.15.3
+            cg-devx.metadata.version: 0.25.0
             # <ADDITIONAL_LABELS>
-          }
         resources:
           limits:
             cpu: 400m
