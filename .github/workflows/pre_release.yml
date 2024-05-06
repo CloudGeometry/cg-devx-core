@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: ${{ inputs.PYTHON_VERSION }}
       - name: Set up Python ${{ inputs.PYTHON_VERSION }} with Poetry
-        run: poetry env use ${PYTHON_VERSION}
+        run: poetry env use ${Python3_ROOT_DIR}/python
       - run: poetry version ${{ inputs.RELEASE_TAG }}
       - run: poetry install
       - run: poetry config repositories.testpypi https://test.pypi.org/legacy/
