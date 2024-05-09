@@ -1,144 +1,101 @@
-# CG DevX CLI Workload Management commands
+# CG DevX CLI Workload Management Commands
 
-Below is a list of Workload Management commands supported by CG DevX CLI tool.
-Workload Management commands depend on local cluster metadata and:
-a) could only be executed when CG DevX cluster is already provisioned;
-b) should be executed from the same machine as cluster provisioning.
-
-For more details on cluster provisioning, please check [setup command documentation](../README.md#setup)
+This document provides a detailed guide on the Workload Management commands supported by the CG DevX CLI tool. These commands require that the CG DevX cluster is already provisioned and should be executed from the same machine used for cluster provisioning. For more information on cluster provisioning, please refer to the [setup command documentation](../README.md#setup).
 
 ## Create
 
-Generates declarative configuration of resources required for workload to function. Configuration is placed in the
-platform
-GitOps repository. CLI automatically pushes changes to feature branch and creates a Pull Request (PR). Changes
-introduced with PR should be reviewed and adjusted when necessary.
-All the changes to platform GitOps repository should be applied via Atlantis by typing `atlantis apply` in the PR
-comments section.
+The `workload create` command generates and configures resources required for the workload. It automatically pushes changes to a feature branch and creates a pull request (PR) for review and adjustment.
 
-`workload create` command creates:
+**Operations performed:**
+- Creates configuration for the VCS module to establish Workload source code and GitOps repositories.
+- Sets up the Secrets module for managing Workload secrets and RBAC.
+- Configures Core Services like Image Registry and Code Quality projects.
+- Initializes an ArgoCD Project AppSet for automated Workload service delivery.
 
-- Configuration for **VCS** module to create Workload source code monorepo and Workload GitOps repo;
-- Configuration for **Secrets** module to create Workload secrets namespace and RBAC;
-- Configuration for **Core Services** module to create Image Registry, Code Quality, etc. projects for Workload;
-- ArgoCD dedicated Workload Project AppSet to automatically deliver Workload services.
+**Usage:** This command can be executed using command-line arguments or environment variables.
 
-`workload create` command could be executed using arguments, or environment variables.
-
-**Arguments**:
+### Command Arguments
 
 | Name (short, full)                        | Type                                    | Description                                       |
 |-------------------------------------------|-----------------------------------------|---------------------------------------------------|
-| -wl, --workload-name                      | TEXT                                    | Workload name                                     |
-| -wlrn, --workload-repository-name         | TEXT                                    | Name for Workload repository                      |
-| -wlgrn, --workload-gitops-repository-name | TEXT                                    | Name for Workload GitOps repository               |
-| --verbosity                               | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
+| -wl, --workload-name                      | TEXT                                    | Name of the Workload                              |
+| -wlrn, --workload-repository-name         | TEXT                                    | Workload repository name                          |
+| -wlgrn, --workload-gitops-repository-name | TEXT                                    | Workload GitOps repository name                   |
+| --verbosity                               | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Logging verbosity level, default CRITICAL         |
 
-> **Note!**: For all names use kebab-case.
+> **Note:** Use kebab-case for all names.
 
-**Command snippet**
-
-Using command arguments
+**Example:**
 
 ```bash
-cgdevxcli workload create --workload-name your-workload-name \ 
-                          --workload-repository-name your-workload-repository-name
+cgdevxcli workload create --workload-name your-workload-name \
+                          --workload-repository-name your-workload-repository-name \
                           --workload-gitops-repository-name your-workload-gitops-repository-name
+
 ```
 
-## Bootstrap
+# Bootstrap
 
-Creates folder structure and injects all the necessary configurations for your Workload into repositories created
-by [create command](#create).
+The workload bootstrap command sets up the folder structure and injects necessary configurations into repositories created by the create command.
 
-By default, bootstrap command uses:
+Templates used:
 
-- CG DevX Workload template [repository](https://github.com/CloudGeometry/cg-devx-wl-template)
-- CG DevX Workload GitOps template [repository](https://github.com/CloudGeometry/cg-devx-wl-gitops-template)
+Workload template repository: CG DevX Workload Template
+Workload GitOps template repository: CG DevX Workload GitOps Template
+These templates provide a predefined Docker file, CI/CD processes, release promotion process, and environment definitions.
 
-Those templates provide you:
+Customization: You can fork and customize these templates and specify custom URLs and branches during execution.
 
-- Workload repository structure
-- Pre-defined Docker file
-- CI process
-- CD process
-- Release promotion process
-- GitOps style environment definition
-- IaC for out of the cluster cloud resources
+# Command Arguments:
 
-You could fork and customize existing template repositories and use them by providing custom template repository URLs
-and branches.
+Name (short, full)	Type	Description
+-wl, --workload-name	TEXT	Workload name
+-wlrn, --workload-repository-name	TEXT	Workload repository name
+-wlgrn, --workload-gitops-repository-name	TEXT	Workload GitOps repository name
+-wltu, --workload-template-url	TEXT	URL of the workload repository template
+-wltb, --workload-template-branch	TEXT	Branch of the workload repository template
+-wlgu, --workload-gitops-template-url	TEXT	URL of the workload GitOps repository template
+-wlgb, --workload-gitops-template-branch	TEXT	Branch of the workload GitOps repository template
+-wls, --workload-service-name	TEXT	Name of the service within the workload
+-wlsp, --workload-service-port	NUMBER	Service port, default 3000
+--verbosity	[DEBUG, INFO, WARNING, ERROR, CRITICAL]	Logging verbosity level, default CRITICAL
+Note: For all names use kebab-case.
 
-> **Note!**: Boostrap command must be executed using the same workload and workload repository names.
+# Example 
 
-`workload bootstrap` command could be executed using arguments, or environment variables.
+cgdevxcli workload bootstrap --workload-name your-workload-name \
+                             --workload-repository-name your-workload-repository-name \
+                             --workload-gitops-repository-name your-workload-gitops-repository-name \
+                             --workload-service-name your-first-service-name \
+                             --workload-service-port your-first-service-port
 
-**Arguments**:
 
-| Name (short, full)                        | Type                                    | Description                                       |
-|-------------------------------------------|-----------------------------------------|---------------------------------------------------|
-| -wl, --workload-name                      | TEXT                                    | Workload name                                     |
-| -wlrn, --workload-repository-name         | TEXT                                    | Name for Workload repository                      |
-| -wlgrn, --workload-gitops-repository-name | TEXT                                    | Name for Workload GitOps repository               |
-| -wltu, --workload-template-url            | TEXT                                    | Workload repository template                      |
-| -wltb, --workload-template-branch         | TEXT                                    | Workload repository template branch               |
-| -wlgu, --workload-gitops-template-url     | TEXT                                    | Workload GitOps repository template               |
-| -wlgb, --workload-gitops-template-branch  | TEXT                                    | Workload GitOps repository template branch        |
-| -wls, --workload-service-name             | TEXT                                    | Workload service name                             |
-| -wlsp, --workload-service-port            | NUMBER                                  | Workload service port, default 3000               |
-| --verbosity                               | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
+# Delete
 
-> **Note!**: For all names use kebab-case.
+The workload delete command removes the declarative configuration of resources required for a workload. It automatically pushes changes to a feature branch and creates a pull request for review.
+
+Important:
+
+This command deletes all configuration generated by the create command.
+If executed with the --destroy-resources flag, it will also destroy all the resources created for the specific workload. This operation is irreversible and should be executed by the cluster owner only.
+
+# Command Arguments:
+
+Name (short, full)	Type	Description
+-wl, --workload-names	TEXT	Workload name(s), can be multiple
+--all	Flag	Flag to destroy all existing workloads
+-wldr, --destroy-resources	Flag	Flag to destroy workload resources
+-wlgrn, --workload-gitops-repository-name	TEXT	Workload GitOps repository name
+--verbosity	[DEBUG, INFO, WARNING, ERROR, CRITICAL]	Logging verbosity level, default CRITICAL
+
+Note: This process is irreversible.
+
 
 **Command snippet**
 
 Using command arguments
 
 ```bash
-cgdevxcli workload bootstrap --workload-name your-workload-name \ 
-                          --workload-repository-name your-workload-repository-name
-                          --workload-gitops-repository-name your-workload-gitops-repository-name
-                          --workload-service-name your-first-service-name
-                          --workload-service-port your-first-service-name-port
-```
-
-## Delete
-
-Removes declarative configuration of resources required for workload to function. CLI automatically pushes changes to
-feature branch and creates a Pull Request (PR). Changes introduced with PR should be reviewed and adjusted when
-necessary.
-All the changes to platform GitOps repository should be applied via Atlantis by typing `atlantis apply` in the PR
-comments section.
-
-`workload delete` command deletes all the configuration generated by `workload create` [command](#create):
-
-When executed with `--destroy-resources` flag it will also destroy all the resources created for a specific workload.
-Please note that workload GitOps repository name should match one for workload.
-When executing with `--destroy-resources` flag enabled it **must** be executed by cluster owner.
-Under the hood, it will execute tf destroy locally, and tf state storage is protected and accessible only by the owner.
-
-
-> **NOTE!**: this process is irreversible
-
-`workload delete` command could be executed using arguments, or environment variables.
-
-**Arguments**:
-
-| Name (short, full)                        | Type                                    | Description                                       |
-|-------------------------------------------|-----------------------------------------|---------------------------------------------------|
-| -wl, --workload-names                     | TEXT                                    | Workload name(s), could be multiple args          |
-| --all                                     | Flag                                    | Destroy all existing workloads                    |
-| -wldr, --destroy-resources                | Flag                                    | Destroy workload resources                        |
-| -wlgrn, --workload-gitops-repository-name | TEXT                                    | Name for Workload GitOps repository               |
-| --verbosity                               | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
-
-> **Note!**: For all names use kebab-case.
-
-**Command snippet**
-
-Using command arguments
-
-```bash
-cgdevxcli workload delete --workload-name your-workload-name
+cgdevxcli cgdevxcli workload delete --workload-name your-workload-name
 ```
 
