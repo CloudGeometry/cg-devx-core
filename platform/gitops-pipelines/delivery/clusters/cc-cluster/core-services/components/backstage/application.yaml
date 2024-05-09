@@ -48,7 +48,7 @@ spec:
           image:
             registry: ghcr.io
             repository: backstage/backstage
-            tag: latest
+            tag: 1.17.0-next.2
             pullPolicy: Always
             pullSecrets: []
             debug: false
