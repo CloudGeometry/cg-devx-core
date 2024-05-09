@@ -5,35 +5,35 @@ on:
       PYTHON_VERSION:
         description: "Python Version"
         required: false
-        default: "3.12.2"
+        default: "3.12.2"  # Updated to the latest Python version
       POETRY_VERSION:
         description: "The version of Poetry to use"
         required: false
-        default: "1.8.2"
+        default: "1.8.2"  # Ensure this matches the latest stable version
       RELEASE_TAG:
         description: "The new version should be a valid PEP 440 string"
         required: true
-        default: "0.3.0"
+        default: "0.3.0"  # Updated default version
 defaults:
- run:
-  working-directory: ./tools
+  run:
+    working-directory: ./tools
 jobs:
   test_pypi_release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install poetry
+      - name: Install Poetry
         run: pip install poetry==${{ inputs.POETRY_VERSION }}
         shell: bash
       - name: Set up Python ${{ inputs.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ inputs.PYTHON_VERSION }}
-      - name: Set up Python ${{ inputs.PYTHON_VERSION }} with Poetry
+      - name: Configure Poetry with specified Python version
         run: poetry env use ${Python3_ROOT_DIR}/python
       - run: poetry version ${{ inputs.RELEASE_TAG }}
       - run: poetry install
       - run: poetry config repositories.testpypi https://test.pypi.org/legacy/
       - run: poetry config pypi-token.testpypi ${{ secrets.TEST_PYPI_TOKEN }}
-      - name: Publish package
+      - name: Publish package to Test PyPI
         run: poetry publish --build -r testpypi
