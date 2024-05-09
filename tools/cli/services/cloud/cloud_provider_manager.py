@@ -7,6 +7,12 @@ class CloudProviderManager(ABC):
 
     @property
     def region(self) -> str:
+        """Cloud provider geographic area"""
+        pass
+
+    @property
+    def account(self) -> str:
+        """Cloud provider tenant"""
         pass
 
     @classmethod
@@ -155,5 +161,13 @@ class CloudProviderManager(ABC):
         """
         Creates Cloud Provider specific configuration section for Atlantis
         :return: Atlantis configuration section
+        """
+        pass
+
+    @abstractmethod
+    def create_kubecost_annotation(self):
+        """
+        Creates Cloud Provider specific configuration section for KubeCost
+        :return: KubeCost configuration section
         """
         pass

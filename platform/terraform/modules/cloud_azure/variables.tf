@@ -34,7 +34,7 @@ variable "cluster_name" {
 
 variable "cluster_version" {
   type        = string
-  default     = "1.27"
+  default     = "1.29"
   description = "(Optional) Specifies the AKS Kubernetes version"
 }
 
@@ -90,4 +90,17 @@ variable "enable_native_auto_scaling" {
   description = "Enables AKS native autoscaling feature."
   type        = bool
   default     = false
+}
+
+variable "domain_name" {
+  type        = string
+  description = "Specifies the platform domain name"
+}
+
+variable "workloads" {
+  description = "Workloads configuration"
+  type        = map(object({
+    description = optional(string, "")
+  }))
+  default = {}
 }

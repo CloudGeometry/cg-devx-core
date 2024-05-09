@@ -23,8 +23,14 @@ class AzureManager(CloudProviderManager):
         self._azure_sdk = AzureSdk(subscription_id, location)
 
     @property
-    def region(self):
+    def region(self) -> str:
+        """Azure geography location"""
         return self._azure_sdk.location
+
+    @property
+    def account(self) -> str:
+        """Azure tenant id"""
+        return self._azure_sdk.get_tenant_id()
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str):
@@ -271,3 +277,7 @@ class AzureManager(CloudProviderManager):
       ARM_CLIENT_ID                       = "<IAC_PR_AUTOMATION_IAM_ROLE_RN>",
       ARM_ACCESS_KEY                      = var.tf_backend_storage_access_key,
       # ----'''
+
+    @trace()
+    def create_kubecost_annotation(self):
+        return '''azure-cloud-services: true'''

@@ -11,6 +11,7 @@ provider "vault" {
 }
 
 locals {
+  vcs_owner        = "<GIT_ORGANIZATION_NAME>"
   gitops_repo_name = "<GITOPS_REPOSITORY_NAME>"
   vcs_bot_username = "<GIT_USER_LOGIN>"
   bot_email        = "<OWNER_EMAIL>"
@@ -39,6 +40,7 @@ locals {
 }
 
 module "users" {
-  source = "../modules/users_<GIT_PROVIDER>"
-  users  = local.users
+  source    = "../modules/users_<GIT_PROVIDER>"
+  users     = local.users
+  vcs_owner = local.vcs_owner
 }

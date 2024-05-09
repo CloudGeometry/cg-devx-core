@@ -38,7 +38,7 @@ variable "cluster_name" {
 
 variable "cluster_version" {
   type        = string
-  default     = "1.27"
+  default     = "1.29"
   description = "(Optional) Specifies the EKS Kubernetes version"
 }
 
@@ -54,20 +54,20 @@ variable "node_group_type" {
 variable "node_groups" {
   type = list(object({
     name           = optional(string, "default")
-    instance_types = optional(list(string), ["t3.large"])
+    instance_types = optional(list(string), ["m5.large"])
     capacity_type  = optional(string, "on_demand")
     min_size       = optional(number, 3)
-    max_size       = optional(number, 5)
-    desired_size   = optional(number, 3)
+    max_size       = optional(number, 6)
+    desired_size   = optional(number, 4)
   }))
   default = [
     {
       name           = "default"
-      instance_types = ["t3.large"]
+      instance_types = ["m5.large"]
       capacity_type  = "on_demand"
       min_size       = 3
-      max_size       = 5
-      desired_size   = 3
+      max_size       = 6
+      desired_size   = 4
     }
   ]
 }
@@ -97,4 +97,17 @@ variable "cluster_ssh_public_key" {
   description = "(Optional) SSH public key to access worker nodes."
   type        = string
   default     = ""
+}
+
+variable "domain_name" {
+  type        = string
+  description = "Specifies the platform domain name"
+}
+
+variable "workloads" {
+  description = "Workloads configuration"
+  type        = map(object({
+    description = optional(string, "")
+  }))
+  default = {}
 }

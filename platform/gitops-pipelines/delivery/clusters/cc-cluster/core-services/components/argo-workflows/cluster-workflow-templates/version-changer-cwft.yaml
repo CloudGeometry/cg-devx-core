@@ -3,7 +3,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: ClusterWorkflowTemplate
 metadata:
   name: version-changer-cwft
-  namespace: argo
 spec:
   entrypoint: version-changer
   templates:
@@ -14,7 +13,6 @@ spec:
             path: /src
             git:
               repo: '{{workflow.parameters.gitops-repo}}'
-         # revision: "{{workflow.parameters.tag}}" 
               sshPrivateKeySecret:
                 name: ci-secrets
                 key: SSH_PRIVATE_KEY
@@ -44,8 +42,9 @@ spec:
           then
             for SVC_NAME in $WL_SERVICE_LIST
               do
-                echo $SVC_NAME
-                sed  -i  -r "s/(^\s*image:.+$SVC_NAME).*$/\1:$NEW_TAG\"/" version.yaml
+                SVC_NAME=`basename $SVC_NAME`
+                echo "Service to up the tag: $SVC_NAME"
+                sed -i  -r "s/(^\s*image:.+\/$SVC_NAME)[:,\"].*\s*$/\1:$NEW_TAG\"/" version.yaml
               done
             cat version.yaml
             mkdir ~/.ssh

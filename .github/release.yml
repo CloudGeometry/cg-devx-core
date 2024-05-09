@@ -1,0 +1,16 @@
+changelog:
+  exclude:
+    labels:
+      - platform
+  categories:
+    - title: Breaking Changes 🛠
+      labels:
+        - Semver-Major
+        - breaking-change
+    - title: New Features 🎉
+      labels:
+        - Semver-Minor
+        - feature
+    - title: Other Changes
+      labels:
+        - "*"

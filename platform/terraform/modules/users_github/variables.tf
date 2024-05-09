@@ -12,3 +12,8 @@ variable "users" {
   }))
   default = {}
 }
+
+variable "vcs_owner" {
+  type    = string
+  default = ""
+}

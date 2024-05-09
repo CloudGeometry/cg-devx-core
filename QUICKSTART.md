@@ -136,3 +136,5 @@ you should be able to provision a cluster using [`setup`](tools/cli/commands/REA
 You can find the full list of the CLI commands [here](tools/cli/commands/README.md).
 
 Once you have a running cluster, you could create your first workload using this [guide](WORKLOADS.md).
+
+For more details please see [installation guide](https://cloudgeometry.github.io/cg-devx-docs/operators_guide/installation/quickstart/).

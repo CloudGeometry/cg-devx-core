@@ -13,7 +13,7 @@ from common.enums.cloud_providers import CloudProviders
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
 from common.utils.command_utils import init_cloud_provider, preprocess_workload_names, \
-    init_git_provider
+    init_git_provider, construct_wl_iam_role
 from services.wl_template_manager import WorkloadManager
 
 
@@ -138,6 +138,13 @@ def bootstrap(
         git_runner_group_name = state_store.parameters["<GIT_RUNNER_GROUP_NAME>"]
         git_organisation_name = state_store.parameters["<GIT_ORGANIZATION_NAME>"]
         cluster_name = state_store.parameters["<PRIMARY_CLUSTER_NAME>"]
+        cloud_account = state_store.internals["CLOUD_ACCOUNT"]
+        domain_name = state_store.parameters["<DOMAIN_NAME>"]
+        cloud_region = state_store.parameters["<CLOUD_REGION>"]
+        owner_email = state_store.parameters["<OWNER_EMAIL>"]
+        ci_iam_role_rn = state_store.parameters["<CI_IAM_ROLE_RN>"]
+        artifact_store = state_store.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"]
+        ci_ingress_url = state_store.parameters["<CI_INGRESS_URL>"]
 
         click.echo("1/11: Configuration loaded.")
     except KeyError as e:
@@ -173,6 +180,7 @@ def bootstrap(
         "<WL_GITOPS_REPO_NAME>": wl_gitops_repo_name,
         "<GIT_ORGANIZATION_NAME>": git_organisation_name,
         "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
+        "<CI_INGRESS_URL>": ci_ingress_url,
     }
 
     wl_gitops_params = {
@@ -182,7 +190,6 @@ def bootstrap(
         "<WL_SERVICE_IMAGE>": f'{registry_url}/{wl_name}/{wl_svc_name}',
         "<WL_SERVICE_PORT>": str(wl_svc_port),
         "# <K8S_ROLE_MAPPING>": cloud_man.create_k8s_cluster_role_mapping_snippet(),
-        "<WL_IAM_ROLE_RN>": f"{cluster_name}-{wl_name}-{wl_svc_name}-role",
         "# <ADDITIONAL_LABELS>": cloud_man.create_additional_labels(),
         "# <TF_WL_SECRETS_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(
             location=tf_backend_storage_name,
@@ -200,6 +207,17 @@ def bootstrap(
         "<GIT_RUNNER_GROUP_NAME>": git_runner_group_name,
         "<TERRAFORM_VERSION>": TERRAFORM_VERSION,
         "<CLUSTER_NAME>": cluster_name,
+        "<DOMAIN_NAME>": domain_name,
+        "<TF_BACKEND_STORAGE_NAME>": tf_backend_storage_name,
+        "<CLOUD_REGION>": cloud_region,
+        "<OWNER_EMAIL>": owner_email,
+        "<REGISTRY_URL>": registry_url,
+        "<CI_IAM_ROLE_RN>": ci_iam_role_rn,
+        "<CLOUD_ACCOUNT>": cloud_account,
+        "<WL_IAM_ROLE_RN>": construct_wl_iam_role(
+            state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
+        ),
+        "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store
     }
 
     # set cloud provider specific params
@@ -216,8 +234,8 @@ def bootstrap(
     # Initialize WorkloadManager for the workload repository
     wl_manager = WorkloadManager(
         org_name=org_name,
-        repo_name=wl_repo_name,
-        key_path=key_path,
+        wl_repo_name=wl_repo_name,
+        ssh_pkey_path=key_path,
         template_url=wl_template_url,
         template_branch=wl_template_branch
     )
@@ -239,8 +257,8 @@ def bootstrap(
     # Initialize WorkloadManager for the GitOps repository
     wl_gitops_manager = WorkloadManager(
         org_name=org_name,
-        repo_name=wl_gitops_repo_name,
-        key_path=key_path,
+        wl_repo_name=wl_gitops_repo_name,
+        ssh_pkey_path=key_path,
         template_url=wl_gitops_template_url,
         template_branch=wl_gitops_template_branch
     )

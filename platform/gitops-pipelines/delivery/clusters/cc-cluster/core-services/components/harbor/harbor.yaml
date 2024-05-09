@@ -40,16 +40,28 @@ spec:
           type: internal
           internal:
             resources:
-              limits:
-                cpu: 500m
-                memory: 800Mi
               requests:
-                cpu: 500m
-                memory: 800Mi
+                cpu: 300m
+                memory: 512Mi
         registry:
           # set the service account to be used, default if left empty
           serviceAccountName: ""
           automountServiceAccountToken: false
+          registry:
+            resources:
+              requests:
+                memory: 256Mi
+                cpu: 100m
+          controller:
+            resources:
+              requests:
+                memory: 256Mi
+                cpu: 100m
+        portal:
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
         persistence:
           enabled: true
           imageChartStorage:
@@ -58,9 +70,24 @@ spec:
               rootdirectory: /storage
           persistentVolumeClaim:
             registry:
-              size: 50Gi
+              size: 250Gi
+        core:
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+        jobservice:
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
         redis:
           type: internal
+          internal:
+            resources:
+              requests:
+                memory: 256Mi
+                cpu: 100m
         notary:
           enabled: false
         trivy:

@@ -147,7 +147,19 @@ spec:
                 editable: true
                 options:
                   path: /var/lib/grafana/dashboards/grafana-dashboards-kubernetes
+              - name: 'grafana-dashboards-security'
+                orgId: 1
+                folder: 'Security'
+                type: file
+                disableDeletion: true
+                editable: true
+                options:
+                  path: /var/lib/grafana/dashboards/grafana-dashboards-security
           dashboards:
+            grafana-dashboards-security:
+              k8s-security-tracee:
+                url: https://raw.githubusercontent.com/CloudGeometry/cg-devx-core/main/platform/gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/monitoring/dashboards/security/k8s-security-tracee.json
+                token: ''
             grafana-dashboards-kubernetes:
               k8s-system-api-server:
                 url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-system-api-server.json

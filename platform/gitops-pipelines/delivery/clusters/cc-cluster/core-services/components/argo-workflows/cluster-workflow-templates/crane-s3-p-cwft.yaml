@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: crane-s3-p-cwft
+spec:
+  templates:
+    - name: crane
+      inputs:
+        parameters:
+          - name: wl-service-name
+        artifacts:
+          - name: tar-build
+            path: /tmp/{{inputs.parameters.wl-service-name}}.tar
+            s3:
+              key: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{inputs.parameters.wl-service-name}}-tar"
+
+      container:
+        image: '{{workflow.parameters.gcr-registry-proxy}}/go-containerregistry/crane'
+        imagePullPolicy: IfNotPresent
+        args:
+          - push
+          - /tmp/{{inputs.parameters.wl-service-name}}.tar
+          - '{{workflow.parameters.registry}}/{{workflow.parameters.workload-name}}/{{inputs.parameters.wl-service-name}}:{{workflow.parameters.tag}}'
+        volumeMounts:
+          - name: crane-secret
+            mountPath: /home/nonroot/.docker
+

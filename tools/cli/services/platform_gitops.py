@@ -1,13 +1,13 @@
 import json
 import os
 import shutil
-from typing import Optional
+from typing import Optional, List
 
 from ghrepo import GHRepo
 from git import InvalidGitRepositoryError, Repo, Actor, NoSuchPathError
 
 from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_SECRETS_MANAGER, \
-    LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER
+    LOCAL_TF_FOLDER_CORE_SERVICES, LOCAL_CC_CLUSTER_WORKLOAD_FOLDER, LOCAL_TF_FOLDER_HOSTING_PROVIDER
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
 from common.logging_config import logger
 from common.tracing_decorator import trace
@@ -95,14 +95,14 @@ class PlatformGitOpsRepo:
         current.checkout()
 
     @trace()
-    def upload_changes(self):
+    def upload_changes(self, message: Optional[str] = "initial") -> None:
         """
         Commit all the changes to an active branch
         """
         with self._repo.git.custom_environment(GIT_SSH_COMMAND=self._ssh_cmd):
             self._repo.git.add(all=True)
             author = Actor(name=self._author_name, email=self._author_email)
-            self._repo.index.commit("initial", author=author, committer=author)
+            self._repo.index.commit(message, author=author, committer=author)
 
             self._repo.remotes.origin.push(self._repo.active_branch.name)
 
@@ -172,6 +172,10 @@ class PlatformGitOpsRepo:
         self._add_wl_vars(LOCAL_TF_FOLDER_CORE_SERVICES, wl_name, {
             "description": f"CG DevX {wl_name} workload definition"
         })
+        # hosting provider
+        self._add_wl_vars(LOCAL_TF_FOLDER_HOSTING_PROVIDER, wl_name, {
+            "description": f"CG DevX {wl_name} workload definition"
+        })
 
         # prepare ArgoCD manifest
         wl_gitops_repo = GHRepo(self._git_man.organization, wl_gitops_repo_name)
@@ -203,6 +207,8 @@ class PlatformGitOpsRepo:
         self._rm_wl_vars(LOCAL_TF_FOLDER_SECRETS_MANAGER, wl_name)
         # core services
         self._rm_wl_vars(LOCAL_TF_FOLDER_CORE_SERVICES, wl_name)
+        # hosting provider
+        self._rm_wl_vars(LOCAL_TF_FOLDER_HOSTING_PROVIDER, wl_name)
 
         # delete ArgoCD manifest
         wl_argo_manifest = LOCAL_CC_CLUSTER_WORKLOAD_FOLDER / f"{wl_name}.yaml"
@@ -232,3 +238,21 @@ class PlatformGitOpsRepo:
 
             with open(tf_module_path / "terraform.tfvars.json", "w") as file:
                 file.write(json.dumps(vcs_tf_vars, indent=2))
+
+    @staticmethod
+    @trace()
+    def list_workloads() -> List[str]:
+        """
+        List all workloads defined in the platform GitOps repository.
+
+        :return: A list of workload names.
+        """
+        try:
+            with open(os.path.join(LOCAL_TF_FOLDER_VCS, "terraform.tfvars.json"), "r") as file:
+                tf_vars = json.load(file)
+            workloads = tf_vars.get("workloads", {}).keys()
+            logger.info(f"Found {len(workloads)} workloads: {list(workloads)}")
+            return list(workloads)
+        except FileNotFoundError:
+            logger.error(f"Could not find the Terraform variables file at {LOCAL_TF_FOLDER_VCS}")
+            return []

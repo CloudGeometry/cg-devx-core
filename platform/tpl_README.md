@@ -20,17 +20,24 @@ The CG DevX services:
 | Grafana        | monitoring | Observability                      | https://<GRAFANA_INGRESS_URL>           |
 | SonarQube      | sonarqube  | Code Quality                       | https://<CODE_QUALITY_INGRESS_URL>      |
 | Backstage      | backstage  | Portal                             | https://<PORTAL_INGRESS_URL>            |
+
+For more details on platform usage please refer
+to [Operator Guide](https://cloudgeometry.github.io/cg-devx-docs/operators_guide/concept/)
+and [Developer Guide](https://cloudgeometry.github.io/cg-devx-docs/developers_guide/concept/)
+or [official documentation](https://cloudgeometry.github.io/cg-devx-docs/).
+
 ---
 
 ## GitOps registry
 
-The argocd configurations in this repo can be found in the [registry directory](./registry). The applications that we
+The argocd configurations in this repo can be found in
+the [core services directory](./gitops-pipelines/delivery/clusters/cc-cluster/core-services). The applications that we
 build and release on the CG DevX platform will also be registered here in the development, staging, and production
 folders.
 
 The `main` branch's registry directory represents the gitops desired state for all apps registered with kubernetes. Argo
 CD will automatically apply your desired state to kubernetes through. You can see the Sync status of all of your apps
-in [argo cd](https://argocd.cgdevx-demo.demoapps.click).
+in [argo cd](https://<CD_INGRESS_URL>).
 
 ## Terraform infrastructure as code
 

@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "cg-devx-core"
-version = "0.1.0"
+name = "cgdevxcli"
+version = "0.3.0"
 description = ""
 authors = ["Alexander Ulyanov <alexu@cloudgeometry.io>", "Mikhail Turetskii <mturetsky@cloudgeometry.io>"]
 readme = "README.md"
@@ -11,7 +11,7 @@ cgdevxcli = "cli.__main__:entry_point"
 build = "cli.build:install"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.11"
+python = ">=3.10,<3.13"
 click = "8.1.7"
 cloup = "3.0.2"
 PyInstaller = "5.13.2"
@@ -34,10 +34,9 @@ gcloud = "0.18.3"
 gitpython = "3.1.32"
 ghrepo = "0.7.0"
 dnspython = "2.4.2"
-httpx = "0.25.0"
 hvac = "1.2.1"
-portforward = "^0.6.0"
 alive-progress = "^3.1.5"
+kr8s = "^0.14.2"
 google-cloud-storage = "^2.15.0"
 google-cloud-dns = "^0.35.0"
 google-auth = "^2.28.2"
@@ -48,7 +47,6 @@ flake8 = "6.1.0"
 flake8-class-attributes-order = "0.1.3"
 flake8-docstrings = "1.7.0"
 pydocstyle = "6.3.0"
-
 
 [build-system]
 requires = ["poetry-core"]

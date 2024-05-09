@@ -3,3 +3,11 @@ variable "cluster_ssh_public_key" {
   type        = string
   default     = ""
 }
+
+variable "workloads" {
+  description = "Workloads configuration"
+  type        = map(object({
+    description = optional(string, "")
+  }))
+  default = {}
+}

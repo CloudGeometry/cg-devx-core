@@ -26,7 +26,7 @@ spec:
           - name: WL_SERVICE_DIR
             value: '{{workflow.parameters.wl-service-dir}}'
           - name: REGISTRY_MIRROR
-            value: '{{workflow.parameters.registry}}'
+            value: '{{workflow.parameters.kaniko-registry-mirror}}'
           - name: DOCKERHUB_REGISTRY_PROXY
             value: '{{workflow.parameters.dockerhub-registry-proxy}}'
 
@@ -36,8 +36,9 @@ spec:
           DOCKERHUB_PROXY_PREFIX=`basename $DOCKERHUB_REGISTRY_PROXY`
           echo "WL_SERVICE: $WL_SERVICE"
           echo "Dockerfile-parameter {{workflow.parameters.dockerfile}}"
-          cp -r /src/*  /build/  && echo "Copy successful."
-          if [[ $REGISTRY_MIRROR ]]
+          cp -r /src/.  /build/  && echo "Copy successful."
+          echo "REGISTRY_MIRROR: $REGISTRY_MIRROR"
+          if [ $REGISTRY_MIRROR != NOMIRROR ]
           then
             cd /build/$WL_SERVICE_DIR
             sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/\1/;s/FROM\s+(\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/library\/\1/" Dockerfile

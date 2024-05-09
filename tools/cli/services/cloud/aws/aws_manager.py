@@ -19,8 +19,14 @@ class AWSManager(CloudProviderManager):
         self._aws_sdk = AwsSdk(region, profile, key, secret)
 
     @property
-    def region(self):
+    def region(self) -> str:
+        """AWS region"""
         return self._aws_sdk.region
+
+    @property
+    def account(self) -> str:
+        """AWS account id"""
+        return self._aws_sdk.account_id
 
     @classmethod
     def detect_cli_presence(cls) -> bool:
@@ -178,3 +184,7 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
         return '''awsRegion: <CLOUD_REGION>'''
+
+    @trace()
+    def create_kubecost_annotation(self):
+        return '''amazon-web-services: true'''

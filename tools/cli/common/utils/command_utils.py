@@ -105,7 +105,7 @@ def init_git_provider(state: StateStore) -> GitProviderManager:
     return git_man
 
 
-def prepare_cloud_provider_auth_env_vars(state: StateStore):
+def prepare_cloud_provider_auth_env_vars(state: StateStore) -> dict:
     if state.cloud_provider == CloudProviders.AWS:
         # drop empty values
         cloud_provider_auth_env_vars = {
@@ -120,6 +120,16 @@ def prepare_cloud_provider_auth_env_vars(state: StateStore):
     else:
         cloud_provider_auth_env_vars = {}
     return cloud_provider_auth_env_vars
+
+
+def prepare_git_provider_env_vars(state: StateStore) -> dict:
+    if state.git_provider == GitProviders.GitHub:
+        return {
+            "GITHUB_TOKEN": state.get_input_param(GIT_ACCESS_TOKEN),
+            "GITHUB_OWNER": state.get_input_param(GIT_ORGANIZATION_NAME)
+        }
+    elif state.git_provider == GitProviders.GitLab:
+        return {"GITLAB_TOKEN": state.get_input_param(GIT_ACCESS_TOKEN)}
 
 
 def set_envs(env_vars):
@@ -284,3 +294,28 @@ def preprocess_workload_names(
     wl_gitops_repo_name = str_to_kebab(wl_gitops_repo_name or f"{wl_repo_name}-gitops")
     logger.info(f"Processed names: {wl_name}, {wl_repo_name}, {wl_gitops_repo_name}")
     return wl_name, wl_repo_name, wl_gitops_repo_name
+
+
+def construct_wl_iam_role(
+        cloud_provider: CloudProviders,
+        cloud_account: str,
+        cluster_name: str,
+        wl_name: str,
+        wl_svc_name: str):
+    """
+    Creates cloud-provider-specific workload IAM role name used for K8s role mapping annotations.
+
+    Parameters:
+        cloud_provider (CloudProviders): Cloud provider
+        cloud_account (str): Cloud account
+        cluster_name (str): K8s cluster name
+        wl_name (str): Workload name
+        wl_svc_name (str): Workload service name
+
+    Returns:
+        str: Role name
+    """
+    if cloud_provider == CloudProviders.AWS:
+        return f"arn:aws:iam::{cloud_account}:role/{cluster_name}-{wl_name}-{wl_svc_name}-role"
+    else:
+        return "<set workload role mapping here>"

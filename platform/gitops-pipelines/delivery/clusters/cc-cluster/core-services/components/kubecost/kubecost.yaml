@@ -15,14 +15,48 @@ spec:
   source:
     chart: cost-analyzer
     repoURL: https://kubecost.github.io/cost-analyzer/
-    targetRevision: 1.103.3
+    targetRevision: 2.2.2
     helm:
       releaseName: kubecost
       values: |
         global:
           prometheus:
             enabled: false
-            fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+            fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          grafana:
+            # disable embedded grafana when upgrading to v2.3
+            # https://github.com/kubecost/cost-analyzer-helm-chart/issues/3219
+            enabled: true
+            domainName: <GRAFANA_INGRESS_URL>
+            scheme: "https"
+            proxy: false
+        kubecostMetrics:
+          exporter:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+        networkCosts:
+          enabled: true
+          prometheusScrape: true
+          config:
+            services:
+              # <KUBECOST_CLOUD_PROVIDER_CONFIGURATION>
+        serviceMonitor:
+          enabled: true
+          networkCosts:
+            enabled: true
+        grafana:
+          sidecar:
+            dashboards:
+              enabled: true
+            datasources:
+              enabled: false
+        # kubecostToken: "put your token here"
+        # generated at http://kubecost.com/install, used for alerts tracking and free trials
+        # productKey: # apply business or enterprise product license
+        #   key: ""
+        #   enabled: false
+        #   secretname: productkeysecret # create a secret out of a file named productkey.json of format { "key": "kc-b1325234" }
   syncPolicy:
     automated:
       prune: true

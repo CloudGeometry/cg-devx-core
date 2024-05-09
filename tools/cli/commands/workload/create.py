@@ -7,7 +7,7 @@ from common.const.const import GITOPS_REPOSITORY_MAIN_BRANCH, WL_PR_BRANCH_NAME_
 from common.custom_excpetions import GitBranchAlreadyExists, PullRequestCreationError
 from common.logging_config import configure_logging, logger
 from common.state_store import StateStore
-from common.utils.command_utils import str_to_kebab, check_installation_presence, \
+from common.utils.command_utils import check_installation_presence, \
     initialize_gitops_repository, create_and_setup_branch, create_and_open_pull_request, preprocess_workload_names
 from services.platform_gitops import PlatformGitOpsRepo
 

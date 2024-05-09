@@ -4,14 +4,13 @@ import webbrowser
 
 import click
 import hvac
-import portforward
 import yaml
 from alive_progress import alive_bar
 
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
-    TERRAFORM_VERSION
+    TERRAFORM_VERSION, GITHUB_TF_REQUIRED_PROVIDER_VERSION, GITLAB_TF_REQUIRED_PROVIDER_VERSION
 from common.const.namespaces import ARGOCD_NAMESPACE, ARGO_WORKFLOW_NAMESPACE, EXTERNAL_SECRETS_OPERATOR_NAMESPACE, \
     ATLANTIS_NAMESPACE, VAULT_NAMESPACE, HARBOR_NAMESPACE, SONARQUBE_NAMESPACE
 from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVIDER, CLOUD_ACCOUNT_ACCESS_KEY, \
@@ -26,8 +25,9 @@ from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.tracing_decorator import trace
 from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
-    set_envs, unset_envs, wait, wait_http_endpoint_readiness
+    set_envs, unset_envs, wait, wait_http_endpoint_readiness, prepare_git_provider_env_vars
 from common.utils.generators import random_string_generator
+from common.utils.k8s_utils import find_pod_by_name_fragment, get_kr8s_pod_instance_by_name
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
 from services.dns.dns_provider_manager import DNSManager
@@ -130,6 +130,7 @@ def setup(
     cloud_man, dns_man = init_cloud_provider(p)
 
     p.parameters["<CLOUD_REGION>"] = cloud_man.region
+    p.internals["CLOUD_ACCOUNT"] = cloud_man.account
 
     git_man = init_git_provider(p)
 
@@ -150,6 +151,9 @@ def setup(
         p.internals["GIT_USER_EMAIL"] = git_user_email
         p.parameters["<GIT_USER_EMAIL>"] = git_user_email
         p.fragments["# <GIT_PROVIDER_MODULE>"] = git_man.create_tf_module_snippet()
+        p.fragments["# <GIT_REQUIRED_PROVIDER>"] = git_man.create_tf_required_provider_snippet()
+        p.parameters["<GITHUB_PROVIDER_VERSION>"] = GITHUB_TF_REQUIRED_PROVIDER_VERSION
+        p.parameters["<GITLAB_PROVIDER_VERSION>"] = GITLAB_TF_REQUIRED_PROVIDER_VERSION
 
         git_subscription_plan = git_man.get_organization_plan()
         p.parameters["<GIT_SUBSCRIPTION_PLAN>"] = str(bool(git_subscription_plan)).lower()
@@ -256,6 +260,8 @@ def setup(
         p.fragments["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
         p.fragments["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
 
+        p.fragments["# <KUBECOST_CLOUD_PROVIDER_CONFIGURATION>"] = cloud_man.create_kubecost_annotation()
+
         # dns zone info for external dns
         dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
         p.internals["DNS_ZONE_NAME"] = dns_zone_name
@@ -291,6 +297,7 @@ def setup(
 
     # VCS provisioning
     cloud_provider_auth_env_vars = prepare_cloud_provider_auth_env_vars(p)
+    git_provider_env_vars = prepare_git_provider_env_vars(p)
 
     # VCS section
     if not p.has_checkpoint("vcs-tf"):
@@ -298,8 +305,7 @@ def setup(
         # vcs env vars
         vcs_tf_env_vars = {
             **cloud_provider_auth_env_vars,
-            **{"GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-               "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME)}
+            **git_provider_env_vars
         }
 
         # set envs as required by tf
@@ -552,13 +558,21 @@ def setup(
             p.internals["ARGOCD_PASSWORD"] = argo_pas
 
             # get argocd auth token
-            with portforward.forward(ARGOCD_NAMESPACE, "argocd-server", 8080, 8080,
-                                     config_path=p.internals["KCTL_CONFIG_PATH"], waiting=3,
-                                     log_level=portforward.LogLevel.ERROR):
+            k8s_pod = find_pod_by_name_fragment(
+                kube_config_path=p.internals["KCTL_CONFIG_PATH"],
+                name_fragment="argocd-server",
+                namespace=ARGOCD_NAMESPACE
+            )
+            kr8s_pod = get_kr8s_pod_instance_by_name(
+                pod_name=k8s_pod.metadata.name,
+                namespace=ARGOCD_NAMESPACE,
+                kubeconfig=p.internals["KCTL_CONFIG_PATH"]
+            )
+            with kr8s_pod.portforward(remote_port=8080, local_port=8080):
+                # Make an API request to the forwarded port
                 argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
                 p.internals["ARGOCD_TOKEN"] = argocd_token
             bar()
-
             # create argocd "core" project
             # TODO: explicitly whitelist project repositories
             cd_man.create_project(argocd_core_project_name, [
