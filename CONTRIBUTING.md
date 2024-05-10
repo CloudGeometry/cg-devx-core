@@ -1,9 +1,8 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change.
+Before contributing to this repository, please discuss your proposed changes with the repository owners through an issue, email, or any other available method."
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+Note: Our community thrives by adhering to a Code of Conduct, which we expect all participants to follow in all project interactions.
 
 #### Table Of Contents
 
@@ -31,9 +30,7 @@ participating, you are expected to uphold this code.
 ### Reporting Bugs
 
 This section guides you through submitting a bug report.
-Before creating bug reports, please check this list as you might find out that you don't need to create one. When you
-are creating a bug report, please include as many details as possible. Fill out the required template, the information
-it asks for helps us resolve issues faster.
+BTo submit a bug report, first verify that your issue hasn't been addressed by checking the list below. This helps avoid duplicate reports.
 
 > Note: If you find a Closed issue that seems like it is the same thing that you're experiencing, open a new issue and
 > include a link to the original issue in the body of your new one.
@@ -43,7 +40,7 @@ it asks for helps us resolve issues faster.
 * **Determine which components of the platform cause problem**
 * **Check the FAQs, git pages and forums of those components to identify if the problem is with component itself**
 * **Perform a [cursory search](https://github.com/CloudGeometry/cgdevx-core/issues)** to see if the problem has already
-  been reported. If it has and the issue is still open, add a comment to the existing issue instead of opening a new one
+  been reported. Please review the list to see if a similar suggestion has already been submitted.
 
 #### How Do I Submit A (Good) Bug Report?
 
@@ -104,7 +101,7 @@ that repository and provide the following information:
 ### Pull Request Process
 
 * Fill in [the template](PULL_REQUEST_TEMPLATE.md)
-* Do not include issue numbers in the PR title
+* Avoid including issue numbers in the PR title to maintain clarity. Instead, reference issue numbers in the PR description if necessary.
 * Follow the [Python](#python-styleguide) styleguide
 * Document new code based on the [Documentation Styleguide](#documentation-styleguide)
 * Update the corresponding README.md with details of changes.
@@ -119,7 +116,7 @@ Please use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/
 types:
 `feat`, `fix`, `chore`, `reafactor`, `docs`, `test`
 
-* Use the present tense ("Add feature" not "Added feature")
+* Write commit messages in the present tense, e.g., 'Add feature' rather than 'Added feature.'
 * Use the imperative mood ("Move logic to..." not "Moves logic to...")
 * Limit the first line to 72 characters or fewer
 * To indicate Breaking Change appends a ! after the type/scope
