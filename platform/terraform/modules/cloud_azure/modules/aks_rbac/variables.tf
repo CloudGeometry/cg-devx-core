@@ -33,4 +33,8 @@ variable "oidc_issuer_url" {
   type        = string
 }
 
-
+variable "tags" {
+  type    = map(string)
+  default = { }
+  description = "(Optional) Specifies the resource labels"
+}

@@ -17,6 +17,12 @@ spec:
     helm:
       skipCrds: true
       values: |-
+        commonLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: observability.prometheus-stack
+          cg-devx.metadata.chart-version: 47.6.1
+          cg-devx.metadata.version: 0.66.0
         prometheus:
           prometheusSpec:
             podMonitorSelectorNilUsesHelmValues: false
@@ -120,7 +126,7 @@ spec:
               - <GRAFANA_INGRESS_URL>
             annotations:
               cert-manager.io/cluster-issuer: "letsencrypt-prod"
-            tls: 
+            tls:
               - secretName: grafana-tls
                 hosts:
                 - <GRAFANA_INGRESS_URL>

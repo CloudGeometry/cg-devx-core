@@ -36,6 +36,12 @@ spec:
               cert-manager.io/cluster-issuer: "letsencrypt-prod"
               # To be used for the nginx ingress on AKS:
               kubernetes.io/ingress.class: nginx
+            labels:
+              cg-devx.cost-allocation.cost-center: platform
+              cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+              cg-devx.metadata.service: oci-registry.harbor
+              cg-devx.metadata.chart-version: 1.13.0
+              cg-devx.metadata.version: 2.9.0
         database:
           type: internal
           internal:
@@ -43,6 +49,12 @@ spec:
               requests:
                 cpu: 300m
                 memory: 512Mi
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         registry:
           # set the service account to be used, default if left empty
           serviceAccountName: ""
@@ -57,11 +69,23 @@ spec:
               requests:
                 memory: 256Mi
                 cpu: 100m
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         portal:
           resources:
             requests:
               memory: 256Mi
               cpu: 100m
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         persistence:
           enabled: true
           imageChartStorage:
@@ -76,11 +100,23 @@ spec:
             requests:
               memory: 256Mi
               cpu: 100m
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         jobservice:
           resources:
             requests:
               memory: 256Mi
               cpu: 100m
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         redis:
           type: internal
           internal:
@@ -88,11 +124,29 @@ spec:
               requests:
                 memory: 256Mi
                 cpu: 100m
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         notary:
           enabled: false
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         trivy:
           # enabled the flag to enable Trivy scanner
           enabled: true
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: oci-registry.harbor
+            cg-devx.metadata.chart-version: 1.13.0
+            cg-devx.metadata.version: 2.9.0
         updateStrategy:
           type: Recreate
         existingSecretAdminPassword: harbor-admin

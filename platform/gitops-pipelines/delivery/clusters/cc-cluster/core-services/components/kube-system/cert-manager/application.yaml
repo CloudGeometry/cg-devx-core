@@ -18,6 +18,12 @@ spec:
           annotations:
            <K8S_ROLE_MAPPING>: "<CERT_MANAGER_IAM_ROLE_RN>"
         installCRDs: true
+        commonLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: cert-manager
+          cg-devx.metadata.chart-version: 1.11.0
+          cg-devx.metadata.version: 1.11.0
     chart: cert-manager
   destination:
     server: https://kubernetes.default.svc

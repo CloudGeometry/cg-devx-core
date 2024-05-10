@@ -24,7 +24,7 @@ spec:
         plugins:
           install:
             # https://docs.sonarsource.com/sonarqube/latest/instance-administration/plugin-version-matrix/
-            # pottentially interesting plugin not compatible with v10.* yet 
+            # pottentially interesting plugin not compatible with v10.* yet
             # https://github.com/mc1arke/sonarqube-community-branch-plugin
             - "https://github.com/dependency-check/dependency-check-sonar-plugin/releases/download/4.0.0/sonar-dependency-check-plugin-4.0.0.jar"
             # core dump with yaml plugin, debug later
@@ -42,12 +42,24 @@ spec:
             nginx.ingress.kubernetes.io/proxy-body-size: "64m"
             cert-manager.io/cluster-issuer: "letsencrypt-prod"
             ingressClassName: nginx
+          labels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: code-quality.sonarqube
+            cg-devx.metadata.chart-version: 10.2.0
+            cg-devx.metadata.version: 10.2.0
           tls:
             - secretName: sonarqube-tls
               hosts:
                 - <CODE_QUALITY_INGRESS_URL>
         account:
           adminPasswordSecretName: "sonarqube-admin"
+        labels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: code-quality.sonarqube
+          cg-devx.metadata.chart-version: 10.2.0
+          cg-devx.metadata.version: 10.2.0
   syncPolicy:
     automated:
       prune: true

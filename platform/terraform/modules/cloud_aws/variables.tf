@@ -83,7 +83,7 @@ variable "cluster_node_labels" {
 variable "tags" {
   type    = map(string)
   default = {
-    ProvisionedBy = "CGDevX"
+    provisioned-by = "cg-devx"
   }
   description = "(Optional) Specifies the AWS resource tags"
 }

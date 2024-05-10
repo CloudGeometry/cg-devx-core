@@ -10,6 +10,7 @@ resource "azurerm_user_assigned_identity" "aks_workload_identity" {
   location            = var.resource_group_location
   name                = "${var.name}-aks-workload-identity"
   resource_group_name = var.resource_group_name
+  tags                = var.tags
 }
 
 resource "azurerm_federated_identity_credential" "workload_identity_credentials" {
@@ -19,6 +20,7 @@ resource "azurerm_federated_identity_credential" "workload_identity_credentials"
   parent_id           = azurerm_user_assigned_identity.aks_workload_identity.id
   resource_group_name = var.resource_group_name
   subject             = "system:serviceaccount:${var.namespace}:${var.service_account_name}"
+  tags                = var.tags
 
   depends_on = [azurerm_user_assigned_identity.aks_workload_identity]
 }
@@ -31,4 +33,5 @@ resource "azurerm_role_assignment" "aks_rbac" {
   scope                = "/subscriptions/${data.azurerm_client_config.current_subscription.subscription_id}${var.role_definitions[count.index].scope}"
   role_definition_name = var.role_definitions[count.index].name
   principal_id         = azurerm_user_assigned_identity.aks_workload_identity.principal_id
+  tags                = var.tags
 }
