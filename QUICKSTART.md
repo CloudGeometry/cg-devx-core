@@ -2,6 +2,9 @@
 
 ## Supported Platforms
 
+This guide outlines the platforms supported by our software, detailing the operating systems and cloud environments that you can use for running the application and development. Whether you are setting up a development environment or deploying the application in production, the following platforms are currently supported or will be in future releases.
+
+
 ### Operating Systems
 
 - Linux - Supported
@@ -25,26 +28,26 @@
 
 Before you begin the installation process, ensure you have the following prerequisites covered:
 
-### GitHub
+### GitHub Setup Requirements 
 
 You should have:
 
 1. A user account for the Git platform you're working with. This account will be used to create and manage repositories,
    make commits, manage users, and perform other tasks, such as executing Terraform scripts. For Github, you can create
    one
-   following [this guide](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account).
+   following [this guide] to sign up for a Github account. (https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account).
 3. A GitHub Organization. Organizations are used to group repositories, and CGDevX will create a new repo within a
    specific
    organization so that it's easy to find and manage later should you decide to stop using CGDevX. you don't have one,
    please
-   follow [this guide](https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch)
+   follow [this guide] to create a new organization from scratch. (https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch)
    to create one. The user from step 1 should be part of this organization.
 5. A personal access token for the account from step 1. This token will enable CGDevX to take action on the user's
    behalf,
    creating and managing repos, and so on. To get a personal access token, also known as a "developer token", please
    follow
    the steps as described
-   in [this guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
+   in [this guide] to managing personal access tokens. (https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
 
    The GitHub token will be used to authenticate with the GitHub API and perform various actions such as creating and
    deleting repositories, groups, and other users. To provide permission for these actions, make sure you seelct the
