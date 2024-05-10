@@ -1,33 +1,27 @@
 # CG DevX CLI
+# CG DevX CLI
 
-CG DevX CLI simplifies initial setup of CG DevX reference architecture.
-The setup process is intended to be executed from an operator's machine and will create a local folder containing tools,
-temporary, and configuration files.
-All subsequent commands should be executed from the same machine, as they will rely on a data created by setup process.
+The CG DevX CLI simplifies the initial setup of the CG DevX reference architecture. This setup process is intended to be executed from an operator's machine and will create a local folder containing tools, temporary, and configuration files. All subsequent commands should be executed from the same machine, as they rely on data created during the setup process.
 
 ## Getting Started
 
-Required installations:
+### Required Installations
 
-- **python 3.10 + pip**
-- **[poetry](https://python-poetry.org/)** 1.6.*
+- **Python 3.10 + pip**
+- **[Poetry](https://python-poetry.org/)** version 1.6.*
 
-If you don't have poetry installed, please follow official installation
-instructions [here](https://python-poetry.org/docs/#installation).
+If you do not have Poetry installed, follow the official installation instructions here: [Poetry Installation](https://python-poetry.org/docs/#installation).
 
 ```bash
 # Assumed directory: GITROOT/tools
-# NOTE: Poetry configuration and lock files are stored in the 'cli' directory.
+# Note: Poetry configuration and lock files are stored in the 'cli' directory.
 
 # To install dependencies, use:
 poetry install
 
-# Activate the virtual environment with:
+# To activate the virtual environment, use:
 # By default, Poetry creates a virtual environment in {cache-dir}/virtualenvs
 poetry shell
-```
-
-To find more on poetry commands, please [see](https://python-poetry.org/docs/basic-usage/).
 
 ## Local development
 
@@ -42,29 +36,24 @@ flake8
 To run provisioning using a local dev version of repository, instead of cloning GitOps template repo, you could use
 environment variable `CGDEVX_CLI_CLONE_LOCAL=True`
 
-## Build CLI tool
+Build the CLI Tool
 
-To build CLI tool, please run `PyInstaller`
+To build the CLI tool, use PyInstaller:
 
-directly
-
-```bash 
 # Current directory: GITROOT/tools
 python -m PyInstaller --onefile cli/__main__.py --name cgdevxcli
-```
 
-or via python script
+Alternatively, you can build via a Python script:
 
-```bash 
 # Current directory: GITROOT/tools
 poetry run build
-```
 
-After that you could use and distribute `cgdexvcli` located at `GITROOT/dist/cgdevxcli`
 
-## Use CG DevX CLI
+After building, you can use and distribute cgdexvcli located at GITROOT/dist/cgdevxcli.
 
-You could run a Python script via poetry with the snippet below
+Using CG DevX CLI
+
+To run a Python script via Poetry, use the snippet below:
 
 ```bash
  # Current directory: GITROOT/tools
@@ -78,25 +67,28 @@ or use a version build using the steps above
 ./dist/cgdevxcli
 ```
 
-The usage pattern is `[OPTIONS] COMMAND [ARGS]`
+Or, use a version built using the steps above:
+# Current directory: GITROOT/tools
+./dist/cgdevxcli
 
-CG DevX CLI support following:
 
+The usage pattern is [OPTIONS] COMMAND [ARGS].
+
+CG DevX CLI Supports the Following:
 Options:
 
-- `--help` Show help message
-
+--help - Shows the help message.
 Commands:
 
-- `setup` Creates new CG DevX installation
-- `destroy` Destroys existing CG DevX installation
-- `workload` Commands related to Workload Management
-    - `create` Generates configuration of key Workload resources
-    - `bootstrap` Bootstraps Workload with configuration templates
-    - `delete` Removes configuration of key Workload resources
+setup - Creates a new CG DevX installation.
+destroy - Destroys an existing CG DevX installation.
+workload - Manages workloads with the following subcommands:
+create - Generates configuration for key workload resources.
+bootstrap - Bootstraps a workload with configuration templates.
+delete - Removes configuration for key workload resources.
 
 Arguments:
-Are command specific and could be supplied via command lime, environment variables, or file
+Arguments are command-specific and can be supplied via the command line, environment variables, or a file.
 
 For more details,
 please check CG DevX quickstart [commands](cli/commands/README.md)
