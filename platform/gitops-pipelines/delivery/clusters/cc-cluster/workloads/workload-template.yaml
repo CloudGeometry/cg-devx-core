@@ -12,9 +12,10 @@ spec:
   destinations:
     - namespace: 'wl-<WL_NAME>-*'
       server: '*'
+  # Deny all cluster-scoped resources from being created, except for Namespace
   clusterResourceWhitelist:
     - group: '*'
-      kind: '*'
+      kind: Namespace
   roles:
     # A role which provides read-only access to all applications in the project
     - name: read-only
