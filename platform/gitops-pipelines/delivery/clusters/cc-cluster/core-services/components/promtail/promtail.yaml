@@ -29,7 +29,7 @@ spec:
                           # IP4
                           # https://github.com/helm/helm/issues/2798
                           expression: '(\d{1,3}[.]\d{1,3}[.]\d{1,3}[.]\d{1,3})'
-                          replace: >- 
+                          replace: >-
                             {{ printf "*IP4*{{ .Value | Hash \"salt\" }}*" }}
                       - replace:
                           # email
@@ -45,6 +45,12 @@ spec:
             serviceName: "loki.monitoring.svc.cluster.local"
             servicePort: 3100
             serviceScheme: http
+          podLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: log-management.promtail
+            cg-devx.metadata.chart-version: 0.20.2
+            cg-devx.metadata.version: 0.25.2
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 6.14.1
   syncPolicy:

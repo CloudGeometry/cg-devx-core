@@ -13,7 +13,12 @@ spec:
     targetRevision: 0.40.11
     helm:
       valuesObject:
-         
+        commonLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: continuous-integration.argo-workflow
+          cg-devx.metadata.chart-version: 0.40.11
+          cg-devx.metadata.version: 3.5.4
         singleNamespace: false
         nameOverride: argo
         controller:
@@ -50,7 +55,7 @@ spec:
               cpu: 100m
               memory: 64Mi
             limits:
-              cpu: 200m 
+              cpu: 200m
               memory: 1Gi
         workflow:
           serviceAccount:

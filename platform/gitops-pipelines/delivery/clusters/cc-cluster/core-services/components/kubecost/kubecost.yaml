@@ -20,6 +20,12 @@ spec:
       releaseName: kubecost
       values: |
         global:
+          additionalLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: cost-management.kubecost
+            cg-devx.metadata.chart-version: 2.2.2
+            cg-devx.metadata.version: 2.2.2
           prometheus:
             enabled: false
             fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
