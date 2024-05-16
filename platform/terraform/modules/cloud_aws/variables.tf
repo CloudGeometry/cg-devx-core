@@ -59,6 +59,7 @@ variable "node_groups" {
     min_size       = optional(number, 3)
     max_size       = optional(number, 6)
     desired_size   = optional(number, 4)
+    gpu_enabled    = optional(bool, false)
   }))
   default = [
     {

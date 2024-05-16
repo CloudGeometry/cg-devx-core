@@ -261,6 +261,7 @@ def setup(
         p.fragments["# <SIDECAR_ANNOTATION>"] = cloud_man.create_sidecar_annotation()
 
         p.fragments["# <KUBECOST_CLOUD_PROVIDER_CONFIGURATION>"] = cloud_man.create_kubecost_annotation()
+        p.fragments["# <GPU_OPERATOR_ADDITIONAL_PARAMETERS>"] = cloud_man.create_gpu_operator_parameters()
 
         # dns zone info for external dns
         dns_zone_name, is_dns_zone_private = dns_man.get_domain_zone(p.parameters["<DOMAIN_NAME>"])
