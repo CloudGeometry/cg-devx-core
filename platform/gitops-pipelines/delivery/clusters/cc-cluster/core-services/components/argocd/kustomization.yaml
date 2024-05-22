@@ -8,6 +8,9 @@ resources:
 - externalsecrets.yaml
 - argocd-oidc-restart-job.yaml
 
+transformers:
+  - label-transformer.yaml
+
 patches:
 - path: argocd-cm.yaml
 - path: argocd-cmd-params-cm.yaml

@@ -21,9 +21,13 @@ spec:
           annotations: {
             # <SIDECAR_ANNOTATION>
           }
-          extraLabels: {
+          extraLabels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: secrets-management.hashicorp-vault
+            cg-devx.metadata.chart-version: 0.26.1
+            cg-devx.metadata.version: 1.15.1
             # <ADDITIONAL_LABELS>
-          }
           serviceAccount:
             create: true
             name: vault
@@ -58,7 +62,7 @@ spec:
                 service_registration "kubernetes" {}
           ingress:
             enabled: true
-            annotations: 
+            annotations:
               cert-manager.io/cluster-issuer: "letsencrypt-prod"
             ingressClassName: "nginx"
             pathType: Prefix

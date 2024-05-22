@@ -9,10 +9,12 @@ resource "azurerm_storage_account" "storage_account" {
   name                = lower("${replace(replace(local.name, "_", ""), "-", "")}ar${random_string.sa_random_suffix.result}")
   resource_group_name = azurerm_resource_group.rg.name
 
-  location                      = var.region
-  account_tier                  = "Standard"
-  account_replication_type      = "LRS"
-  tags                          = local.tags
+  location                 = var.region
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  tags                     = merge(local.tags, {
+    "cg-devx.metadata.service" : "secret-manager"
+  })
   public_network_access_enabled = true
   min_tls_version               = "TLS1_2"
 
@@ -46,4 +48,7 @@ resource "azurerm_storage_container" "artifacts_repository" {
   name                  = "${local.name}-artifacts-repository-${random_string.sc_random_suffix.id}"
   storage_account_name  = azurerm_storage_account.storage_account.name
   container_access_type = "private"
+  tags                     = merge(local.tags, {
+    "cg-devx.metadata.service" : "continuous-integration"
+  })
 }

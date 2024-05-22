@@ -29,6 +29,12 @@ spec:
           extraArgs:
             publish-service: ingress-nginx/ingress-nginx-controller
             enable-ssl-passthrough: true
+        commonLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: ingress-nginx
+          cg-devx.metadata.chart-version: 4.5.2
+          cg-devx.metadata.version: 1.6.4
     chart: ingress-nginx
   destination:
     server: https://kubernetes.default.svc

@@ -21,6 +21,12 @@ spec:
       values: |
         config:
           metrics: true
+        labels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: runtime-security.tracee
+          cg-devx.metadata.chart-version: 0.15.1
+          cg-devx.metadata.version: 0.15.1
   syncPolicy:
     automated:
       prune: true

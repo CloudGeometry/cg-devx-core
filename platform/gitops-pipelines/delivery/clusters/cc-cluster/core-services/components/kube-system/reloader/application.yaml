@@ -16,6 +16,12 @@ spec:
         reloader:
           ignoreSecrets: false
           reloadStrategy: annotations
+          labels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: pod-reloader
+            cg-devx.metadata.chart-version: 1.0.10
+            cg-devx.metadata.version: 1.0.10
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: reloader
