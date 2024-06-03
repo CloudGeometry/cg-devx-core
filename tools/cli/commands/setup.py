@@ -6,7 +6,7 @@ import click
 import hvac
 import yaml
 from alive_progress import alive_bar
-
+from typing import List
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
@@ -17,7 +17,7 @@ from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVI
     CLOUD_ACCOUNT_ACCESS_SECRET, CLOUD_REGION, PRIMARY_CLUSTER_NAME, DNS_REGISTRAR, DNS_REGISTRAR_ACCESS_TOKEN, \
     DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, DOMAIN_NAME, GIT_PROVIDER, GIT_ORGANIZATION_NAME, \
     GIT_ACCESS_TOKEN, GITOPS_REPOSITORY_NAME, GITOPS_REPOSITORY_TEMPLATE_URL, GITOPS_REPOSITORY_TEMPLATE_BRANCH, \
-    DEMO_WORKLOAD
+    DEMO_WORKLOAD, OPTIONAL_SERVICES
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
@@ -28,6 +28,7 @@ from common.utils.command_utils import init_cloud_provider, init_git_provider, p
     set_envs, unset_envs, wait, wait_http_endpoint_readiness, prepare_git_provider_env_vars
 from common.utils.generators import random_string_generator
 from common.utils.k8s_utils import find_pod_by_name_fragment, get_kr8s_pod_instance_by_name
+from common.utils.optional_services_manager import OptionalServices, build_argo_exclude_string
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
 from services.dns.dns_provider_manager import DNSManager
@@ -69,6 +70,8 @@ from services.vcs.git_provider_manager import GitProviderManager
               default=GITOPS_REPOSITORY_BRANCH, type=click.STRING)
 @click.option('--setup-demo-workload', '-dw', 'install_demo', help='Setup demo workload', default=False,
               is_flag=True)
+@click.option('--optional-services', '-ops', 'optional_services', help='Optional services', type=click.STRING,
+              multiple=True)
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -79,7 +82,7 @@ def setup(
         cloud_region: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
         dns_reg_key: str, dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
         gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool,
-        config: click.File, verbosity: str
+        optional_services: List[str], config: click.File, verbosity: str
 ):
     """Creates new CG DevX installation."""
     click.echo("Setup CG DevX installation...")
@@ -120,7 +123,8 @@ def setup(
             GITOPS_REPOSITORY_NAME: gitops_repo_name,
             GITOPS_REPOSITORY_TEMPLATE_URL: gitops_template_url,
             GITOPS_REPOSITORY_TEMPLATE_BRANCH: gitops_template_branch,
-            DEMO_WORKLOAD: install_demo
+            DEMO_WORKLOAD: install_demo,
+            OPTIONAL_SERVICES: optional_services
         })
 
     # validate parameters
@@ -584,7 +588,8 @@ def setup(
             ])
 
             # deploy registry app
-            cd_man.create_core_application(argocd_core_project_name, p.parameters["<GIT_REPOSITORY_GIT_URL>"])
+            cd_man.create_core_application(argocd_core_project_name, p.parameters["<GIT_REPOSITORY_GIT_URL>"],
+                                           p.parameters["<CD_SERVICE_EXCLUDE_LIST>"])
             bar()
 
             p.set_checkpoint("k8s-delivery")
@@ -937,6 +942,15 @@ def show_credentials(p):
 @trace()
 def prepare_parameters(p):
     # TODO: move to appropriate place
+
+    exclude_string = build_argo_exclude_string(p.get_input_param(OPTIONAL_SERVICES))
+    p.parameters["<CD_SERVICE_EXCLUDE_LIST>"] = exclude_string
+    if exclude_string:
+        p.fragments["# <CD_SERVICE_EXCLUDE_SNIPPET>"] = """directory:
+          exclude: '{<CD_SERVICE_EXCLUDE_LIST>}'"""
+    else:
+        p.fragments["# <CD_SERVICE_EXCLUDE_SNIPPET>"] = ""
+
     p.parameters["<OWNER_EMAIL>"] = p.get_input_param(OWNER_EMAIL).lower()
     p.parameters["<CLOUD_PROVIDER>"] = p.cloud_provider
     p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
@@ -1023,5 +1037,12 @@ def setup_param_validator(params: StateStore) -> bool:
              or params.get_input_param(CLOUD_ACCOUNT_ACCESS_SECRET) is None)):
         click.echo("Cloud account keys validation error: should specify only one of profile or key + secret")
         return False
+
+    if params.get_input_param(OPTIONAL_SERVICES):
+        incorrect_services = [v for v in params.get_input_param(OPTIONAL_SERVICES) if not OptionalServices.has_value(v)]
+        if incorrect_services:
+            click.echo(
+                f"Features list parsing error: unsupported features found - {str.join(', ', incorrect_services)}")
+            return False
 
     return True
