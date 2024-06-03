@@ -5,7 +5,7 @@ on:
       PYTHON_VERSION:
         description: "Python Version"
         required: false
-        default: "3.12.2"  # Updated to the latest Python version
+        default: "3.12.2"  
       POETRY_VERSION:
         description: "The version of Poetry to use"
         required: false
@@ -13,7 +13,7 @@ on:
       RELEASE_TAG:
         description: "The new version should be a valid PEP 440 string"
         required: true
-        default: "0.3.0"  # Updated default version
+        default: "0.3.0"  
 defaults:
   run:
     working-directory: ./tools

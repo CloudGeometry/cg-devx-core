@@ -5,9 +5,9 @@ The `GitOps` repository has two main sections:
 - `/gitops_pipelines`: Contains delivery pipeline configurations.
 - `/terraform`: Manages infrastructure as code & configuration as code for all cloud services, git provider, secrets, and user management.
 
-## CG DevX Services
+## Core Platform Services
 
-The CG DevX services are detailed in the following table:
+Your core platform services provisioned by CG DevX are detailed in the following table:
 
 | Application    | Namespace  | Description                                      | URL (where applicable)                  |
 |----------------|------------|--------------------------------------------------|-----------------------------------------|

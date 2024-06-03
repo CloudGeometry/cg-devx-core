@@ -24,38 +24,93 @@ All values in files located under the `/platform` folder and templated with `<ke
 - `GITOPS_REPOSITORY_NAME` - Name of the Platform GitOps repository.
 
 ### Generated During Setup
+
+Templating variables are generated during setup process.
+
 #### IAM Roles for Core Components
 - `CERT_MANAGER_IAM_ROLE_RN` - IAM role for the Certificate Manager K8s service account.
 - `CI_IAM_ROLE_RN` - IAM role for Continuous Integration (CI) (Argo Workflow/Git* runners) K8s service account.
-- Additional IAM roles listed similarly...
+- `EXTERNAL_DNS_IAM_ROLE_RN` - External DNS IAM role for a K8s service account.
+- `IAC_PR_AUTOMATION_IAM_ROLE_RN` - IaC Pull Request automation IAM role for a K8s service account.
+- `SECRET_MANAGER_IAM_ROLE_RN` - Secrets Manager (Vault) IAM role for a K8s service account.
+- `CLUSTER_AUTOSCALER_IAM_ROLE_RN` - Cluster Autoscaler IAM role for a K8s service account.
 
 #### Ingress URLs for Core Components (Note: URLs do not contain protocol prefix)
 - `CC_CLUSTER_FQDN` - FQDN for the primary K8s cluster.
 - `CD_INGRESS_URL` - Continuous Delivery (ArgoCD) ingress URL.
-- Additional ingress URLs listed similarly...
+- `CI_INGRESS_URL` - Continuous Integration (Argo Workflow) ingress URL.
+- `GRAFANA_INGRESS_URL` - Metrics / Logs visualization system (Grafana) ingress URL.
+- `IAC_PR_AUTOMATION_INGRESS_URL` - IaC PR automation (Atlantis) ingress URL.
+- `REGISTRY_INGRESS_URL` - Registry (Harbor) ingress URL.
+- `REGISTRY_REGISTRY_URL` - Registry (Harbor) entrypoint.
+- `SECRET_MANAGER_INGRESS_URL` - Secrets Manager (Vault) ingress URL.
+- `CODE_QUALITY_INGRESS_URL` - Code Quality (SonarQube) ingress URL.
 
 ### Git Configuration
 - `GIT_REPOSITORY_GIT_URL` - Git URL for the Platform GitOps repository.
 - `GIT_REPOSITORY_ROOT` - Git organization root.
 - `GIT_REPOSITORY_URL` - HTTP URL for the Platform GitOps repository.
-- Additional Git configurations listed similarly...
+- `GIT_USER_NAME` - Git machine user name used by the Platform.
+- `GIT_USER_LOGIN` - Git machine user login used by the Platform.
+- `IAC_PR_AUTOMATION_WEBHOOK_SECRET` - Infrastructure as Code Pull Request automation (Atlantis) webhook secret.
+- `IAC_PR_AUTOMATION_WEBHOOK_URL` - Infrastructure as Code PR automation (Atlantis) webhook.
+- `VCS_BOT_SSH_PUBLIC_KEY` - Git machine user SSH public key.
 
 ### OIDC Provider Configuration (Note: URLs do not contain protocol prefix)
 - `OIDC_PROVIDER_AUTHORIZE_URL` - Authorize URL for the OIDC provider (Vault).
-- Additional OIDC configurations listed similarly...
+- `OIDC_PROVIDER_TOKEN_URL` - OIDC provider (Vault) token URL.
+- `OIDC_PROVIDER_URL` - OIDC provider (Vault) URL.
+- `OIDC_PROVIDER_USERINFO_URL` - OIDC provider (Vault) user info URL.
+
+- `CD_OAUTH_CALLBACK_URL` - Continuous Delivery (ArgoCD) OAuth callback URL.
+- `CI_OAUTH_CALLBACK_URL` - Continuous Integration (Argo Workflow) OAuth callback URL.
+
 
 ### Kubernetes Configuration
 - `CC_CLUSTER_SSH_PUBLIC_KEY` - SSH public key for the primary K8s cluster.
-- Additional Kubernetes configurations listed similarly...
+- `K8S_ROLE_MAPPING` - K8s service account IAM role mapping attribute. This value is cloud provider specific.
+- `KUBECTL_VERSION` - The version of kubectl used by the Platform.
 
 ### Terraform Snippets
 - `GIT_PROVIDER_MODULE` - Terraform definition for the Git provider module.
-- Additional Terraform snippets listed similarly...
+- `TF_HOSTING_PROVIDER` - Terraform Cloud provider definition, such as AWS, Azure, or GCP.
+- `TF_HOSTING_REMOTE_BACKEND` - Terraform state storage backend definition for cloud infrastructure. This value is cloud provider specific.
+- `TF_SECRETS_REMOTE_BACKEND`- Terraform state storage backend definition for secrets. This value is cloud provider specific.
+- `TF_USERS_REMOTE_BACKEND` - Terraform state storage backend definition for users. This value is cloud provider specific.
+- `TF_VCS_REMOTE_BACKEND`- Terraform state storage backend definition for version control (Git). This value is cloud provider specific.
 
 ### Manifest Snippets
 - `SECRET_MANAGER_SEAL` - Seal configuration for the Secrets Manager (Vault).
-- Additional manifest snippets listed similarly...
+
+### Cloud
+
+- `CLOUD_ACCOUNT` - Cloud account number, such as AWS account number. This value is cloud provider specific.
+- `CLOUD_BINARY_ARTIFACTS_STORE` - Continuous Integration (Argo Workflow) Artifact Repository. This value is cloud provider specific.
+- `NETWORK_ID` - Platform primary K8s cluster network ID.
+- `SECRET_MANAGER_SEAL_RN` - Secrets Manager (Vault) seal key ID.
 
 ### Internal Parameters
 - `ARGOCD_PASSWORD` - Admin password for ArgoCD.
-- Additional internal parameters listed similarly...
+- `ARGOCD_PASSWORD` - Continuous Delivery (ArgoCD) admin password.
+- `ARGOCD_TOKEN` - Continuous Delivery (ArgoCD) admin token.
+- `ARGOCD_USER` - Continuous Delivery (ArgoCD) admin username.
+- `CC_CLUSTER_CA_CERT_DATA` - K8s cluster Certificate Authority certificate data.
+- `CC_CLUSTER_CA_CERT_PATH` - K8s cluster Certificate Authority certificate path.
+- `CC_CLUSTER_ENDPOINT` - Primary K8s cluster admin API endpoint.
+- `CLUSTER_SSH_PRIVATE_KEY` - K8s cluster SSH private key.
+- `CLUSTER_SSH_PRIVATE_KEY_PATH` - K8s cluster SSH private key path.
+- `CLUSTER_SSH_PUBLIC_KEY_PATH` - K8s cluster SSH public key path.
+- `DEFAULT_SSH_PRIVATE_KEY` - Default platform SSH private key.
+- `DEFAULT_SSH_PRIVATE_KEY_PATH` - Default platform SSH private key path.
+- `DEFAULT_SSH_PUBLIC_KEY` - Default platform SSH public key.
+- `DEFAULT_SSH_PUBLIC_KEY_PATH` - Default platform SSH public key path.
+- `GIT_ACCESS_TOKEN` - Git access token.
+- `GIT_USER_EMAIL` - Git machine user email.
+- `GIT_USER_LOGIN` - Git machine user login.
+- `GIT_USER_NAME` - Git machine user name.
+- `KCTL_CONFIG_PATH` - Primary K8s cluster kubectl config path.
+- `REGISTRY_ROBO_USER` - Registry (Harbor) machine username.
+- `REGISTRY_ROBO_USER_AUTH` - Registry (Harbor) auth string.
+- `REGISTRY_ROBO_USER_PASSWORD` - Registry (Harbor) machine user password.
+- `TF_BACKEND_STORAGE_NAME` - Terraform state storage backend location.
+- `VAULT_ROOT_TOKEN` - Secrets Manager (Vault) root access token.
