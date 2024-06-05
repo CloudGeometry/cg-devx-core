@@ -30,7 +30,7 @@ participating, you are expected to uphold this code.
 ### Reporting Bugs
 
 This section guides you through submitting a bug report.
-BTo submit a bug report, first verify that your issue hasn't been addressed by checking the list below. This helps avoid duplicate reports.
+To submit a bug report, first verify that your issue hasn't been addressed by checking the list below. This helps avoid duplicate reports.
 
 > Note: If you find a Closed issue that seems like it is the same thing that you're experiencing, open a new issue and
 > include a link to the original issue in the body of your new one.

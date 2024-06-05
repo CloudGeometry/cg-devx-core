@@ -57,7 +57,7 @@ for checkpointing, allowing the command to be rerun if necessary.
 ```bash
 cgdevxcli setup --email user@cgdevx.io \
                 --cloud-provider aws \
-                --cloud-profile your-profile-name \
+                --cloud-profile your-aws-cli-profile-name \
                 --cluster-name cluster-name \
                 --dns-registrar route53 \
                 --domain-name example.com \
@@ -71,6 +71,22 @@ Using a parameter file:
 
 ```bash
 cgdevxcli setup -f path/to/your/parameters.yaml
+```
+
+`parameters.yaml` file example
+
+```yaml
+email: user@cgdevx.io
+cloud-provider: aws
+cloud-profile: your-aws-cli-profile-name
+cloud-region: eu-west-1
+cluster-name: cluster-name
+dns-registrar: route53
+domain-name: example.com
+git-provider: github
+git-org: acmeinc
+git-access-token: ghp_xxx
+gitops-repo-name: gitops-repo-name
 ```
 
 ### Troubleshooting
