@@ -19,6 +19,7 @@ locals {
       min_size       = node_group.min_size
       max_size       = node_group.max_size
       desired_size   = node_group.desired_size
+      disk_size      = node_group.disk_size
       instance_types = node_group.instance_types
       capacity_type  = upper(node_group.capacity_type)
       labels         = merge(

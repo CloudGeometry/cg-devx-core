@@ -34,7 +34,7 @@ variable "cluster_name" {
 
 variable "cluster_version" {
   type        = string
-  default     = "1.29"
+  default     = "1.30"
   description = "(Optional) Specifies the AKS Kubernetes version"
 }
 
