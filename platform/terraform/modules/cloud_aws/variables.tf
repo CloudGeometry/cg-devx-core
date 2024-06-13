@@ -70,18 +70,7 @@ variable "node_groups" {
       min_size       = 3
       max_size       = 6
       desired_size   = 4
-      disk_size      = 100
     },
-    # {
-    #   name           = "ml-node-group"
-    #   instance_types = ["g5.xlarge"]
-    #   gpu_enabled    = true
-    #   capacity_type  = "on_demand"
-    #   min_size       = 0
-    #   max_size       = 1
-    #   desired_size   = 1
-    #   disk_size      = 30
-    # },
   ]
 }
 

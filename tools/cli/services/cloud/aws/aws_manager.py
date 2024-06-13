@@ -162,7 +162,7 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_ingress_annotations(self) -> str:
         return '''service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
-              service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "600"'''
+              service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "60"'''
 
     @trace()
     def create_additional_labels(self) -> str:
