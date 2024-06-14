@@ -41,7 +41,7 @@ spec:
           if [ $REGISTRY_MIRROR != NOMIRROR ]
           then
             cd /build/$WL_SERVICE_DIR
-            sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/\1/;s/FROM\s+(\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/library\/\1/" Dockerfile
+            sed -r -i.orig "s/FROM\s+(\S+(\/)\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/\1/;/\//! s/FROM\s+(\S+)/FROM $DOCKERHUB_PROXY_PREFIX\/library\/\1/" Dockerfile
             cat Dockerfile
           fi
           cd /build
