@@ -26,7 +26,7 @@ locals {
         var.cluster_node_labels,
         { "node.kubernetes.io/lifecycle" = "${node_group.capacity_type}" }
       )
-      ami_type = node_group.gpu_enabled == true ? "BOTTLEROCKET_x86_64_NVIDIA" : "AL2023_x86_64_STANDARD"
+      ami_type = node_group.gpu_enabled == true ? "BOTTLEROCKET_x86_64_NVIDIA" : "AL2_x86_64"
       taints   = merge(node_group.capacity_type == "spot" ?
         {
           capacity_type_spot = {
