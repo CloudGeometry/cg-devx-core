@@ -1,99 +1,97 @@
-# CG DevX CLI commands
+# CG DevX CLI Commands
 
-Below is a list of commands supported by CG DevX CLI tool.
+This document outlines the commands supported by the CG DevX CLI tool, which configures the CG DevX Kubernetes Internal
+Developer Platform (IDP) kit.
 
 ## Setup
 
-Creates and configures reference implementation of CG DevX K8s Internal Developer Platform (IDP) kit.
-CLI tool saves intermediate state to a local file when running through multiple steps of the setup proces (AKA
-checkpoints) and could be re-run
+The `setup` command initializes and configures the reference implementation, saving intermediate states to a local file
+for checkpointing, allowing the command to be rerun if necessary.
 
-`setup` command checks:
+**Key Operations Performed:**
 
-- Cloud CLI tools presence
-- Cloud account permission using profile or access keys you provided
-- DNS provider permission using token or access keys you provided
-- Domain ownership
+- Checks cloud CLI tool presence and permissions using provided profiles or access keys.
+- Validates DNS provider permissions and domain ownership.
+- Creates SSH key pairs, remote backend storage (e.g., AWS S3), and a GitOps repository under the chosen Git provider.
+- Provisions a Kubernetes cluster and associated cloud resources.
 
-`setup` command creates:
+**Usage Options:**
 
-- SSH key pairs
-- Remote backend storage (e.g., AWS S3) used for IaC
-- GitOps repository created under Git provider of your choice
-- K8s cluster and supporting cloud resources provisioned by CG DevX CLI
+- **Arguments**: Command-line arguments directly.
+- **Environment Variables**: Via the system environment.
+- **Input File**: Specifying parameters in a YAML file.
 
-`setup` command could be executed using arguments, environment variables, or input file.
+### Command Arguments
 
-**Arguments**:
-
-| Name (short, full)             | Type                                    | Description                                       |
-|--------------------------------|-----------------------------------------|---------------------------------------------------|
-| -e, --email                    | TEXT                                    | Email address used for alerts                     |
-| -c, --cloud-provider           | [aws]                                   | Cloud provider type                               |
-| -cp, --cloud-profile           | TEXT                                    | Cloud account profile                             |
-| -cc, --cloud-account-key       | TEXT                                    | Cloud account access key                          |
-| -cs, --cloud-account-secret    | TEXT                                    | Cloud account access secret                       |
-| -r, --cloud-region             | TEXT                                    | Cloud regions                                     |
-| -n, --cluster-name             | TEXT                                    | Cluster name                                      |
-| -d, --dns-registrar            | [route53]                               | DNS registrar                                     |
-| -dt, --dns-registrar-token     | TEXT                                    | DNS registrar token                               |
-| -dk, --dns-registrar-key       | TEXT                                    | DNS registrar key                                 |
-| -ds, --dns-registrar-secret    | TEXT                                    | DNS registrar secret                              |
-| -dn, --domain-name             | TEXT                                    | Domain-name used by K8s cluster                   |
-| -g, --git-provider             | [github]                                | Git provider                                      |
-| -go, --git-org                 | TEXT                                    | Git organization name                             |
-| -gt, --git-access-token        | TEXT                                    | Git access token                                  |
-| -grn, --gitops-repo-name       | TEXT                                    | GitOps repository name                            |
-| -gtu, --gitops-template-url    | TEXT                                    | GitOps repository template url                    |
-| -gtb, --gitops-template-branch | TEXT                                    | GitOps repository template branch                 |
-| -dw, --setup-demo-workload     | Flag                                    | Setup demo workload                               |
-| -ops, --optional-services      | TEXT                                    | Setup optional services                           |
-| -f, --config-file              | FILENAME                                | Load parameters from file                         |
-| --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
+| Name (short, full)             | Type                                    | Description                                   |
+|--------------------------------|-----------------------------------------|-----------------------------------------------|
+| -e, --email                    | TEXT                                    | Email address for alerts                      |
+| -c, --cloud-provider           | [aws]                                   | Cloud provider type                           |
+| -cp, --cloud-profile           | TEXT                                    | Cloud account profile                         |
+| -cc, --cloud-account-key       | TEXT                                    | Cloud account access key                      |
+| -cs, --cloud-account-secret    | TEXT                                    | Cloud account access secret                   |
+| -r, --cloud-region             | TEXT                                    | Cloud region                                  |
+| -n, --cluster-name             | TEXT                                    | Cluster name                                  |
+| -d, --dns-registrar            | [route53]                               | DNS registrar                                 |
+| -dt, --dns-registrar-token     | TEXT                                    | DNS registrar token                           |
+| -dk, --dns-registrar-key       | TEXT                                    | DNS registrar key                             |
+| -ds, --dns-registrar-secret    | TEXT                                    | DNS registrar secret                          |
+| -dn, --domain-name             | TEXT                                    | Domain name for the Kubernetes cluster        |
+| -g, --git-provider             | [github]                                | Git provider                                  |
+| -go, --git-org                 | TEXT                                    | Git organization name                         |
+| -gt, --git-access-token        | TEXT                                    | Git access token                              |
+| -grn, --gitops-repo-name       | TEXT                                    | GitOps repository name                        |
+| -gtu, --gitops-template-url    | TEXT                                    | GitOps repository template URL                |
+| -gtu, --gitops-template-url    | TEXT                                    | GitOps repository template URL                |
+| -gtb, --gitops-template-branch | TEXT                                    | GitOps repository template branch             |
+| -dw, --setup-demo-workload     | Flag                                    | Flag to set up a demo workload                |
+| -ops, --optional-services      | TEXT                                    | Setup optional services                       |
+| -f, --config-file              | FILENAME                                | File to load setup parameters from            |
+| --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Logging verbosity level, defaults to CRITICAL |
 
 **Available Optional Services**:
 
 - nvidia-gpu-operator
 
-> **Note!**: For all names use kebab-case.
+> **Note!**: Use kebab-case for all parameter names.
 
-`parameters.yaml` file example
+### Examples
 
-```yaml
-email: user@cgdevx.io
-cloud-provider: aws
-cloud-profile: profile-name
-cloud-region: eu-west-1
-cluster-name: cluster-name
-dns-registrar: route53
-domain-name: demo.cgdevx.io
-git-provider: github
-git-org: CGDevX
-git-access-token: ghp_xxx
-gitops-repo-name: cgdevx-gitops
-```
-
-**Command snippet**
-
-Using command arguments
+**Using command arguments:**
 
 ```bash
-cgdevxcli setup --email user@cgdevx.io \ 
-                --cloud-provider aws 
-                --cloud-profile your-profile-name \ 
-                --cluster-name cluster-name \ 
+cgdevxcli setup --email user@cgdevx.io \
+                --cloud-provider aws \
+                --cloud-profile your-aws-cli-profile-name \
+                --cluster-name cluster-name \
                 --dns-registrar route53 \
-                --domain-name example.com \ 
+                --domain-name example.com \
                 --git-provider github \
                 --git-org acmeinc \
                 --git-access-token ghp_xxx \
                 --gitops-repo-name gitops-repo-name
 ```
 
-Using parameter file
+Using a parameter file:
 
 ```bash
 cgdevxcli setup -f path/to/your/parameters.yaml
+```
+
+`parameters.yaml` file example
+
+```yaml
+email: user@cgdevx.io
+cloud-provider: aws
+cloud-profile: your-aws-cli-profile-name
+cloud-region: eu-west-1
+cluster-name: cluster-name
+dns-registrar: route53
+domain-name: example.com
+git-provider: github
+git-org: acmeinc
+git-access-token: ghp_xxx
+gitops-repo-name: gitops-repo-name
 ```
 
 ### Troubleshooting
@@ -107,31 +105,28 @@ It should resume from the step when it failed previously.
 
 ## Destroy
 
-Destroys all the resources created by setup process AKA reverse setup. It uses local state data created by setup
-process.
+This command destroys all resources created during the setup process, effectively reversing the setup. It uses local
+state data created during the setup.
 
-`destroy` command deletes:
+What the destroy command deletes:
 
-- K8s cluster and supporting cloud resources provisioned by CG DevX CLI
-- GitOps repository created under Git provider of your choice
+- K8s cluster and supporting cloud resources provisioned by the CG DevX CLI
+- GitOps repository created under the Git provider of your choice
 - Remote backend storage (e.g., AWS S3) used for IaC
-- All local files created by CG DevX CLI
+- All local files created by the CG DevX CLI
 
-> **NOTE!**: this process is irreversible
+> **Note**: This process is irreversible.
 
-> **NOTE!**: This operation will delete all workload repositories if you have them.
-> If workloads have any out of the cluster (cloud provider) resources, they will become orphaned,
-> and should be deleted manually.
-> It is highly recommended prior to destroying your installation to delete all active workloads first also deleting all
-> the resources.
-> Please see more on `workload delete` command with `--destroy-resources` flag [here](workload/README.md#delete).
-
+> **Note**: This operation will delete all workload repositories. If workloads have any out-of-cluster (cloud provider)
+> resources, they will become orphaned and should be manually deleted. It is highly recommended to delete all active
+> workloads and associated resources before destroying your installation. See more on the workload delete command with the
+> --destroy-resources flag here.
 
 **Arguments**:
 
 | Name (short, full) | Type                                    | Description                                       |
 |--------------------|-----------------------------------------|---------------------------------------------------|
-| --verbosity        | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
+| --verbosity        | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Logging verbosity level, default CRITICAL         |
 
 **Command snippet**
 
