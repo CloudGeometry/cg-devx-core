@@ -47,8 +47,13 @@ checkpoints) and could be re-run
 | -gtu, --gitops-template-url    | TEXT                                    | GitOps repository template url                    |
 | -gtb, --gitops-template-branch | TEXT                                    | GitOps repository template branch                 |
 | -dw, --setup-demo-workload     | Flag                                    | Setup demo workload                               |
+| -ops, --optional-services      | TEXT                                    | Setup optional services                           |
 | -f, --config-file              | FILENAME                                | Load parameters from file                         |
 | --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Set the logging verbosity level, default CRITICAL |
+
+**Available Optional Services**:
+
+- nvidia-gpu-operator
 
 > **Note!**: For all names use kebab-case.
 
