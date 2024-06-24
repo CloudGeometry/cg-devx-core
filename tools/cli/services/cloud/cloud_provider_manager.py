@@ -171,3 +171,11 @@ class CloudProviderManager(ABC):
         :return: KubeCost configuration section
         """
         pass
+
+    @abstractmethod
+    def create_gpu_operator_parameters(self):
+        """
+        Creates Cloud Provider specific configuration section for Nvidia GPU operator
+        :return: Additional GPU operator parameters
+        """
+        pass

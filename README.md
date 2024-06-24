@@ -1,6 +1,10 @@
-[//]: # (![GitHub]&#40;https://img.shields.io/github/license/CloudGeometry/cg-devx-core&#41;)
+![GitHub](https://img.shields.io/github/license/CloudGeometry/cg-devx-core)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+![Libraries.io dependency status for GitHub repo](https://img.shields.io/librariesio/github/cloudgeometry/cg-devx-core)
+![GitHub Tag](https://img.shields.io/github/v/tag/cloudgeometry/cg-devx-core)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cgdevxcli)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/cgdevxcli)
 
-[//]: # ([![Contributor Covenant]&#40;https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg&#41;]&#40;code_of_conduct.md&#41;)
 
 > **WORK IN PROGRESS**: Repository is under active development, breaking changes are expected.
 
@@ -18,6 +22,8 @@ release.
 CG DevX is an all-in-one platform designed to simplify and enhance the development, deployment, and management of
 cloud-native applications. Whether you are an experienced platform engineer or just a beginner DevOps starting your
 cloud-native journey, CG DevX provides the tools and capabilities to empower your team and streamline your workflows.
+
+Do you want to try it yourself? Follow our [quickstart guide](QUICKSTART.md).
 
 For comprehensive list of features please see
 this [page](https://cloudgeometry.github.io/cg-devx-docs/capabilities/capabilities/).

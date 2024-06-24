@@ -34,7 +34,7 @@ variable "cluster_name" {
 
 variable "cluster_version" {
   type        = string
-  default     = "1.29"
+  default     = "1.30"
   description = "(Optional) Specifies the AKS Kubernetes version"
 }
 
@@ -46,6 +46,7 @@ variable "node_groups" {
     min_size       = optional(number, 3)
     max_size       = optional(number, 5)
     desired_size   = optional(number, 3)
+    gpu_enabled    = optional(bool, false)
   }))
   default = [
     {

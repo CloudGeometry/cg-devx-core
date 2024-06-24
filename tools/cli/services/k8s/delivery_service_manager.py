@@ -94,7 +94,7 @@ class DeliveryServiceManager:
 
         return self._create_argocd_object(argo_proj_cr, "appprojects")
 
-    def create_core_application(self, project_name: str, repo_url: str):
+    def create_core_application(self, project_name: str, repo_url: str, exclude: str = ""):
         argo_app_cr = {
             "apiVersion": "argoproj.io/v1alpha1",
             "kind": "Application",
@@ -107,7 +107,7 @@ class DeliveryServiceManager:
                 "source": {
                     "repoURL": repo_url,
                     "path": ARGOCD_REGISTRY_APP_PATH,
-                    "targetRevision": "HEAD",
+                    "targetRevision": "HEAD"
                 },
                 "destination": {
                     "server": "https://kubernetes.default.svc",
@@ -131,6 +131,9 @@ class DeliveryServiceManager:
                 },
             },
         }
+
+        if exclude:
+            argo_app_cr["spec"]["source"]["directory"] = {"exclude": f"{{{exclude}}}"}
 
         return self._create_argocd_object(argo_app_cr, "applications")
 

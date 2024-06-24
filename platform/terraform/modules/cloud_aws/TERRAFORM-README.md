@@ -59,7 +59,7 @@
 | <a name="input_cluster_network_cidr"></a> [cluster\_network\_cidr](#input\_cluster\_network\_cidr) | n/a | `string` | `"10.0.0.0/16"` | no |
 | <a name="input_cluster_node_labels"></a> [cluster\_node\_labels](#input\_cluster\_node\_labels) | (Optional) EKS node labels | `map(any)` | <pre>{<br>  "provisioned-by": "cg-devx"<br>}</pre> | no |
 | <a name="input_cluster_ssh_public_key"></a> [cluster\_ssh\_public\_key](#input\_cluster\_ssh\_public\_key) | (Optional) SSH public key to access worker nodes. | `string` | `""` | no |
-| <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | (Optional) Specifies the EKS Kubernetes version | `string` | `"1.29"` | no |
+| <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | (Optional) Specifies the EKS Kubernetes version | `string` | `"1.30"` | no |
 | <a name="input_domain_name"></a> [domain\_name](#input\_domain\_name) | Specifies the platform domain name | `string` | n/a | yes |
 | <a name="input_node_group_type"></a> [node\_group\_type](#input\_node\_group\_type) | n/a | `string` | `"EKS"` | no |
 | <a name="input_node_groups"></a> [node\_groups](#input\_node\_groups) | n/a | <pre>list(object({<br>    name           = optional(string, "default")<br>    instance_types = optional(list(string), ["m5.large"])<br>    capacity_type  = optional(string, "on_demand")<br>    min_size       = optional(number, 3)<br>    max_size       = optional(number, 6)<br>    desired_size   = optional(number, 4)<br>  }))</pre> | <pre>[<br>  {<br>    "capacity_type": "on_demand",<br>    "desired_size": 4,<br>    "instance_types": [<br>      "m5.large"<br>    ],<br>    "max_size": 6,<br>    "min_size": 3,<br>    "name": "default"<br>  }<br>]</pre> | no |
