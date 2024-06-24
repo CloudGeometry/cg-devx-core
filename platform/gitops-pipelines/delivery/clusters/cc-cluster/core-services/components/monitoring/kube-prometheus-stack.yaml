@@ -191,6 +191,8 @@ spec:
               k8s-addons-trivy-operator:
                 url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-addons-trivy-operator.json
                 token: ''
+              k8s-scaler-keda:
+                url: https://raw.githubusercontent.com/kedacore/keda/main/config/grafana/keda-dashboard.json
     repoURL: https://prometheus-community.github.io/helm-charts
     targetRevision: 47.6.1
   syncPolicy:

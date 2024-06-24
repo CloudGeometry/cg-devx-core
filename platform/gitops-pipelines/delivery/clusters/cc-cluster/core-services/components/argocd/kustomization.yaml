@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: argocd
 
 resources:
-- github.com:argoproj/argo-cd.git/manifests/ha/cluster-install?ref=v2.8.4
+- github.com:argoproj/argo-cd.git/manifests/ha/cluster-install?ref=v2.11.3
 - argocd-ui-ingress.yaml
 - externalsecrets.yaml
 - argocd-oidc-restart-job.yaml

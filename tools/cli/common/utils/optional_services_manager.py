@@ -1,7 +1,9 @@
 from common.enums.optional_services import OptionalServices
 
 OPTIONAL_SERVICES_MAP = {
-    OptionalServices.NvidiaGpuOperator: ["180-nvidia-gpu-operator.yaml"]
+    OptionalServices.NvidiaGpuOperator: ["180-nvidia-gpu-operator.yaml"],
+    OptionalServices.KEDA: ["180-keda.yaml"],
+    OptionalServices.VPA: ["180-vpa.yaml"]
 }
 
 

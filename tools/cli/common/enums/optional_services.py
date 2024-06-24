@@ -8,6 +8,8 @@ class OptionalServices(str, enum.Enum):
     """List of all CG DevX platform optional services."""
 
     NvidiaGpuOperator = "nvidia-gpu-operator"
+    VPA = "vpa"
+    KEDA = "keda"
 
     @classmethod
     def has_value(cls, value) -> bool:

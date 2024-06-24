@@ -73,6 +73,12 @@ spec:
                       summary: >-
                         {{ printf "Service {{ $labels.namespace }}, Pod {{ $labels.pod }} has being force terminated and is attempting to recover." }}
         monitoring:
+          lokiCanary:
+            enabled: true
+            resources:
+              requests:
+                memory: "16Mi"
+                cpu: "10m"
           selfMonitoring:
             enabled: false
             grafanaAgent:

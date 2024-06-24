@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vpa
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '180'
+spec:
+  project: core
+  source:
+    repoURL: <GIT_REPOSITORY_GIT_URL>
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/kube-system/vpa
+    targetRevision: HEAD
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        maxDuration: 15m0s
+        factor: 2

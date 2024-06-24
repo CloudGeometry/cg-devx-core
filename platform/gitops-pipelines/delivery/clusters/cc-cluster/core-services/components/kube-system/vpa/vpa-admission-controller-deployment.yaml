@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-admission-controller
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: vpa-tls-certs
+            items:
+              - key: ca.crt
+                path: caCert.pem
+              - key: tls.crt
+                path: serverCert.pem
+              - key: tls.key
+                path: serverKey.pem
