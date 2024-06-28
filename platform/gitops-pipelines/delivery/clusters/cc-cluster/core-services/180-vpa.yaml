@@ -9,11 +9,11 @@ spec:
   project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/kube-system/vpa
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/scalers/vpa
     targetRevision: HEAD
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: kube-system
+    namespace: vpa
   syncPolicy:
     automated:
       prune: true
