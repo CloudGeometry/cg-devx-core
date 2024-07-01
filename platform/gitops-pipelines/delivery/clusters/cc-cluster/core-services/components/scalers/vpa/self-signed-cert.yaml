@@ -3,9 +3,9 @@ kind: Certificate
 metadata:
   name: vpa-self-signed-cert
 spec:
-  commonName: vpa-webhook.kube-system.svc
+  commonName: vpa-webhook.keda.svc
   dnsNames:
-    - vpa-webhook.kube-system.svc
+    - vpa-webhook.keda.svc
   secretName: vpa-tls-certs
   privateKey:
     algorithm: RSA
