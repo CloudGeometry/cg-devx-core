@@ -52,7 +52,7 @@ module "efs_csi_irsa_role" {
 
 locals {
   ci_sa_workloads_list = [
-    for key, value in var.workloads : "wl-${key}-dev:argo-workflow"
+    for key, value in var.workloads : "wl-${key}-build:argo-workflow"
   ]
 }
 
