@@ -26,13 +26,13 @@ for checkpointing, allowing the command to be rerun if necessary.
 | Name (short, full)             | Type                                    | Description                                   |
 |--------------------------------|-----------------------------------------|-----------------------------------------------|
 | -e, --email                    | TEXT                                    | Email address for alerts                      |
-| -c, --cloud-provider           | [aws]                                   | Cloud provider type                           |
+| -c, --cloud-provider           | [aws,azure]                             | Cloud provider type                           |
 | -cp, --cloud-profile           | TEXT                                    | Cloud account profile                         |
 | -cc, --cloud-account-key       | TEXT                                    | Cloud account access key                      |
 | -cs, --cloud-account-secret    | TEXT                                    | Cloud account access secret                   |
 | -r, --cloud-region             | TEXT                                    | Cloud region                                  |
 | -n, --cluster-name             | TEXT                                    | Cluster name                                  |
-| -d, --dns-registrar            | [route53]                               | DNS registrar                                 |
+| -d, --dns-registrar            | [route53,azure_dns]                     | DNS registrar                                 |
 | -dt, --dns-registrar-token     | TEXT                                    | DNS registrar token                           |
 | -dk, --dns-registrar-key       | TEXT                                    | DNS registrar key                             |
 | -ds, --dns-registrar-secret    | TEXT                                    | DNS registrar secret                          |
@@ -51,7 +51,9 @@ for checkpointing, allowing the command to be rerun if necessary.
 
 **Available Optional Services**:
 
+- keda
 - nvidia-gpu-operator
+- vpa
 
 > **Note!**: Use kebab-case for all parameter names.
 
@@ -119,14 +121,15 @@ What the destroy command deletes:
 
 > **Note**: This operation will delete all workload repositories. If workloads have any out-of-cluster (cloud provider)
 > resources, they will become orphaned and should be manually deleted. It is highly recommended to delete all active
-> workloads and associated resources before destroying your installation. See more on the workload delete command with the
+> workloads and associated resources before destroying your installation. See more on the workload delete command with
+> the
 > --destroy-resources flag here.
 
 **Arguments**:
 
-| Name (short, full) | Type                                    | Description                                       |
-|--------------------|-----------------------------------------|---------------------------------------------------|
-| --verbosity        | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Logging verbosity level, default CRITICAL         |
+| Name (short, full) | Type                                    | Description                               |
+|--------------------|-----------------------------------------|-------------------------------------------|
+| --verbosity        | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Logging verbosity level, default CRITICAL |
 
 **Command snippet**
 

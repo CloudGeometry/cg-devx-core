@@ -3,7 +3,6 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: argo-admin
-  namespace: argo
   annotations:
     argocd.argoproj.io/sync-wave: '0'
     workflows.argoproj.io/rbac-rule: "'admins' in groups"
@@ -15,7 +14,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: argo-admin
-  namespace: argo
   annotations:
     kubernetes.io/service-account.name: argo-admin
 type: kubernetes.io/service-account-token
@@ -24,7 +22,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: argo-admin-crb
-  namespace: argo
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -38,7 +35,6 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: argo-developer
-  namespace: argo
   annotations:
     argocd.argoproj.io/sync-wave: '0'
     workflows.argoproj.io/rbac-rule: "'developers' in groups"
@@ -50,7 +46,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: argo-developer
-  namespace: argo
   annotations:
     kubernetes.io/service-account.name: argo-developer
 type: kubernetes.io/service-account-token
@@ -59,7 +54,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: argo-developer-crb
-  namespace: argo
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

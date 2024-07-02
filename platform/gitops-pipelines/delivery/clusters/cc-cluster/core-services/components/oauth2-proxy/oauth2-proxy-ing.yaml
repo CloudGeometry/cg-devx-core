@@ -4,7 +4,6 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   name: oauth2-proxy
-  namespace: oauth2-proxy
 spec:
   ingressClassName: nginx
   rules:

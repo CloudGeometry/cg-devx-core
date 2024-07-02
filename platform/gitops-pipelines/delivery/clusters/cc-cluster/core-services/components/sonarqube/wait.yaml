@@ -3,13 +3,11 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: k8s-toolkit-sonarqube-tls
-  namespace: sonarqube
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: k8s-toolkit-sonarqube-tls
-  namespace: sonarqube
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -25,7 +23,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
   name: wait-sonarqube-tls
-  namespace: sonarqube
 spec:
   template:
     spec:

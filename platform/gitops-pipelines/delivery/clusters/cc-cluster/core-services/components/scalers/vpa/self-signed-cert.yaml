@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vpa-self-signed-cert
+spec:
+  commonName: vpa-webhook.keda.svc
+  dnsNames:
+    - vpa-webhook.keda.svc
+  secretName: vpa-tls-certs
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: selfsigned-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+

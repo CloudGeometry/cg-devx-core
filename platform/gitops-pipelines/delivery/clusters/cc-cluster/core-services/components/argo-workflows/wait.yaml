@@ -2,13 +2,11 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: k8s-toolkit-argo
-  namespace: argo
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: k8s-toolkit-argo
-  namespace: argo
 rules:
   - apiGroups:
       - apps
@@ -24,7 +22,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: k8s-toolkit-argo
-  namespace: argo
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -40,7 +37,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
   name: wait-argo-workflow-controller
-  namespace: argo
 spec:
   template:
     spec:
@@ -67,7 +63,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
   name: wait-argo-server
-  namespace: argo
 spec:
   backoffLimit: 10
   template:

@@ -2,13 +2,11 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: k8s-toolkit-eso
-  namespace: external-secrets-operator
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: k8s-toolkit-eso
-  namespace: external-secrets-operator
 rules:
   - apiGroups:
       - apps
@@ -24,7 +22,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: k8s-toolkit-eso
-  namespace: external-secrets-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -40,7 +37,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
   name: wait-external-secrets-cert-controller
-  namespace: external-secrets-operator
 spec:
   template:
     spec:
@@ -67,7 +63,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
   name: wait-external-secrets
-  namespace: external-secrets-operator
 spec:
   template:
     spec:
@@ -94,7 +89,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
   name: wait-external-secrets-webhook
-  namespace: external-secrets-operator
 spec:
   template:
     spec:

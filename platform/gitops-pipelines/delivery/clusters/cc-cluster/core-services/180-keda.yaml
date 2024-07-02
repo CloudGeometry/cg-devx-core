@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cluster-autoscaler-components
+  name: keda-components
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '30'
+    argocd.argoproj.io/sync-wave: '180'
 spec:
   project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/scalers/cluster-autoscaler
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/scalers/keda
     targetRevision: HEAD
   destination:
-    server: https://kubernetes.default.svc
-    namespace: cluster-autoscaler
+    server: 'https://kubernetes.default.svc'
+    namespace: keda
   syncPolicy:
     automated:
       prune: true
@@ -21,7 +21,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
     retry:
-      limit: 10
+      limit: 5
       backoff:
         duration: 30s
         maxDuration: 15m0s
