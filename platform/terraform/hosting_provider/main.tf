@@ -37,7 +37,7 @@ module "hosting-provider" {
   domain_name            = local.domain_name
   workloads              = var.workloads
   ## Example of node groups for the AWS cloud hosting provider
-  ## Please note that for the  GPU node, you need to check node type availability
+  ## Please note that for the  GPU or metal nodes, you need to check node type availability
   ## in your region and send service quota-increasing request to the support
   # node_groups            = [
   #   {
@@ -53,6 +53,15 @@ module "hosting-provider" {
   #   #   name           = "ml-node-group"
   #   #   instance_types = ["g5.xlarge"]
   #   #   gpu_enabled    = true
+  #   #   capacity_type  = "on_demand"
+  #   #   min_size       = 0
+  #   #   max_size       = 1
+  #   #   desired_size   = 1
+  #   # },
+  #   # {
+  #   #   name           = "metal-node-group"
+  #   #   instance_types = ["c5.metal"]
+  #   #   gpu_enabled    = false
   #   #   capacity_type  = "on_demand"
   #   #   min_size       = 0
   #   #   max_size       = 1
