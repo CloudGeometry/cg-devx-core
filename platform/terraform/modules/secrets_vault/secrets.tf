@@ -1,5 +1,5 @@
 locals {
-  b64_docker_auth      = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
+  b64_docker_auth = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
   harbor_admin_user    = "admin"
   grafana_admin_user   = "admin"
   atlantis_admin_user  = "admin"
@@ -227,7 +227,7 @@ resource "vault_generic_secret" "runner_token" {
 
   data_json = jsonencode(
     {
-      runner_token = "<VCS_RUNNER_TOKEN>"
+      runner_token = var.vcs_runner_token
     }
   )
 

@@ -325,6 +325,7 @@ def setup(
         # store out params
         p.parameters["<GIT_REPOSITORY_GIT_URL>"] = vcs_out["gitops_repo_ssh_clone_url"]
         p.parameters["<GIT_REPOSITORY_URL>"] = vcs_out["gitops_repo_html_url"]
+        p.internals["VCS_RUNNER_TOKEN"] = vcs_out["vcs_runner_token"]
 
         # unset envs as no longer needed
         unset_envs(vcs_tf_env_vars)
@@ -726,6 +727,7 @@ def setup(
             "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
             "vault_token": p.internals["VAULT_ROOT_TOKEN"],
             "cluster_endpoint": p.internals["CC_CLUSTER_ENDPOINT"],
+            "vcs_runner_token": p.internals["VCS_RUNNER_TOKEN"],
         }
         if "<CC_CLUSTER_SSH_PUBLIC_KEY>" in p.parameters:
             sec_man_tf_params["cluster_ssh_public_key"] = p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"]

@@ -45,7 +45,7 @@ variable "cluster_endpoint" {
 
 variable "workloads" {
   description = "Workloads configuration"
-  type        = map(object({
+  type = map(object({
     description = optional(string, "")
   }))
   default = {}
@@ -59,6 +59,12 @@ variable "cluster_ssh_public_key" {
 
 variable "tf_backend_storage_access_key" {
   description = "Specifies the access key for tf backend storage. Only applicable to AKS."
+  type        = string
+  default     = ""
+}
+
+variable "vcs_runner_token" {
+  description = "VCS self hosted runner token for GitLab runners"
   type        = string
   default     = ""
 }
