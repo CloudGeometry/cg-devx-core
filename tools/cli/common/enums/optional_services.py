@@ -10,6 +10,7 @@ class OptionalServices(str, enum.Enum):
     NvidiaGpuOperator = "nvidia-gpu-operator"
     VPA = "vpa"
     KEDA = "keda"
+    KUBEVIRT = "kubevirt"
 
     @classmethod
     def has_value(cls, value) -> bool:
