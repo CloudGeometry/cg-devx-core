@@ -221,3 +221,15 @@ resource "vault_generic_secret" "oauth2_cookie_secret" {
 
   depends_on = [vault_mount.secret]
 }
+
+resource "vault_generic_secret" "runner_token" {
+  path = "secret/gitlab-runner"
+
+  data_json = jsonencode(
+    {
+      runner_token = "<VCS_RUNNER_TOKEN>"
+    }
+  )
+
+  depends_on = [vault_mount.secret]
+}
