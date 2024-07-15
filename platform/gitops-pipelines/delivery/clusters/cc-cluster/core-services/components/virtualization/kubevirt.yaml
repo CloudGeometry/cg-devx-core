@@ -1,19 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kubevirt-components
+  name: kubevirt
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: '180'
+    argocd.argoproj.io/sync-wave: '10'
 spec:
   project: core
   source:
     repoURL: <GIT_REPOSITORY_GIT_URL>
-    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/virtualization
+    path: gitops-pipelines/delivery/clusters/cc-cluster/core-services/components/virtualization/kubevirt
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: kubevirt
   syncPolicy:
     automated:
       prune: true
