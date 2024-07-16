@@ -9,6 +9,20 @@ spec:
   #   featureGates:
   #   - HonorWaitForFirstConsumer
   imagePullPolicy: IfNotPresent
+  # customizeComponents:
+  #   patches:
+  #   - resourceType: Deployment
+  #     resourceName: cdi-apiserver
+  #     patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}}}}}'
+  #     type: strategic
+  #   - resourceType: Deployment
+  #     resourceName: cdi-deployment
+  #     patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}}}}}'
+  #     type: strategic
+  #   - resourceType: Deployment
+  #     resourceName: cdi-uploadproxy
+  #     patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}}}}}'
+  #     type: strategic
   infra:
     nodeSelector:
       kubernetes.io/os: linux
