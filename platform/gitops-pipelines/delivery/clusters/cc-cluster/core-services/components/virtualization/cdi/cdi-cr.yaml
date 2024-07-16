@@ -1,0 +1,35 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: CDI
+metadata:
+  name: cdi
+  annotations:
+    argocd.argoproj.io/sync-wave: '30'
+spec:
+  # config:
+  #   featureGates:
+  #   - HonorWaitForFirstConsumer
+  imagePullPolicy: IfNotPresent
+  ## check resolution for the cdi v1.59 issue "/dev/cdi-block-volume: Permission denied" later
+  # customizeComponents:
+  #   patches:
+  #   - resourceType: Deployment
+  #     resourceName: cdi-apiserver
+  #     patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}}}}}'
+  #     type: strategic
+  #   - resourceType: Deployment
+  #     resourceName: cdi-deployment
+  #     patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}}}}}'
+  #     type: strategic
+  #   - resourceType: Deployment
+  #     resourceName: cdi-uploadproxy
+  #     patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.cdi","cg-devx.metadata.version":"1.54.2"}}}}}'
+  #     type: strategic
+  infra:
+    nodeSelector:
+      kubernetes.io/os: linux
+    tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+  workload:
+    nodeSelector:
+      kubernetes.io/os: linux
