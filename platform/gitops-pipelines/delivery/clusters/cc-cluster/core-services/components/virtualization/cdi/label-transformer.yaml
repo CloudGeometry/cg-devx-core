@@ -1,0 +1,16 @@
+---
+apiVersion: builtin
+kind: LabelTransformer
+metadata:
+  name: cdi-common-labels
+labels:
+  cg-devx.cost-allocation.cost-center: "platform"
+  cg-devx.metadata.owner: "<GITOPS_REPOSITORY_NAME>-admin"
+  cg-devx.metadata.service: "virtualization.cdi"
+  cg-devx.metadata.version: "1.54.2"
+fieldSpecs:
+- path: metadata/labels
+  create: true
+- path: spec/template/metadata/labels
+  create: true
+  kind: Deployment

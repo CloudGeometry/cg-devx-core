@@ -5,6 +5,7 @@ OPTIONAL_SERVICES_MAP = {
     OptionalServices.GitLab: ["60-gitlab-runner.yaml"],
     OptionalServices.NvidiaGpuOperator: ["180-nvidia-gpu-operator.yaml"],
     OptionalServices.KEDA: ["180-keda.yaml"],
+    OptionalServices.KUBEVIRT: ["180-kubevirt.yaml"],
     OptionalServices.VPA: ["180-vpa.yaml"]
 }
 

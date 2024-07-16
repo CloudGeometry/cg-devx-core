@@ -52,6 +52,7 @@ for checkpointing, allowing the command to be rerun if necessary.
 **Available Optional Services**:
 
 - keda
+- kubevirt
 - nvidia-gpu-operator
 - vpa
 
