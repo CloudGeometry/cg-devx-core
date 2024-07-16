@@ -9,6 +9,7 @@ spec:
   #   featureGates:
   #   - HonorWaitForFirstConsumer
   imagePullPolicy: IfNotPresent
+  ## check resolution for the cdi v1.59 issue "/dev/cdi-block-volume: Permission denied" later
   # customizeComponents:
   #   patches:
   #   - resourceType: Deployment
