@@ -69,6 +69,17 @@ variable "atlantis_repo_webhook_secret" {
   sensitive = true
 }
 
+variable "argocd_webhook_secret" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "argocd_webhook_url" {
+  type    = string
+  default = ""
+}
+
 variable "vcs_subscription_plan" {
   description = "True for advanced github/gitlab plan. False for free tier"
   type    = bool

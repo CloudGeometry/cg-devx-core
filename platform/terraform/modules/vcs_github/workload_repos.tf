@@ -19,4 +19,6 @@ module "workload_repos" {
   atlantis_enabled             = each.value.atlantis_enabled
   atlantis_url                 = var.atlantis_url
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
+  argocd_webhook_url           = var.argocd_webhook_url
+  argocd_webhook_secret        = var.argocd_webhook_secret
 }

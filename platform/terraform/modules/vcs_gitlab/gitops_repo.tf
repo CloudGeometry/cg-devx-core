@@ -6,6 +6,8 @@ module "gitops-repo" {
   atlantis_enabled             = true
   atlantis_url                 = var.atlantis_url
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
+  argocd_webhook_url           = var.argocd_webhook_url
+  argocd_webhook_secret        = var.argocd_webhook_secret
   vcs_subscription_plan        = var.vcs_subscription_plan
   vcs_owner                    = data.gitlab_group.owner.group_id
   branch_protection            = true
