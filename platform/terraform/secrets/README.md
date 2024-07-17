@@ -22,12 +22,15 @@ vcs_token                    = var.vcs_token
 atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
 # IaC PR automation webhook URL
 atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
+# CD after push sync event webhook secret
+argocd_webhook_secret        = var.argocd_webhook_secret
 #Secrets Manager root access token
 vault_token                  = var.vault_token
 ```
 
 | Name                                                                                                                         | Description                    | Type     | Default | Required |
 |------------------------------------------------------------------------------------------------------------------------------|--------------------------------|----------|---------|:--------:|
+| <a name="input_argocd_webhook_secret"></a> [argocd\_webhook\_secret](#input\_argocd\_webhook\_secret) | argocd webhook secret        | `string` | `""`    |    no    |
 | <a name="input_atlantis_repo_webhook_secret"></a> [atlantis\_repo\_webhook\_secret](#input\_atlantis\_repo\_webhook\_secret) | atlantis webhook secret        | `string` | `""`    |    no    |
 | <a name="input_atlantis_repo_webhook_url"></a> [atlantis\_repo\_webhook\_url](#input\_atlantis\_repo\_webhook\_url)          | atlantis webhook url           | `string` | `""`    |    no    |
 | <a name="input_vault_token"></a> [vault\_token](#input\_vault\_token)                                                        | vault token                    | `string` | `""`    |    no    |
