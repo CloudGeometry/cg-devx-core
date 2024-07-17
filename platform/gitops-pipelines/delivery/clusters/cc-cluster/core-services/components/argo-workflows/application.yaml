@@ -22,6 +22,9 @@ spec:
         singleNamespace: false
         nameOverride: argo
         controller:
+          instanceID:
+            enabled: true
+            explicitID: "cgdevx"
           workflowDefaults:
             spec:
               podGC:
