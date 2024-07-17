@@ -65,7 +65,7 @@ No requirements.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_argocd_webhook_secret"></a> [argocd\_webhook\_secret](#input\_argocd\_webhook\_secret) | argocd webhook secret | `string` | `""` | no |
+| <a name="input_cd_webhook_secret"></a> [cd\_webhook\_secret](#input\_cd\_webhook\_secret) | cd webhook secret | `string` | `""` | no |
 | <a name="input_atlantis_repo_webhook_secret"></a> [atlantis\_repo\_webhook\_secret](#input\_atlantis\_repo\_webhook\_secret) | atlantis webhook secret | `string` | `""` | no |
 | <a name="input_atlantis_repo_webhook_url"></a> [atlantis\_repo\_webhook\_url](#input\_atlantis\_repo\_webhook\_url) | atlantis webhook url | `string` | `""` | no |
 | <a name="input_cluster_endpoint"></a> [cluster\_endpoint](#input\_cluster\_endpoint) | (Required) K8s cluster endpoint | `string` | n/a | yes |

@@ -14,15 +14,15 @@ resource "github_repository_webhook" "gitops_atlantis_webhook" {
   events = ["pull_request_review", "push", "issue_comment", "pull_request"]
 }
 
-resource "github_repository_webhook" "gitops_argocd_webhook" {
+resource "github_repository_webhook" "gitops_cd_webhook" {
   count      = var.atlantis_enabled ? 1 : 0
   repository = github_repository.repo.name
 
   configuration {
     content_type = "json"
     insecure_ssl = false
-    url          = var.argocd_webhook_url
-    secret       = var.argocd_webhook_secret
+    url          = var.cd_webhook_url
+    secret       = var.cd_webhook_secret
   }
 
   active = true

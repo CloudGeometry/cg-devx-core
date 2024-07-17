@@ -29,7 +29,7 @@ module "secrets" {
   vcs_token                    = var.vcs_token
   atlantis_repo_webhook_secret = var.atlantis_repo_webhook_secret
   atlantis_repo_webhook_url    = var.atlantis_repo_webhook_url
-  argocd_webhook_secret        = var.argocd_webhook_secret
+  cd_webhook_secret            = var.cd_webhook_secret
   vault_token                  = var.vault_token
   cluster_endpoint             = var.cluster_endpoint
   cluster_ssh_public_key       = var.cluster_ssh_public_key

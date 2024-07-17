@@ -3,7 +3,7 @@ variable "atlantis_repo_webhook_secret" {
   default = ""
 }
 
-variable "argocd_webhook_secret" {
+variable "cd_webhook_secret" {
   type    = string
   default = ""
 }

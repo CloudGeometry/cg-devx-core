@@ -31,8 +31,8 @@ variable "atlantis_repo_webhook_url" {
   type        = string
 }
 
-variable "argocd_webhook_secret" {
-  description = "argocd webhook secret"
+variable "cd_webhook_secret" {
+  description = "cd webhook secret"
   default     = ""
   type        = string
   sensitive   = true

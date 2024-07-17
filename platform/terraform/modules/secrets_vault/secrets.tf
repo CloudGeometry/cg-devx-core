@@ -43,12 +43,12 @@ resource "vault_generic_secret" "ci_secrets" {
   depends_on = [vault_mount.secret]
 }
 
-resource "vault_generic_secret" "argocd_secrets" {
-  path = "secret/argocd-secrets"
+resource "vault_generic_secret" "cd_secrets" {
+  path = "secret/cd-secrets"
 
   data_json = jsonencode(
     {
-      argocd_webhook_secret         = var.argocd_webhook_secret,
+      cd_webhook_secret         = var.cd_webhook_secret,
     }
   )
 
@@ -72,7 +72,7 @@ resource "vault_generic_secret" "atlantis_secrets" {
       GITHUB_OWNER                         = "<GIT_ORGANIZATION_NAME>",
       GITHUB_TOKEN                         = var.vcs_token,
       # ----
-      TF_VAR_argocd_webhook_secret         = var.argocd_webhook_secret,
+      TF_VAR_cd_webhook_secret             = var.cd_webhook_secret,
       TF_VAR_atlantis_repo_webhook_secret  = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url     = var.atlantis_repo_webhook_url,
       TF_VAR_vcs_token                     = var.vcs_token,

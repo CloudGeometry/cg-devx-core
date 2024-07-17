@@ -29,8 +29,8 @@
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_argocd_webhook_secret"></a> [argocd\_webhook\_secret](#input\_argocd\_webhook\_secret) | n/a | `string` | `""` | no |
-| <a name="input_argocd_webhook_url"></a> [argocd\_webhook\_url](#input\_argocd\_webhook\_url) | n/a | `string` | `""` | no |
+| <a name="input_cd_webhook_secret"></a> [cd\_webhook\_secret](#input\_cd\_webhook\_secret) | n/a | `string` | `""` | no |
+| <a name="input_cd_webhook_url"></a> [cd\_webhook\_url](#input\_cd\_webhook\_url) | n/a | `string` | `""` | no |
 | <a name="input_atlantis_repo_webhook_secret"></a> [atlantis\_repo\_webhook\_secret](#input\_atlantis\_repo\_webhook\_secret) | n/a | `string` | `""` | no |
 | <a name="input_atlantis_url"></a> [atlantis\_url](#input\_atlantis\_url) | n/a | `string` | `""` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | n/a | `string` | `""` | no |

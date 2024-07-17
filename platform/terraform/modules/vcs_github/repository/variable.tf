@@ -69,13 +69,13 @@ variable "atlantis_repo_webhook_secret" {
   sensitive = true
 }
 
-variable "argocd_webhook_secret" {
+variable "cd_webhook_secret" {
   type      = string
   default   = ""
   sensitive = true
 }
 
-variable "argocd_webhook_url" {
+variable "cd_webhook_url" {
   type    = string
   default = ""
 }
