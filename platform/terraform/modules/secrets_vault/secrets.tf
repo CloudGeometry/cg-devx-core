@@ -52,6 +52,9 @@ resource "vault_generic_secret" "argocd_secrets" {
     }
   )
 
+  depends_on = [vault_mount.secret]
+}
+
 resource "vault_generic_secret" "atlantis_secrets" {
   path = "secret/atlantis/envs-secrets"
 
