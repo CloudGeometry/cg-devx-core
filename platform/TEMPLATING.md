@@ -56,6 +56,7 @@ The following templating variables are generated during setup process:
 
 ### Git Configuration
 
+- `CD_PUSH_EVENT_WEBHOOK_SECRET` - Continuous Delivery (ArgoCD) push event automation webhook secret.
 - `GIT_REPOSITORY_GIT_URL` - Git URL for the Platform GitOps repository.
 - `GIT_REPOSITORY_ROOT` - Git organization root.
 - `GIT_REPOSITORY_URL` - HTTP URL for the Platform GitOps repository.
