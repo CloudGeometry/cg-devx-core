@@ -31,6 +31,13 @@ variable "atlantis_repo_webhook_url" {
   type        = string
 }
 
+variable "cd_webhook_secret" {
+  description = "cd webhook secret"
+  default     = ""
+  type        = string
+  sensitive   = true
+}
+
 variable "vault_token" {
   description = "vault token"
   default     = ""
