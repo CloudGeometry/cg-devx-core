@@ -320,6 +320,7 @@ def setup(
         tf_wrapper = TfWrapper(LOCAL_TF_FOLDER_VCS)
         tf_wrapper.init()
         tf_wrapper.apply({"atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
+                          "cd_webhook_secret": p.parameters["<CD_PUSH_EVENT_WEBHOOK_SECRET>"],
                           "vcs_bot_ssh_public_key": p.parameters["<VCS_BOT_SSH_PUBLIC_KEY>"]})
         vcs_out = tf_wrapper.output()
 
@@ -724,6 +725,7 @@ def setup(
             "vcs_bot_ssh_public_key": p.internals["DEFAULT_SSH_PUBLIC_KEY"],
             "vcs_bot_ssh_private_key": p.internals["DEFAULT_SSH_PRIVATE_KEY"],
             "vcs_token": p.internals["GIT_ACCESS_TOKEN"],
+            "cd_webhook_secret": p.parameters["<CD_PUSH_EVENT_WEBHOOK_SECRET>"],
             "atlantis_repo_webhook_secret": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"],
             "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
             "vault_token": p.internals["VAULT_ROOT_TOKEN"],
@@ -983,6 +985,10 @@ def prepare_parameters(p):
     # set IaC webhook secret
     if "<IAC_PR_AUTOMATION_WEBHOOK_SECRET>" not in p.parameters:
         p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_SECRET>"] = random_string_generator(20)
+
+    # set CD webhook secret
+    if "<CD_PUSH_EVENT_WEBHOOK_SECRET>" not in p.parameters:
+        p.parameters["<CD_PUSH_EVENT_WEBHOOK_SECRET>"] = random_string_generator(20)
 
     # Ingress URLs for core components. Note!: URL does not contain protocol
     cluster_fqdn = f'{p.get_input_param(DOMAIN_NAME)}'

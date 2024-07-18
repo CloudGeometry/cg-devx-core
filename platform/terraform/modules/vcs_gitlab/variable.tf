@@ -9,6 +9,17 @@ variable "atlantis_url" {
   default = ""
 }
 
+variable "cd_webhook_secret" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
+variable "cd_webhook_url" {
+  type    = string
+  default = ""
+}
+
 variable "gitops_repo_name" {
   type    = string
   default = "gitops"
