@@ -17,6 +17,6 @@ def build_argo_exclude_string(services: [str]) -> str:
     for svc in services:
         oc_to_ignore.pop(svc)
     if oc_to_ignore:
-        return str.join(", ", *oc_to_ignore.values())
+        return ", ".join([x for xs in list(oc_to_ignore.values()) for x in xs])
     else:
         return ""
