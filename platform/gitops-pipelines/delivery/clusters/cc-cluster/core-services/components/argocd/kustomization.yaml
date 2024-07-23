@@ -15,6 +15,7 @@ patches:
 - path: argocd-cmd-params-cm.yaml
 - path: argocd-rbac-cm.yaml
 - path: argocd-secret.yaml
+- path: argocd-repo-server-settings.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

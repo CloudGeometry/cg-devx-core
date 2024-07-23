@@ -1,0 +1,92 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+sortOptions:
+  order: legacy
+  legacySortOptions:
+    orderFirst:
+      - Namespace
+      - ResourceQuota
+      - StorageClass
+      - CustomResourceDefinition
+      - MutatingWebhookConfiguration
+      - ServiceAccount
+      - PodSecurityPolicy
+      - Role
+      - ClusterRole
+      - RoleBinding
+      - ClusterRoleBinding
+      - ConfigMap
+      - Secret
+      - Endpoints
+      - Service
+      - LimitRange
+      - PriorityClass
+      - PersistentVolume
+      - PersistentVolumeClaim
+      - Deployment
+      - StatefulSet
+      - CronJob
+      - PodDisruptionBudget
+    orderLast:
+      - ValidatingWebhookConfiguration
+      -
+resources:
+# Cert-Manager
+- github.com/kubeflow/manifests/common/cert-manager/kubeflow-issuer/base?ref=v1.8.1
+# Istio
+- github.com/kubeflow/manifests/common/istio-1-17/istio-crds/base?ref=v1.8.1
+- github.com/kubeflow/manifests/common/istio-1-17/istio-namespace/base?ref=v1.8.1
+- github.com/kubeflow/manifests/common/istio-1-17/istio-install/base?ref=v1.8.1
+# OIDC Authservice
+- github.com/kubeflow/manifests/common/oidc-client/oidc-authservice/base?ref=v1.8.1
+# Dex
+- github.com/kubeflow/manifests/common/dex/overlays/istio?ref=v1.8.1
+# KNative
+- github.com/kubeflow/manifests/common/knative/knative-serving/overlays/gateways?ref=v1.8.1
+- github.com/kubeflow/manifests/common/knative/knative-eventing/base?ref=v1.8.1
+- github.com/kubeflow/manifests/common/istio-1-17/cluster-local-gateway/base?ref=v1.8.1
+# Kubeflow namespace
+- github.com/kubeflow/manifests/common/kubeflow-namespace/base?ref=v1.8.1
+# Kubeflow Roles
+- github.com/kubeflow/manifests/common/kubeflow-roles/base?ref=v1.8.1
+# Kubeflow Istio Resources
+- github.com/kubeflow/manifests/common/istio-1-17/kubeflow-istio-resources/base?ref=v1.8.1
+
+
+# Kubeflow Pipelines
+- github.com/kubeflow/manifests/apps/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user?ref=v1.8.1
+# Katib
+- github.com/kubeflow/manifests/apps/katib/upstream/installs/katib-with-kubeflow?ref=v1.8.1
+# Central Dashboard
+- github.com/kubeflow/manifests/apps/centraldashboard/upstream/overlays/kserve?ref=v1.8.1
+# Admission Webhook
+- github.com/kubeflow/manifests/apps/admission-webhook/upstream/overlays/cert-manager?ref=v1.8.1
+# Jupyter Web App
+- github.com/kubeflow/manifests/apps/jupyter/jupyter-web-app/upstream/overlays/istio?ref=v1.8.1
+# Notebook Controller
+- github.com/kubeflow/manifests/apps/jupyter/notebook-controller/upstream/overlays/kubeflow?ref=v1.8.1
+# Profiles + KFAM
+- github.com/kubeflow/manifests/apps/profiles/upstream/overlays/kubeflow?ref=v1.8.1
+# PVC Viewer
+- github.com/kubeflow/manifests/apps/pvcviewer-controller/upstream/base/?ref=v1.8.1
+# Volumes Web App
+- github.com/kubeflow/manifests/apps/volumes-web-app/upstream/overlays/istio?ref=v1.8.1
+# Tensorboards Controller
+-  github.com/kubeflow/manifests/apps/tensorboard/tensorboard-controller/upstream/overlays/kubeflow
+# Tensorboard Web App
+-  github.com/kubeflow/manifests/apps/tensorboard/tensorboards-web-app/upstream/overlays/istio
+# Training Operator
+- github.com/kubeflow/manifests/apps/training-operator/upstream/overlays/kubeflow?ref=v1.8.1
+# User namespace
+- github.com/kubeflow/manifests/common/user-namespace/base?ref=v1.8.1
+
+# KServe
+- github.com/kubeflow/manifests/contrib/kserve/kserve?ref=v1.8.1
+- github.com/kubeflow/manifests/contrib/kserve/models-web-app/overlays/kubeflow?ref=v1.8.1
+
+# ingress
+- ui-ingress.yaml
+
+transformers:
+  - label-transformer.yaml
