@@ -20,6 +20,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   dns_prefix                       = lower(local.name)
   private_cluster_enabled          = false
   workload_identity_enabled        = true
+  sku_tier                         = "Standard"
   oidc_issuer_enabled              = true
   open_service_mesh_enabled        = false
   image_cleaner_enabled            = false
@@ -107,14 +108,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "node_pool" {
   node_count      = each.value.desired_size
   os_disk_size_gb = each.value.disc_size
   node_labels     = var.cluster_node_labels
-  node_taints = each.value.gpu_enabled == true ? {
-    # should set dynamically to allow node group selection on pod level
-    group_type = {
-      key    = "group-type"
-      value  = "gpu-enabled"
-      effect = "NO_SCHEDULE"
-    }
-  } : {}
+  node_taints = each.value.gpu_enabled == true ? ["group-type=gpu-enabled:NoSchedule"] : []
   orchestrator_version  = var.cluster_version
   tags                  = local.tags
   enable_node_public_ip = false
