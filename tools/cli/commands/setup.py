@@ -659,7 +659,7 @@ def setup(
             wait(30)
             kctl = KctlWrapper(p.internals["KCTL_CONFIG_PATH"])
             try:
-                out = kctl.exec("vault-0", "-- vault operator init", namespace=VAULT_NAMESPACE)
+                out = kctl.exec("vault-0", "-- vault operator init", container="vault", namespace=VAULT_NAMESPACE)
             except Exception as e:
                 raise click.ClickException(f"Could not unseal vault: {e}")
             bar()
