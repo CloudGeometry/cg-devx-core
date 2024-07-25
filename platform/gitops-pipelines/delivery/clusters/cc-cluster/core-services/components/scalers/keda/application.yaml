@@ -1,0 +1,87 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keda
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '180'
+spec:
+  project: core
+  source:
+    repoURL: https://kedacore.github.io/charts
+    chart: keda
+    targetRevision: v2.14.2
+    helm:
+      values: |-
+        clusterName: <PRIMARY_CLUSTER_NAME>
+        additionalLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: scaler.keda
+          cg-devx.metadata.chart-version: 2.14.2
+          cg-devx.metadata.version: 2.14.0
+        crds:
+          additionalAnnotations:
+            argocd.argoproj.io/sync-options: ServerSideApply=true
+        metricsServer:
+          hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
+        prometheus:
+          metricServer:
+            # -- Enable metric server Prometheus metrics expose
+            enabled: true
+            serviceMonitor:
+              # -- Enables ServiceMonitor creation for the Prometheus Operator
+              enabled: true
+            podMonitor:
+              # -- Enables PodMonitor creation for the Prometheus Operator
+              enabled: true
+          operator:
+            # -- Enable KEDA Operator prometheus metrics expose
+            enabled: true
+            serviceMonitor:
+              # -- Enables ServiceMonitor creation for the Prometheus Operator
+              enabled: true
+            podMonitor:
+              # -- Enables PodMonitor creation for the Prometheus Operator
+              enabled: true
+            prometheusRules:
+              # -- Enables PrometheusRules creation for the Prometheus Operator
+              enabled: true
+          webhooks:
+            # -- Enable KEDA admission webhooks prometheus metrics expose
+            enabled: true
+            serviceMonitor:
+              # -- Enables ServiceMonitor creation for the Prometheus webhooks
+              enabled: true
+            prometheusRules:
+              # -- Enables PrometheusRules creation for the Prometheus Operator
+              enabled: true
+
+        certificates:
+          certManager:
+            # -- Enables Cert-manager for certificate management
+            enabled: true
+            duration: 2190h0m0s # 3 month
+            # -- Certificate renewal time before expiration
+            renewBefore: 730h0m0s # 1 month
+        permissions:
+          metricServer:
+            restrict:
+              # -- Restrict Secret Access for Metrics Server
+              secret: true
+          operator:
+            restrict:
+              # -- Restrict Secret Access for KEDA operator
+              # if true, KEDA operator will be able to read only secrets in {{ .Release.Namespace }} namespace
+              secret: false
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: keda
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

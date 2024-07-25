@@ -281,3 +281,13 @@ class AzureManager(CloudProviderManager):
     @trace()
     def create_kubecost_annotation(self):
         return '''azure-cloud-services: true'''
+
+    @trace()
+    def create_gpu_operator_parameters(self):
+      return '''# azure
+        - name: "driver.enabled"
+          value: "false"
+        - name: "toolkit.enabled"
+          value: "false"
+        - name: "operator.runtimeClass"
+          value: "nvidia-container-runtime"'''

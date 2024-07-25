@@ -2,13 +2,11 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: eso-clustersecretstore
-  namespace: external-secrets-operator
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: eso-clustersecretstore
-  namespace: external-secrets-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -24,7 +22,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "20"
   name: wait-vault-kv-secret
-  namespace: external-secrets-operator
 spec:
   template:
     spec:

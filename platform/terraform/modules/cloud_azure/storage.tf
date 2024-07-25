@@ -48,7 +48,4 @@ resource "azurerm_storage_container" "artifacts_repository" {
   name                  = "${local.name}-artifacts-repository-${random_string.sc_random_suffix.id}"
   storage_account_name  = azurerm_storage_account.storage_account.name
   container_access_type = "private"
-  tags                     = merge(local.tags, {
-    "cg-devx.metadata.service" : "continuous-integration"
-  })
 }

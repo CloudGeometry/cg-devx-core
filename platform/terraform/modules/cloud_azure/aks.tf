@@ -20,6 +20,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   dns_prefix                       = lower(local.name)
   private_cluster_enabled          = false
   workload_identity_enabled        = true
+  sku_tier                         = "Standard"
   oidc_issuer_enabled              = true
   open_service_mesh_enabled        = false
   image_cleaner_enabled            = false
@@ -37,9 +38,10 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     enable_host_encryption = false
     enable_node_public_ip  = false
     node_count             = local.default_node_group.desired_size
-    min_count              = local.enable_native_auto_scaling? local.default_node_group.min_size : null
-    max_count              = local.enable_native_auto_scaling? local.default_node_group.max_size : null
+    min_count              = local.enable_native_auto_scaling ? local.default_node_group.min_size : null
+    max_count              = local.enable_native_auto_scaling ? local.default_node_group.max_size : null
     max_pods               = local.max_pods
+    os_disk_size_gb        = local.default_node_group.disc_size
     tags                   = local.tags
   }
 
@@ -97,14 +99,16 @@ resource "azurerm_kubernetes_cluster_node_pool" "node_pool" {
 
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks_cluster.id
 
-  name                  = each.key
-  vm_size               = each.value.instance_types
-  zones                 = local.azs
-  vnet_subnet_id        = azurerm_subnet.private_subnet.id
-  max_count             = each.value.max_size
-  min_count             = each.value.min_size
-  node_count            = each.value.desired_size
-  node_labels           = var.cluster_node_labels
+  name            = each.key
+  vm_size         = each.value.instance_types
+  zones           = local.azs
+  vnet_subnet_id  = azurerm_subnet.private_subnet.id
+  max_count       = each.value.max_size
+  min_count       = each.value.min_size
+  node_count      = each.value.desired_size
+  os_disk_size_gb = each.value.disc_size
+  node_labels     = var.cluster_node_labels
+  node_taints = each.value.gpu_enabled == true ? ["group-type=gpu-enabled:NoSchedule"] : []
   orchestrator_version  = var.cluster_version
   tags                  = local.tags
   enable_node_public_ip = false

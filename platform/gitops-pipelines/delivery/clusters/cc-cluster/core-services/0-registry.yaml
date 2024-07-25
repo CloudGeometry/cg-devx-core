@@ -11,6 +11,7 @@ spec:
     repoURL: <GIT_REPOSITORY_GIT_URL>
     path: gitops-pipelines/delivery/clusters/cc-cluster/core-services
     targetRevision: HEAD
+    # <CD_SERVICE_EXCLUDE_SNIPPET>
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

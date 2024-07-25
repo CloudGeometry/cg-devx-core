@@ -17,7 +17,7 @@ spec:
         additionalLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
-          cg-devx.metadata.service: cluster-autoscaler
+          cg-devx.metadata.service: scaler.cluster-autoscaler
           cg-devx.metadata.chart-version: 9.34.1
           cg-devx.metadata.version: 1.28.2
         autoDiscovery:

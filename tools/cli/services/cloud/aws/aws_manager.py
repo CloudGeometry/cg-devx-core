@@ -188,3 +188,7 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_kubecost_annotation(self):
         return '''amazon-web-services: true'''
+
+    @trace()
+    def create_gpu_operator_parameters(self):
+        return ''

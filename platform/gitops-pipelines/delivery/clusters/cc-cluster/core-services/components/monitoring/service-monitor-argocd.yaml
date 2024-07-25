@@ -4,7 +4,6 @@ metadata:
   name: argocd-metrics
   labels:
     release: prometheus-operator
-  namespace: argocd
 spec:
   selector:
     matchLabels:
@@ -18,7 +17,6 @@ metadata:
   name: argocd-server-metrics
   labels:
     release: prometheus-operator
-  namespace: argocd
 spec:
   selector:
     matchLabels:
@@ -32,7 +30,6 @@ metadata:
   name: argocd-repo-server-metrics
   labels:
     release: prometheus-operator
-  namespace: argocd
 spec:
   selector:
     matchLabels:
@@ -46,7 +43,6 @@ metadata:
   name: argocd-applicationset-controller-metrics
   labels:
     release: prometheus-operator
-  namespace: argocd
 spec:
   selector:
     matchLabels:

@@ -1,0 +1,16 @@
+---
+apiVersion: builtin
+kind: LabelTransformer
+metadata:
+  name: argocd-common-labels
+labels:
+  cg-devx.cost-allocation.cost-center: "platform"
+  cg-devx.metadata.owner: "<GITOPS_REPOSITORY_NAME>-admin"
+  cg-devx.metadata.service: "scaler.vpa"
+  cg-devx.metadata.version: "1.1.2"
+fieldSpecs:
+- path: metadata/labels
+  create: true
+- path: spec/template/metadata/labels
+  create: true
+  kind: Deployment

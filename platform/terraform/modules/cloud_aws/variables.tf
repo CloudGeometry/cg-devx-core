@@ -38,7 +38,7 @@ variable "cluster_name" {
 
 variable "cluster_version" {
   type        = string
-  default     = "1.29"
+  default     = "1.30"
   description = "(Optional) Specifies the EKS Kubernetes version"
 }
 
@@ -59,6 +59,8 @@ variable "node_groups" {
     min_size       = optional(number, 3)
     max_size       = optional(number, 6)
     desired_size   = optional(number, 4)
+    disk_size      = optional(number, 50)
+    gpu_enabled    = optional(bool, false)
   }))
   default = [
     {
@@ -68,7 +70,7 @@ variable "node_groups" {
       min_size       = 3
       max_size       = 6
       desired_size   = 4
-    }
+    },
   ]
 }
 

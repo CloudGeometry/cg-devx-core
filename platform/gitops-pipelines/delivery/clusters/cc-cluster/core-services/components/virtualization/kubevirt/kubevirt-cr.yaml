@@ -1,0 +1,30 @@
+---
+apiVersion: kubevirt.io/v1
+kind: KubeVirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+spec:
+  certificateRotateStrategy: {}
+  configuration:
+    developerConfiguration:
+      useEmulation: true
+  customizeComponents:
+    patches:
+    - resourceType: Deployment
+      resourceName: virt-controller
+      patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.kubevirt","cg-devx.metadata.version":"1.2.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.kubevirt","cg-devx.metadata.version":"1.2.2"}}}}}'
+      type: strategic
+    - resourceType: Deployment
+      resourceName: virt-api
+      patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.kubevirt","cg-devx.metadata.version":"1.2.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.kubevirt","cg-devx.metadata.version":"1.2.2"}}}}}'
+      type: strategic
+    - resourceType: DaemonSet
+      resourceName: virt-handler
+      patch: '{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.kubevirt","cg-devx.metadata.version":"1.2.2"}},"spec":{"template":{"metadata":{"labels":{"cg-devx.cost-allocation.cost-center":"platform","cg-devx.metadata.owner":"<GITOPS_REPOSITORY_NAME>-admin","cg-devx.metadata.service":"virtualization.kubevirt","cg-devx.metadata.version":"1.2.2"}}}}}'
+      type: strategic
+  customizeComponents: {}
+  imagePullPolicy: IfNotPresent
+  workloadUpdateStrategy: {}

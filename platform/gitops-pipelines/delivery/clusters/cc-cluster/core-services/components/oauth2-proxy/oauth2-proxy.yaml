@@ -4,7 +4,6 @@ metadata:
   labels:
     k8s-app: oauth2-proxy
   name: oauth2-proxy
-  namespace: oauth2-proxy
 spec:
   replicas: 1
   selector:
@@ -53,7 +52,6 @@ metadata:
   labels:
     k8s-app: oauth2-proxy
   name: oauth2-proxy
-  namespace: oauth2-proxy
 spec:
   ports:
   - name: http

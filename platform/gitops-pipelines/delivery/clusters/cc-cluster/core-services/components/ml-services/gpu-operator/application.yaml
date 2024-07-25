@@ -1,0 +1,70 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nvidia-gpu-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '180'
+spec:
+  project: core
+  source:
+    repoURL: https://helm.ngc.nvidia.com/nvidia
+    chart: gpu-operator
+    targetRevision: v24.3.0
+    helm:
+      values: |-
+        daemonsets:
+          labels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: ml.gpu-operator
+            cg-devx.metadata.chart-version: 24.3.0
+            cg-devx.metadata.version: 24.3.0
+      parameters:
+        # set tolerations to work on gpu enabled node groups
+        # node-feature-discovery.worker
+        - name: "node-feature-discovery.worker.tolerations[0].key"
+          value: "group-type"
+        - name: "node-feature-discovery.worker.tolerations[0].value"
+          value: "gpu-enabled"
+        - name: "node-feature-discovery.worker.tolerations[0].operator"
+          value: "Equal"
+        - name: "node-feature-discovery.worker.tolerations[0].effect"
+          value: "NoSchedule"
+        # deamonset
+        - name: "daemonsets.tolerations[0].key"
+          value: "group-type"
+        - name: "daemonsets.tolerations[0].value"
+          value: "gpu-enabled"
+        - name: "daemonsets.tolerations[0].operator"
+          value: "Equal"
+        - name: "daemonsets.tolerations[0].effect"
+          value: "NoSchedule"
+        # operator
+        - name: "operator.tolerations[0].key"
+          value: "group-type"
+        - name: "operator.tolerations[0].value"
+          value: "gpu-enabled"
+        - name: "operator.tolerations[0].operator"
+          value: "Equal"
+        - name: "operator.tolerations[0].effect"
+          value: "NoSchedule"
+        # <GPU_OPERATOR_ADDITIONAL_PARAMETERS>
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: gpu-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    managedNamespaceMetadata:
+      labels:
+        "pod-security.kubernetes.io/enforce": "privileged"
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        maxDuration: 5m0s
+        factor: 2
