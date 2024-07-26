@@ -77,3 +77,11 @@ class GitProviderManager(ABC):
         :return: Pull request URL
         """
         pass
+
+    @abstractmethod
+    def create_iac_pr_automation_config_snippet(self):
+        """
+        Creates Git Provider specific configuration section for Atlantis
+        :return: Atlantis configuration section
+        """
+        pass

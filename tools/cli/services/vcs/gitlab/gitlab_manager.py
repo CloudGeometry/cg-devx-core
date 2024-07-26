@@ -209,3 +209,16 @@ class GitLabProviderManager(GitProviderManager):
     @trace()
     def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
         pass
+
+    def create_iac_pr_automation_config_snippet(self):
+        """
+        Creates GitHub specific configuration section for Atlantis
+        :return: Atlantis configuration section
+        """
+        return textwrap.dedent("""# gitlab specific section
+      ATLANTIS_GITLAB_HOSTNAME             = "gitlab.com",
+      ATLANTIS_GITLAB_TOKEN                = var.vcs_token,
+      ATLANTIS_GITLAB_USER                 = "<GIT_USER_LOGIN>",
+      ATLANTIS_GITLAB_WEBHOOK_SECRET       = var.atlantis_repo_webhook_secret,
+      GITLAB_TOKEN                         = var.vcs_token,
+      # ----""")

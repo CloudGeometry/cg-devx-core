@@ -52,21 +52,14 @@ resource "vault_generic_secret" "atlantis_secrets" {
   data_json = jsonencode(
     {
       ARGO_SERVER_URL                      = "argo.argo.svc.cluster.local:2746",
-      # github specific section
-      ATLANTIS_GH_HOSTNAME                 = "github.com",
-      ATLANTIS_GH_TOKEN                    = var.vcs_token,
-      ATLANTIS_GH_USER                     = "<GIT_USER_LOGIN>",
-      ATLANTIS_GH_WEBHOOK_SECRET           = var.atlantis_repo_webhook_secret,
-      GITHUB_OWNER                         = "<GIT_ORGANIZATION_NAME>",
-      GITHUB_TOKEN                         = var.vcs_token,
-      # ----
+      # <VCS_IAC_PR_AUTOMATION_CONFIG>
       TF_VAR_atlantis_repo_webhook_secret  = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url     = var.atlantis_repo_webhook_url,
       TF_VAR_vcs_token                     = var.vcs_token,
       TF_VAR_cluster_endpoint              = var.cluster_endpoint,
       TF_VAR_tf_backend_storage_access_key = var.tf_backend_storage_access_key,
       TF_VAR_cluster_ssh_public_key        = var.cluster_ssh_public_key,
-      # <IAC_PR_AUTOMATION_CONFIG>
+      # <CLOUD_PROVIDER_IAC_PR_AUTOMATION_CONFIG>
       TF_VAR_hosted_zone_name              = "<DOMAIN_NAME>",
       TF_VAR_vcs_bot_ssh_public_key        = var.vcs_bot_ssh_public_key,
       TF_VAR_vcs_bot_ssh_private_key       = var.vcs_bot_ssh_private_key,

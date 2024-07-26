@@ -255,7 +255,8 @@ def setup(
 
         p.fragments["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
-        p.fragments["# <IAC_PR_AUTOMATION_CONFIG>"] = cloud_man.create_iac_pr_automation_config_snippet()
+        p.fragments["# <CLOUD_PROVIDER_IAC_PR_AUTOMATION_CONFIG>"] = cloud_man.create_iac_pr_automation_config_snippet()
+        p.fragments["# <VCS_IAC_PR_AUTOMATION_CONFIG>"] = git_man.create_iac_pr_automation_config_snippet()
 
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
