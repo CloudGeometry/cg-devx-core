@@ -98,7 +98,23 @@ module "oauth2_backstage" {
   identity_group_ids     = local.oidc_groups_ids
   oidc_provider_key_name = vault_identity_oidc_key.key.name
   redirect_uris = [
-    "https://<PORTAL_INGRESS_URL>/oauth2/callback",
+    "https://<PORTAL_OAUTH_CALLBACK_URL>",
+  ]
+  secret_mount_path = "secret"
+}
+
+module "kubeflow" {
+  source = "./oidc-client"
+
+  depends_on = [
+    vault_identity_oidc_provider.cgdevx
+  ]
+
+  app_name               = "oauth2_kubeflow"
+  identity_group_ids     = local.oidc_groups_ids
+  oidc_provider_key_name = vault_identity_oidc_key.key.name
+  redirect_uris = [
+    "https://<ML_PLATFORM_OAUTH_CALLBACK_URL>",
   ]
   secret_mount_path = "secret"
 }

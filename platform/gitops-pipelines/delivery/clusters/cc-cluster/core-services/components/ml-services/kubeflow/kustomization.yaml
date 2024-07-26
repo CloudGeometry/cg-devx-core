@@ -32,6 +32,8 @@ sortOptions:
       - ValidatingWebhookConfiguration
       -
 resources:
+# external secret ref to override oidc config
+- oauth2-proxy-external-secret.yaml
 # Cert-Manager
 - github.com/kubeflow/manifests/common/cert-manager/kubeflow-issuer/base?ref=v1.8.1
 # Istio
@@ -39,7 +41,7 @@ resources:
 - github.com/kubeflow/manifests/common/istio-1-17/istio-namespace/base?ref=v1.8.1
 - github.com/kubeflow/manifests/common/istio-1-17/istio-install/base?ref=v1.8.1
 # OIDC Authservice
-- github.com/kubeflow/manifests/common/oidc-client/oidc-authservice/base?ref=v1.8.1
+- github.com/kubeflow/manifests/common/oidc-client/oauth2-proxy/base?ref=v1.8.1
 # Dex
 - github.com/kubeflow/manifests/common/dex/overlays/istio?ref=v1.8.1
 # KNative
@@ -52,7 +54,6 @@ resources:
 - github.com/kubeflow/manifests/common/kubeflow-roles/base?ref=v1.8.1
 # Kubeflow Istio Resources
 - github.com/kubeflow/manifests/common/istio-1-17/kubeflow-istio-resources/base?ref=v1.8.1
-
 
 # Kubeflow Pipelines
 - github.com/kubeflow/manifests/apps/pipeline/upstream/env/cert-manager/platform-agnostic-multi-user?ref=v1.8.1
@@ -90,3 +91,48 @@ resources:
 
 transformers:
   - label-transformer.yaml
+
+configMapGenerator:
+  - name: centraldashboard-parameters
+    namespace: kubeflow
+    behavior: merge
+    literals:
+      - CD_REGISTRATION_FLOW=true
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+patches:
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: centraldashboard
+      name: centraldashboard
+    spec:
+      template:
+        spec:
+          containers:
+          - name: centraldashboard
+            env:
+              - name: REGISTRATION_FLOW
+                value: "true"
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      labels:
+        app: authservice
+      name: oauth2-proxy-authservice
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: oauth2-proxy
+              secret:
+                secretName: oauth2-proxy-oidc
+- path: oauth2-proxy-config-patch.yaml
+  target:
+    kind: ConfigMap
+    name: oauth2-proxy-alpha

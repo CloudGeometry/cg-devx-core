@@ -27,17 +27,23 @@ output "registry_main_robot_user_password" {
 # code quality secrets
 output "code_quality_oidc_client_id" {
   value       = module.secrets.code_quality_oidc_client_id
-  description = "Registry OIDC client ID"
+  description = "Code Quality (SonarQube) OIDC client ID"
 }
 
 output "code_quality_oidc_client_secret" {
   value       = module.secrets.code_quality_oidc_client_secret
-  description = "Registry OIDC client secret"
+  description = "Code Quality (SonarQube) OIDC client secret"
   sensitive   = true
 }
 
 output "code_quality_admin_user_password" {
   value       = module.secrets.code_quality_admin_password
-  description = "admin password"
+  description = "Code Quality (SonarQube) admin password"
   sensitive   = true
+}
+
+# ml platform (kubeflow) secrets
+output "ml_platform_oidc_client_id" {
+  value       = module.secrets.ml_platform_oidc_client_id
+  description = "ML platform OIDC client ID"
 }

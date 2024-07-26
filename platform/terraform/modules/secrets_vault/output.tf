@@ -41,3 +41,9 @@ output "code_quality_admin_password" {
   description = "code quality password"
   sensitive   = true
 }
+
+# ml platform (kubeflow) secrets
+output "ml_platform_oidc_client_id" {
+  value       = module.kubeflow.vault_oidc_client_id
+  description = "ML platform OIDC client ID"
+}

@@ -745,6 +745,7 @@ def setup(
         p.internals["CODE_QUALITY_OIDC_CLIENT_ID"] = sec_man_out["code_quality_oidc_client_id"]
         p.internals["CODE_QUALITY_OIDC_CLIENT_SECRET"] = sec_man_out["code_quality_oidc_client_secret"]
         p.internals["CODE_QUALITY_PASSWORD"] = sec_man_out["code_quality_admin_user_password"]
+        p.parameters["<ML_PLATFORM_OIDC_CLIENT_ID>"] = sec_man_out["ml_platform_oidc_client_id"]
 
         # prepare registry machine user
         robo_user_name = "robot@main-robot"
@@ -985,6 +986,7 @@ def prepare_parameters(p):
     p.parameters["<GRAFANA_INGRESS_URL>"] = f'grafana.{cluster_fqdn}'
     p.parameters["<CODE_QUALITY_INGRESS_URL>"] = f'sonarqube.{cluster_fqdn}'
     p.parameters["<PORTAL_INGRESS_URL>"] = f'backstage.{cluster_fqdn}'
+    p.parameters["<ML_PLATFORM_INGRESS_URL>"] = f'kubeflow.{cluster_fqdn}'
 
     # OIDC config
     sec_man_ing = f'{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}'
@@ -995,6 +997,8 @@ def prepare_parameters(p):
     p.parameters["<CD_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CD_INGRESS_URL>"]}/auth/callback'
     p.parameters["<CI_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<CI_INGRESS_URL>"]}/oauth2/callback'
     p.parameters["<PORTAL_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<PORTAL_INGRESS_URL>"]}/oauth2/callback'
+    p.parameters["<ML_PLATFORM_OAUTH_CALLBACK_URL>"] = f'{p.parameters["<ML_PLATFORM_INGRESS_URL>"]}/oauth2/callback'
+
     p.parameters["<REGISTRY_REGISTRY_URL>"] = f'{p.parameters["<REGISTRY_INGRESS_URL>"]}'
     p.parameters[
         "<IAC_PR_AUTOMATION_WEBHOOK_URL>"] = f'https://{p.parameters["<IAC_PR_AUTOMATION_INGRESS_URL>"]}/events'

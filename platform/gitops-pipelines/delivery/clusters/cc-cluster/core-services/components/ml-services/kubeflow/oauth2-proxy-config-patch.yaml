@@ -1,0 +1,39 @@
+- op: replace
+  path: /data/oauth2_proxy.yml
+  value: >
+    injectResponseHeaders:
+      - name: kubeflow-groups
+        values:
+        - claim: groups
+      - name: kubeflow-userid
+        values:
+        - claim: email
+    metricsServer:
+      BindAddress: 0.0.0.0:44180
+      SecureBindAddress: ""
+      TLS: null
+    providers:
+      - clientID: <ML_PLATFORM_OIDC_CLIENT_ID>
+        clientSecretFile: /etc/oauth2_proxy/CLIENT_SECRET
+        id: oidc=<ML_PLATFORM_OIDC_CLIENT_ID>
+        oidcConfig:
+          audienceClaims:
+            - aud
+          emailClaim: email
+          userIDClaim: email
+          groupsClaim: groups
+          issuerURL: https://vault.delta.cgdevx.io/v1/identity/oidc/provider/cgdevx
+          jwksURL: https://vault.delta.cgdevx.io/v1/identity/oidc/provider/cgdevx/.well-known/keys
+        scope: openid user profile email groups
+        provider: oidc
+        redeemURL: https://vault.delta.cgdevx.io/v1/identity/oidc/provider/cgdevx/token
+    server:
+      BindAddress: 0.0.0.0:8080
+      SecureBindAddress: ""
+      TLS: null
+    upstreamConfig:
+      upstreams:
+      - id: static://200
+        path: /
+        static: true
+        staticCode: 200
