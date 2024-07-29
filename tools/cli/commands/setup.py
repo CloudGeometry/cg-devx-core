@@ -942,12 +942,25 @@ def show_credentials(p):
     return
 
 
+def get_git_provider_specific_optional_services(git_provider: GitProviders) -> list:
+    # TODO: unify and restructure services switching logic after GitLab integration
+
+    if git_provider == GitProviders.GitHub:
+        return [OptionalServices.GitHub]
+    elif git_provider == GitProviders.GitLab:
+        return [OptionalServices.GitLab]
+    return []
+
+
 @trace()
 def prepare_parameters(p):
     # TODO: move to appropriate place
 
-    exclude_string = build_argo_exclude_string(p.get_input_param(OPTIONAL_SERVICES))
+    optional_services = p.get_input_param(OPTIONAL_SERVICES) or []
+    optional_services.extend(get_git_provider_specific_optional_services(p.git_provider))
+    exclude_string = build_argo_exclude_string(optional_services)
     p.parameters["<CD_SERVICE_EXCLUDE_LIST>"] = exclude_string
+
     if exclude_string:
         p.fragments["# <CD_SERVICE_EXCLUDE_SNIPPET>"] = """directory:
           exclude: '{<CD_SERVICE_EXCLUDE_LIST>}'"""

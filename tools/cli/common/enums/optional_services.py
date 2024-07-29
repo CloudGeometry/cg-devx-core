@@ -7,6 +7,8 @@ from common.const.const import DEFAULT_ENUM_VALUE
 class OptionalServices(str, enum.Enum):
     """List of all CG DevX platform optional services."""
 
+    GitHub = "github"
+    GitLab = "gitlab"
     NvidiaGpuOperator = "nvidia-gpu-operator"
     VPA = "vpa"
     KEDA = "keda"
