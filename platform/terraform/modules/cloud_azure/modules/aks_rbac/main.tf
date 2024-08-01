@@ -24,12 +24,16 @@ resource "azurerm_federated_identity_credential" "workload_identity_credentials"
   depends_on = [azurerm_user_assigned_identity.aks_workload_identity]
 }
 
-data "azurerm_client_config" "current_subscription" {}
+data "azurerm_subscription" "current" {}
+
+locals {
+  subscription_id = data.azurerm_subscription.current.subscription_id
+}
 
 resource "azurerm_role_assignment" "aks_rbac" {
   count = length(var.role_definitions)
 
-  scope                = "/subscriptions/${data.azurerm_client_config.current_subscription.subscription_id}${var.role_definitions[count.index].scope}"
+  scope                = "/subscriptions/${local.subscription_id}${var.role_definitions[count.index].scope}"
   role_definition_name = var.role_definitions[count.index].name
   principal_id         = azurerm_user_assigned_identity.aks_workload_identity.principal_id
 }
