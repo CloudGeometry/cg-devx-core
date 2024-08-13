@@ -1,10 +1,10 @@
 module "vpc" {
-  source  = "terraform-google-modules/network/google"
-  version = "~> 9.0.0"
+  source       = "terraform-google-modules/network/google"
+  version      = "~> 9.0.0"
   project_id   = local.project_id
   network_name = "${local.name}-vpc"
   routing_mode = "GLOBAL"
-  subnets = [
+  subnets      = [
     {
       subnet_name           = "${local.name}-public"
       subnet_ip             = cidrsubnet(local.vpc_cidr, 8, 100)
@@ -55,10 +55,10 @@ module "vpc" {
   }
   routes = [
     {
-      name              = "egress-internet-${local.name}"
-      description       = "route through IGW to access internet"
+      name              = "cgdevx-egress-internet-${local.name}"
+      description       = "Route traffic through Cloud NAT to access internet"
       destination_range = "0.0.0.0/0"
-      tags              = "egress-inet"
+      # tags              = "egress-inet"
       next_hop_internet = "true"
     }
   ]
@@ -70,4 +70,20 @@ module "vpc" {
     google_project_service.iam_credentials_service,
     google_project_service.kubernetes_engine_service
   ]
+}
+resource "google_compute_router" "router" {
+  name    = "cgdevx-gke-router-${var.cluster_name}"
+  project = local.project_id
+  network = module.vpc.network_id
+  region  = local.region
+}
+
+module "cloud-nat" {
+  name                               = "cgdevx-gke-nat-config-${var.cluster_name}"
+  source                             = "terraform-google-modules/cloud-nat/google"
+  version                            = "~> 5.0"
+  project_id                         = local.project_id
+  region                             = local.region
+  router                             = google_compute_router.router.name
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }

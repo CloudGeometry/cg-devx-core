@@ -11,6 +11,7 @@ from services.cloud.gcp.iam_permissions import gke_permissions, vpc_permissions,
     own_iam_permissions, gcs_project_permissions, gcs_bucket_permissions
 
 CLI = 'gcloud'
+K8s = 'kubelogin'
 
 
 class GcpManager(CloudProviderManager):
@@ -23,6 +24,11 @@ class GcpManager(CloudProviderManager):
     @property
     def region(self):
         return self._gcp_sdk.location
+
+    @property
+    def account(self) -> str:
+        """AWS account id"""
+        return self._gcp_sdk.project_id
 
     @trace()
     def protect_iac_state_storage(self, name: str, identity: str):
@@ -41,67 +47,61 @@ class GcpManager(CloudProviderManager):
         """Generates the Terraform backend configuration for GCP."""
         bucket_name = location or self.bucket_name
         return textwrap.dedent(f'''
-            terraform {{
               backend "gcs" {{
                 bucket  = "{bucket_name}"
                 prefix  = "terraform/state/{service}"
-              }}
-            }}
-        ''')
+            }}''')
 
     @trace()
     def create_hosting_provider_snippet(self):
         """Creates the provider snippet for Terraform configurations."""
-        return textwrap.dedent('''
+        return textwrap.dedent(f'''
             provider "google" {{
-              project = "{project_id}"
-              region  = "{region}"
-            }}
-        '''.format(project_id=self._gcp_sdk.project_id, region=self.region))
+              project = "{self._gcp_sdk.project_id}"
+              region  = "{self.region}"
+            }}''')
 
     @trace()
     def create_seal_snippet(self, key_id: str, **kwargs) -> str:
         """
         Generates a snippet for configuring Vault's seal with GCP KMS.
         """
-        return textwrap.dedent(f'''
-            seal "gcpckms" {{
-              project     = "{self._gcp_sdk.project_id}"
-              region      = "{self.region}"
-              key_ring    = "{kwargs.get('key_ring')}"
-              crypto_key  = "{key_id}"
-            }}
-        ''')
+        return textwrap.dedent(
+            f'''seal "gcpckms" {{
+                    project     = "{self._gcp_sdk.project_id}"
+                    region      = "global"
+                    key_ring    = "{kwargs['key_ring']}"
+                    crypto_key  = "{key_id}"
+                }}'''
+        )
 
     @trace()
     def create_k8s_cluster_role_mapping_snippet(self) -> str:
         """
         Returns a snippet for Kubernetes cluster role mapping in GCP.
         """
-        # This is a placeholder. Actual implementation may vary based on the role mapping requirements.
-        return "roles/container.clusterAdmin"
+        return "iam.gke.io/gcp-service-account"
 
     @trace()
     def get_k8s_auth_command(self) -> tuple[str, [str]]:
         """
         Provides the command to authenticate with a GKE cluster.
         """
-        args = ['container', 'clusters', 'get-credentials', '<cluster-name>']
-        return 'gcloud', args
+        args = []
+        return 'gke-gcloud-auth-plugin', args
 
     @trace()
     def get_k8s_token(self, cluster_name: str) -> str:
         """
         Retrieves the access token for the GKE cluster.
         """
-        # Placeholder implementation
-        return "<access-token>"
+        return self._gcp_sdk.access_token
 
-    @trace()
     @staticmethod
+    @trace()
     def detect_cli_presence() -> bool:
         """Checks if the gcloud CLI is installed."""
-        return detect_command_presence(CLI)
+        return detect_command_presence(CLI) and detect_command_presence(K8s)
 
     @trace()
     def create_iac_state_storage(self, name: str, **kwargs: dict) -> Tuple[str, str]:
@@ -137,7 +137,11 @@ class GcpManager(CloudProviderManager):
         """
         Creates annotations for ingress in GKE.
         """
-        return ""
+        return textwrap.dedent(
+            '''nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+              cloud.google.com/load-balancer-type: "External"'''
+        )
 
     @trace()
     def create_additional_labels(self) -> str:
@@ -158,20 +162,7 @@ class GcpManager(CloudProviderManager):
         """
         Creates configuration for external secrets in GCP.
         """
-        # Example configuration for external secrets using GCP Secrets Manager
-        return textwrap.dedent('''
-            apiVersion: 'kubernetes-client.io/v1'
-            kind: ExternalSecret
-            metadata:
-              name: '<secret-name>'
-            spec:
-              backendType: gcpSecretsManager
-              projectId: '{self._gcp_sdk.project_id}'
-              data:
-                - key: '<secret-key>'
-                  name: '<secret-name>'
-                  version: latest  # or a specific version
-        ''')
+        return "provider: google"
 
     @trace()
     def create_autoscaler_snippet(self, cluster_name: str, node_groups=[]):
@@ -182,7 +173,19 @@ class GcpManager(CloudProviderManager):
 
     @trace()
     def create_iac_pr_automation_config_snippet(self):
-        """
-        GCP-specific implementation will go here.
-        """
+        """Generates the Terraform configuration snippet for GCP."""
         return ""
+
+    @trace()
+    def create_kubecost_annotation(self):
+        """
+        Creates Cloud Provider specific configuration section for KubeCost
+        :return: KubeCost configuration section
+        """
+        return textwrap.dedent('''
+            google-cloud-platform: true
+        ''')
+
+    @trace()
+    def create_gpu_operator_parameters(self):
+        return ''

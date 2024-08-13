@@ -111,8 +111,8 @@ class CloudProviderManager(ABC):
     @abstractmethod
     def get_k8s_auth_command(self):
         """
-        Returns kubeconfig cluster aut command
-        :return: command
+        Returns kubeconfig cluster auth command
+        :return: list with command
         """
         pass
 

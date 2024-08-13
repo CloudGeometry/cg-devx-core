@@ -52,10 +52,10 @@ def find_pod_by_name_fragment(
         raise
 
 
-@exponential_backoff(base_delay=5)
-def get_kr8s_pod_instance_by_name(pod_name: str, kubeconfig: str, namespace: str = "DEFAULT") -> kr8s.objects.Pod:
+@exponential_backoff(base_delay=5)  # Ensure this decorator is adapted for async
+async def get_kr8s_pod_instance_by_name(pod_name: str, kubeconfig: str, namespace: str = "DEFAULT") -> kr8s.objects.Pod:
     """
-    Retrieves a Kubernetes Pod by its full name from a specified namespace. Raises an error if the Pod cannot be found.
+    Asynchronously retrieves a Kubernetes Pod by its full name from a specified namespace. Raises an error if the Pod cannot be found.
 
     Args:
         pod_name (str): The full name of the Pod to retrieve.
@@ -70,8 +70,8 @@ def get_kr8s_pod_instance_by_name(pod_name: str, kubeconfig: str, namespace: str
     """
     logger.info(f"Attempting to retrieve pod '{pod_name}' from namespace '{namespace}'")
     try:
-        _ = kr8s.api(kubeconfig=kubeconfig)
-        pod = kr8s.objects.Pod.get(pod_name, namespace=namespace)
+        _ = await kr8s.asyncio.api(kubeconfig=kubeconfig)
+        pod = await kr8s.asyncio.objects.Pod.get(pod_name, namespace=namespace)
         if not pod:
             logger.error(f"No Pod found with name {pod_name} in namespace {namespace}.")
             raise NotFoundError(f"No Pod found with name {pod_name} in namespace {namespace}.")

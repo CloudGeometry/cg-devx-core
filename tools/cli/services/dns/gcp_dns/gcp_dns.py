@@ -21,10 +21,9 @@ class GcpDnsManager(DNSManager):
         """
         name_servers, zone_name, _ = self.__gcp_sdk.get_name_servers(domain_name)
         if name_servers and set(get_domain_ns_records(domain_name)).issubset(set(name_servers)):
-            return self.__gcp_sdk.set_hosted_zone_liveness(zone_name=zone_name)
+            return self.__gcp_sdk.set_hosted_zone_liveness(zone_name=zone_name, domain_name=domain_name)
         else:
             return False
-
 
     @trace()
     def get_domain_zone(self, domain_name: str) -> tuple[str, bool]:

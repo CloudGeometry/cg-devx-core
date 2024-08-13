@@ -1,13 +1,11 @@
 import time
 from typing import List, Optional, Literal, Tuple
 
-from dns.zone import Zone
-from gcloud.exceptions import NotFound
-from google.auth import default
+from google.auth import default, transport
 from google.cloud import dns
 from google.cloud import exceptions as gcloud_exceptions
 from google.cloud import storage
-from google.cloud.exceptions import GoogleCloudError
+from google.cloud.container_v1 import ClusterManagerClient
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
 
@@ -25,9 +23,15 @@ class GcpSdk:
     def __init__(self, project_id, location=None):
         self.project_id = project_id
         self.location = location
-        self.credentials, _ = default()
-        self.storage_client = storage.Client(project=project_id, credentials=self.credentials)
-        self.dns_client = dns.Client(project=project_id, credentials=self.credentials)
+        self.__credentials, _ = default()
+        self.storage_client = storage.Client(project=project_id, credentials=self.__credentials)
+        self.dns_client = dns.Client(project=project_id, credentials=self.__credentials)
+        self.cluster_manager = ClusterManagerClient(credentials=self.__credentials)
+
+    @property
+    def access_token(self):
+        self.__credentials.refresh(transport.requests.Request())
+        return self.__credentials.token
 
     def create_bucket(self, bucket_name, location=None):
         """Create a new bucket in a specific project and location"""
@@ -116,7 +120,7 @@ class GcpSdk:
         # Return the list of name servers, the DNS name, and the privacy status of the zone
         return zone.name_servers, zone.name, is_private
 
-    def set_hosted_zone_liveness(self, zone_name: str) -> bool:
+    def set_hosted_zone_liveness(self, zone_name: str, domain_name: str) -> bool:
         """
         Sets a TXT record for liveness check and verifies its propagation in a Google Cloud DNS zone.
 
@@ -127,16 +131,20 @@ class GcpSdk:
             bool: True if the liveness check passes, else False.
         """
         record_name = f'cgdevx-liveness'
-        self._set_txt_record(zone_name, record_name, self.DOMAIN_PROPAGATION_RECORD_VALUE)
+        try:
+            self._set_txt_record(zone_name, record_name, self.DOMAIN_PROPAGATION_RECORD_VALUE, domain_name)
+        except gcloud_exceptions:
+            return False
 
-        is_propagated = self._wait_for_record_propagation(zone_name, record_name, self.DOMAIN_PROPAGATION_RECORD_VALUE)
+        is_propagated = self._wait_for_record_propagation(domain_name, record_name,
+                                                          self.DOMAIN_PROPAGATION_RECORD_VALUE)
         if is_propagated:
             logger.info(f"TXT record for {record_name} propagated successfully.")
         else:
             logger.warning(f"TXT record for {record_name} did not propagate within the expected time.")
         return is_propagated
 
-    def _set_txt_record(self, zone_name: str, record_name: str, value: str) -> None:
+    def _set_txt_record(self, zone_name: str, record_name: str, value: str, domain_name: str) -> None:
         """
         Ensure a TXT record with the specified value is set in the DNS zone.
 
@@ -148,13 +156,15 @@ class GcpSdk:
         try:
             zone = self.dns_client.zone(zone_name)
             # Step 1: Get the record set
-            record_set = zone.resource_record_set(record_name, 'TXT', self.DEFAULT_RECORD_TTL, [f'"{value}"'])
+            record_set = zone.resource_record_set(
+                name=f"{record_name}.{domain_name}.",
+                record_type='TXT',
+                ttl=self.DEFAULT_RECORD_TTL,
+                rrdatas=[f'"{value}"']
+            )
         except gcloud_exceptions.NotFound as not_found_exc:
             logger.error(f"Zone {zone_name} or record set not found: {not_found_exc}")
-            return
-        except Exception as general_exc:
-            logger.error(f"An unexpected error occurred while creating the record set: {general_exc}")
-            return
+            raise
 
         try:
             # Step 2: Apply changes to the DNS zone
@@ -163,11 +173,16 @@ class GcpSdk:
             changes.create()
             logger.info(f"TXT record {record_name} with value {value} has been created in {zone_name}.")
         except gcloud_exceptions.GoogleCloudError as gcloud_err:
+            if gcloud_err.code == 409:  # Check if the error code is 409 indicating a conflict
+                logger.info(f"TXT record {record_name} already exists in {zone_name}. Skipping creation")
+                return
             logger.error(f"An error occurred while applying changes to the DNS zone: {gcloud_err}")
+            raise
         except Exception as general_exc:
             logger.error(f"An unexpected error occurred while applying changes to the DNS zone: {general_exc}")
+            raise
 
-    def _wait_for_record_propagation(self, hosted_zone_name: str, record_name: str, expected_value: str) -> bool:
+    def _wait_for_record_propagation(self, domain_name: str, record_name: str, expected_value: str) -> bool:
         """
         Periodically checks if the TXT record has propagated and its value matches the expected one.
 
@@ -182,7 +197,7 @@ class GcpSdk:
         for _ in range(self.RETRY_COUNT):
             time.sleep(self.RETRY_SLEEP)
 
-            existing_txt_records = get_domain_txt_records_dot(f'{record_name}.{hosted_zone_name}')
+            existing_txt_records = get_domain_txt_records_dot(f'{record_name}.{domain_name}')
 
             if any(expected_value in txt_record for txt_record in existing_txt_records):
                 return True
@@ -209,7 +224,7 @@ class GcpSdk:
         service = discovery.build(
             serviceName='cloudresourcemanager',
             version='v1',
-            credentials=self.credentials
+            credentials=self.__credentials
         )
         request_body = {'permissions': permissions}
         try:

@@ -1,46 +1,157 @@
 import json
+from typing import Optional
 
-import requests
+import httpx
 from kubernetes import client
-from requests import HTTPError
+from kubernetes import client as k8s_client
 
 from common.const.const import ARGOCD_REGISTRY_APP_PATH, GITOPS_REPOSITORY_URL
 from common.const.namespaces import ARGOCD_NAMESPACE
 from common.retry_decorator import exponential_backoff
+from common.utils.k8s_utils import get_kr8s_pod_instance_by_name
 from services.k8s.k8s import KubeClient
 
 
 @exponential_backoff(base_delay=5)
-def get_argocd_token(user, password, endpoint="localhost:8080"):
-    try:
-        response = requests.post(f"https://{endpoint}/api/v1/session",
-                                 verify=False,
-                                 headers={"Content-Type": "application/json"},
-                                 data=json.dumps({"username": user, "password": password})
-                                 )
-        if response.status_code == requests.codes["not_found"]:
-            return None
-        elif response.ok:
-            res = json.loads(response.text)
-            return res["token"]
-    except HTTPError as e:
-        raise e
+async def get_argocd_token_via_k8s_portforward(
+        user: str,
+        password: str,
+        k8s_pod: k8s_client.V1Pod,
+        kube_config_path: str,
+        remote_port: int = 8080,
+        local_port: int = 8080
+) -> Optional[str]:
+    """
+    Asynchronously retrieves an ArgoCD authentication token by port forwarding a Kubernetes pod's port to a local port.
+
+    Args:
+        user (str): The username for authentication.
+        password (str): The password for authentication.
+        k8s_pod (k8s_client.V1Pod): The Kubernetes pod object that supports port forwarding.
+            This pod typically hosts the ArgoCD service.
+        kube_config_path (str): Path to the kubeconfig file that contains configuration
+            information about the Kubernetes cluster. This file is used to authenticate and
+            interact with the cluster.
+        remote_port (int): The port on the Kubernetes pod to forward.
+        local_port (int): The local port to which the pod's port will be forwarded.
+
+    Returns:
+        Optional[str]: The authentication token if successful, or None if the token is not found.
+    """
+    kr8s_pod = await get_kr8s_pod_instance_by_name(
+        pod_name=k8s_pod.metadata.name,
+        namespace=ARGOCD_NAMESPACE,
+        kubeconfig=kube_config_path
+    )
+    async with kr8s_pod.portforward(remote_port=remote_port, local_port=local_port):
+        return await get_argocd_token(user, password, f'localhost:{local_port}')
 
 
 @exponential_backoff(base_delay=5)
-def delete_application(app_name, token, endpoint="localhost:8080"):
-    try:
-        response = requests.delete(f"https://{endpoint}/api/v1/applications/{app_name}?cascade=true",
-                                   verify=False,
-                                   headers={
-                                       "Content-Type": "application/json",
-                                       "Authorization": f"Bearer {token}"
-                                   }
-                                   )
-        if response.ok:
-            return
-    except HTTPError as e:
-        raise e
+async def get_argocd_token(user: str, password: str, endpoint: str = "localhost:8080") -> Optional[str]:
+    """
+    Asynchronously retrieves an ArgoCD authentication token from the specified endpoint using HTTP POST request.
+
+    Args:
+        user (str): The username for ArgoCD authentication.
+        password (str): The password for ArgoCD authentication.
+        endpoint (str): The endpoint URL where the ArgoCD API is available.
+
+    Returns:
+        Optional[str]: The ArgoCD authentication token if the request is successful and the user is authenticated;
+         otherwise, None.
+    """
+    async with httpx.AsyncClient(verify=False) as httpx_client:
+        try:
+            response = await httpx_client.post(
+                f"https://{endpoint}/api/v1/session",
+                headers={"Content-Type": "application/json"},
+                content=json.dumps({"username": user, "password": password})
+            )
+            if response.status_code == 404:
+                return None
+            elif response.is_success:
+                return response.json()["token"]
+        except httpx.HTTPStatusError as e:
+            raise e
+
+
+async def delete_application_via_k8s_portforward(
+        app_name: str,
+        user: str,
+        password: str,
+        k8s_pod: k8s_client.V1Pod,
+        kube_config_path: str,
+        remote_port: int = 8080,
+        local_port: int = 8080
+) -> Optional[bool]:
+    """
+    Asynchronously retrieves an ArgoCD token and deletes an application from the ArgoCD server by
+    port forwarding a Kubernetes pod's port to a local port. This method first obtains an authentication
+    token by forwarding the ArgoCD API service's port to a local port and then uses this token to
+    send a deletion request to the ArgoCD API.
+
+    Args:
+        app_name (str): The name of the application to delete.
+        user (str): The username used to retrieve the ArgoCD token.
+        password (str): The password used to retrieve the ArgoCD token.
+        k8s_pod (k8s_client.V1Pod): The Kubernetes pod object that supports port forwarding.
+            This pod typically hosts the ArgoCD service.
+        kube_config_path (str): Path to the kubeconfig file which is used to authenticate and
+                                manage interactions with the Kubernetes cluster.
+        remote_port (int): The port on the Kubernetes pod to forward, typically the port where the ArgoCD API is served.
+        local_port (int): The local port to which the pod's port will be forwarded, making the ArgoCD API accessible
+         locally.
+
+    Returns:
+        Optional[bool]: True if the application was successfully deleted, None if the token retrieval or application deletion failed.
+
+    Raises:
+        FileNotFoundError: If the kubeconfig file is not found at the specified path.
+        ApiException: If there is an error during interaction with the Kubernetes API.
+        asyncio.TimeoutError: If the request times out during port forwarding, token retrieval, or application deletion.
+    """
+    kr8s_pod = await get_kr8s_pod_instance_by_name(
+        pod_name=k8s_pod.metadata.name,
+        namespace=ARGOCD_NAMESPACE,
+        kubeconfig=kube_config_path
+    )
+
+    async with kr8s_pod.portforward(remote_port=remote_port, local_port=local_port):
+        # Retrieve the ArgoCD token
+        token = await get_argocd_token(user, password, f'localhost:{local_port}')
+        if not token:
+            return None
+
+        # Use the token to request the deletion of the application
+        return await delete_application(app_name, token, f'localhost:{local_port}')
+
+
+@exponential_backoff(base_delay=5)
+async def delete_application(app_name: str, token: str, endpoint: str = "localhost:8080") -> Optional[bool]:
+    """
+    Asynchronously deletes an application from the ArgoCD server via the specified endpoint.
+
+    Args:
+        app_name (str): The name of the application to delete.
+        token (str): The authentication token for ArgoCD.
+        endpoint (str): The endpoint URL where the ArgoCD API is available.
+
+    Returns:
+        Optional[bool]: True if the application was successfully deleted, None otherwise.
+    """
+    async with httpx.AsyncClient(verify=False) as httpx_client:
+        try:
+            response = await httpx_client.delete(
+                f"https://{endpoint}/api/v1/applications/{app_name}?cascade=true",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {token}"
+                }
+            )
+            return response.is_success
+        except httpx.HTTPStatusError as e:
+            raise e
 
 
 class DeliveryServiceManager:

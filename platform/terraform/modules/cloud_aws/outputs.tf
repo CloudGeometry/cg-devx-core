@@ -132,6 +132,12 @@ output "kms_key_policy" {
   value       = module.eks.kms_key_policy
 }
 
+output "secret_manager_unseal_key_ring" {
+  value       = ""
+  description = "Secret Manager unseal key ring"
+  sensitive   = true
+}
+
 ################################################################################
 # Security Group
 ################################################################################

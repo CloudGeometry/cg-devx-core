@@ -73,12 +73,16 @@ output "cluster_oidc_provider_arn" {
 ################################################################################
 # secret manager
 ################################################################################
-output "secret_manager_seal_key" {
+output "secret_manager_unseal_key" {
   value       = module.hosting-provider.secret_manager_unseal_key
   description = "Secret Manager seal key"
   sensitive   = true
 }
-
+output "secret_manager_unseal_key_ring" {
+  value       = module.hosting-provider.secret_manager_unseal_key_ring
+  description = "Secret Manager unseal key ring"
+  sensitive   = true
+}
 ################################################################################
 # artifact storage
 ################################################################################

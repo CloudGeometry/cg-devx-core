@@ -226,6 +226,8 @@ def bootstrap(
         wl_gitops_params["<CLUSTER_OIDC_PROVIDER_ARN>"] = state_store.parameters["<CC_CLUSTER_OIDC_PROVIDER>"]
     elif cloud_provider == CloudProviders.Azure:
         pass
+    elif cloud_provider == CloudProviders.GCP:
+        pass
     else:
         raise click.ClickException("Unknown cloud provider")
 
@@ -322,6 +324,8 @@ def perform_gitops_iac_bootstrap(state_store, wl_gitops_repo_name, wl_gitops_par
     if cloud_provider == CloudProviders.AWS:
         identity_template_file = identity_template_file / "irsa_role.tf"
     elif cloud_provider == CloudProviders.Azure:
+        identity_template_file = identity_template_file / "managed_identity.tf"
+    elif cloud_provider == CloudProviders.GCP:
         identity_template_file = identity_template_file / "managed_identity.tf"
     else:
         raise click.ClickException("Unknown cloud provider")
