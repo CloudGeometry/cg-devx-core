@@ -10,13 +10,13 @@ resource "google_storage_bucket" "artifacts_repository" {
   location = local.region
 
   lifecycle_rule {
-      condition {
-        age = 30
-      }
-      action {
-        type = "Delete"
-      }
+    condition {
+      age = 30
     }
+    action {
+      type = "Delete"
+    }
+  }
   versioning {
     enabled = false
   }

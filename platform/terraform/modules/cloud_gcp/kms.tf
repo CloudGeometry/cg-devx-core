@@ -7,7 +7,8 @@ resource "google_kms_key_ring" "vault_key_ring" {
 resource "google_kms_crypto_key" "vault_unseal_key" {
   name            = "vault-unseal"
   key_ring        = google_kms_key_ring.vault_key_ring.id
-  rotation_period = "100000s"
+  # 365 days
+  rotation_period = "31536000s"
 
   lifecycle {
     prevent_destroy = false

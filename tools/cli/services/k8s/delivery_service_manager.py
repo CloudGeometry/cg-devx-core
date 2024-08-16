@@ -22,21 +22,23 @@ async def get_argocd_token_via_k8s_portforward(
         local_port: int = 8080
 ) -> Optional[str]:
     """
-    Asynchronously retrieves an ArgoCD authentication token by port forwarding a Kubernetes pod's port to a local port.
+    Asynchronously retrieves an ArgoCD authentication token by setting up port forwarding from a Kubernetes pod's port
+    to a local port.
 
-    Args:
-        user (str): The username for authentication.
-        password (str): The password for authentication.
-        k8s_pod (k8s_client.V1Pod): The Kubernetes pod object that supports port forwarding.
-            This pod typically hosts the ArgoCD service.
-        kube_config_path (str): Path to the kubeconfig file that contains configuration
-            information about the Kubernetes cluster. This file is used to authenticate and
-            interact with the cluster.
-        remote_port (int): The port on the Kubernetes pod to forward.
-        local_port (int): The local port to which the pod's port will be forwarded.
-
-    Returns:
-        Optional[str]: The authentication token if successful, or None if the token is not found.
+    :param user: The username for ArgoCD authentication.
+    :type user: str
+    :param password: The password for ArgoCD authentication.
+    :type password: str
+    :param k8s_pod: The Kubernetes pod object hosting the ArgoCD service that supports port forwarding.
+    :type k8s_pod: k8s_client.V1Pod
+    :param kube_config_path: Path to the kubeconfig file for Kubernetes cluster authentication and interaction.
+    :type kube_config_path: str
+    :param remote_port: The remote port on the Kubernetes pod to forward.
+    :type remote_port: int
+    :param local_port: The local port to map the remote port's forwarding.
+    :type local_port: int
+    :return: The ArgoCD authentication token if retrieval is successful; otherwise, None.
+    :rtype: Optional[str]
     """
     kr8s_pod = await get_kr8s_pod_instance_by_name(
         pod_name=k8s_pod.metadata.name,
@@ -50,16 +52,16 @@ async def get_argocd_token_via_k8s_portforward(
 @exponential_backoff(base_delay=5)
 async def get_argocd_token(user: str, password: str, endpoint: str = "localhost:8080") -> Optional[str]:
     """
-    Asynchronously retrieves an ArgoCD authentication token from the specified endpoint using HTTP POST request.
+    Asynchronously retrieves an ArgoCD authentication token from a specified endpoint using HTTP POST requests.
 
-    Args:
-        user (str): The username for ArgoCD authentication.
-        password (str): The password for ArgoCD authentication.
-        endpoint (str): The endpoint URL where the ArgoCD API is available.
-
-    Returns:
-        Optional[str]: The ArgoCD authentication token if the request is successful and the user is authenticated;
-         otherwise, None.
+    :param user: The username for authentication with ArgoCD.
+    :type user: str
+    :param password: The password for authentication with ArgoCD.
+    :type password: str
+    :param endpoint: The endpoint URL where the ArgoCD API is available, defaulting to "localhost:8080".
+    :type endpoint: str
+    :return: The ArgoCD authentication token if the request succeeds and the user is authenticated; otherwise, None.
+    :rtype: Optional[str]
     """
     async with httpx.AsyncClient(verify=False) as httpx_client:
         try:
@@ -91,25 +93,22 @@ async def delete_application_via_k8s_portforward(
     token by forwarding the ArgoCD API service's port to a local port and then uses this token to
     send a deletion request to the ArgoCD API.
 
-    Args:
-        app_name (str): The name of the application to delete.
-        user (str): The username used to retrieve the ArgoCD token.
-        password (str): The password used to retrieve the ArgoCD token.
-        k8s_pod (k8s_client.V1Pod): The Kubernetes pod object that supports port forwarding.
-            This pod typically hosts the ArgoCD service.
-        kube_config_path (str): Path to the kubeconfig file which is used to authenticate and
-                                manage interactions with the Kubernetes cluster.
-        remote_port (int): The port on the Kubernetes pod to forward, typically the port where the ArgoCD API is served.
-        local_port (int): The local port to which the pod's port will be forwarded, making the ArgoCD API accessible
-         locally.
-
-    Returns:
-        Optional[bool]: True if the application was successfully deleted, None if the token retrieval or application deletion failed.
-
-    Raises:
-        FileNotFoundError: If the kubeconfig file is not found at the specified path.
-        ApiException: If there is an error during interaction with the Kubernetes API.
-        asyncio.TimeoutError: If the request times out during port forwarding, token retrieval, or application deletion.
+    :param app_name: The name of the application to be deleted.
+    :type app_name: str
+    :param user: The username used for ArgoCD token retrieval.
+    :type user: str
+    :param password: The password used for ArgoCD token retrieval.
+    :type password: str
+    :param k8s_pod: The Kubernetes pod hosting the ArgoCD service that supports port forwarding.
+    :type k8s_pod: k8s_client.V1Pod
+    :param kube_config_path: Path to the kubeconfig file for Kubernetes cluster authentication.
+    :type kube_config_path: str
+    :param remote_port: The port on the Kubernetes pod to be forwarded.
+    :type remote_port: int
+    :param local_port: The local port to which the remote port's forwarding will be mapped.
+    :type local_port: int
+    :return: True if the application deletion is successful; otherwise, None.
+    :rtype: Optional[bool]
     """
     kr8s_pod = await get_kr8s_pod_instance_by_name(
         pod_name=k8s_pod.metadata.name,
@@ -130,15 +129,16 @@ async def delete_application_via_k8s_portforward(
 @exponential_backoff(base_delay=5)
 async def delete_application(app_name: str, token: str, endpoint: str = "localhost:8080") -> Optional[bool]:
     """
-    Asynchronously deletes an application from the ArgoCD server via the specified endpoint.
+    Asynchronously deletes an application from the ArgoCD server via a specified endpoint using a given authentication token.
 
-    Args:
-        app_name (str): The name of the application to delete.
-        token (str): The authentication token for ArgoCD.
-        endpoint (str): The endpoint URL where the ArgoCD API is available.
-
-    Returns:
-        Optional[bool]: True if the application was successfully deleted, None otherwise.
+    :param app_name: The name of the application to delete.
+    :type app_name: str
+    :param token: The ArgoCD authentication token.
+    :type token: str
+    :param endpoint: The endpoint URL where the ArgoCD API is accessed, defaulting to "localhost:8080".
+    :type endpoint: str
+    :return: True if the application was successfully deleted; otherwise, None.
+    :rtype: Optional[bool]
     """
     async with httpx.AsyncClient(verify=False) as httpx_client:
         try:

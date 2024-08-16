@@ -461,7 +461,7 @@ def setup(
 
             argocd_bootstrap_name = "argocd-bootstrap"
             argocd_core_project_name = "core"
-            dns_deployment_name = get_dns_deployment_name_by_cloud_provider(p.cloud_provider)
+            dns_deployment_name = cloud_man.get_cloud_provider_k8s_dns_deployment_name()
             # get CoreDNS deployments to validate cluster
             dns_deployment = kube_client.get_deployment("kube-system", dns_deployment_name)
             bar()
@@ -1085,14 +1085,3 @@ def setup_param_validator(params: StateStore) -> bool:
             return False
 
     return True
-
-
-def get_dns_deployment_name_by_cloud_provider(cloud_provider) -> str:
-    if cloud_provider == CloudProviders.AWS:
-        return "coredns"
-    elif cloud_provider == CloudProviders.Azure:
-        return "coredns"
-    elif cloud_provider == CloudProviders.GCP:
-        return "kube-dns"
-    else:
-        raise ValueError("Unsupported cloud provider")

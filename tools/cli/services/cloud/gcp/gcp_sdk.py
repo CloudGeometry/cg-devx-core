@@ -15,12 +15,33 @@ from services.dns.dns_provider_manager import get_domain_txt_records_dot
 
 
 class GcpSdk:
+    """
+    A class providing direct interactions with Google Cloud Platform (GCP) services through its various clients.
+
+    This class abstracts functionalities needed to manage GCP resources like storage, DNS, and Kubernetes clusters,
+    making it easier to perform operations such as creating and deleting buckets,
+    managing DNS zones, and testing IAM permissions.
+
+    Attributes:
+        RETRY_COUNT (int): The number of times to retry a check for DNS record propagation
+        RETRY_SLEEP (int): The time interval in seconds between retries for checking DNS record propagation.
+        DOMAIN_PROPAGATION_RECORD_VALUE (str): The expected value to check for DNS domain record propagation.
+        DEFAULT_RECORD_TTL (int): The default time-to-live in seconds for new DNS records.
+        DOMAIN_PROPAGATION_RECORD_NAME (str): The name of the DNS record used to check domain propagation.
+    """
     RETRY_COUNT = 100
     RETRY_SLEEP = 10  # in seconds
     DOMAIN_PROPAGATION_RECORD_VALUE = "domain record propagated"
     DEFAULT_RECORD_TTL = 10
+    DOMAIN_PROPAGATION_RECORD_NAME = 'cgdevx-liveness'
 
-    def __init__(self, project_id, location=None):
+    def __init__(self, project_id: str, location: Optional[str] = None):
+        """
+        Initializes a new GcpSdk instance for managing resources within a specific GCP project.
+
+        :param str project_id: The Google Cloud project ID to manage resources within.
+        :param Optional[str] location: The default location to manage resources within.
+        """
         self.project_id = project_id
         self.location = location
         self.__credentials, _ = default()
@@ -29,49 +50,161 @@ class GcpSdk:
         self.cluster_manager = ClusterManagerClient(credentials=self.__credentials)
 
     @property
-    def access_token(self):
+    def access_token(self) -> str:
+        """
+        Refreshes and retrieves the access token from GCP credentials.
+
+        :return: The current access token.
+        :rtype: str
+        """
         self.__credentials.refresh(transport.requests.Request())
         return self.__credentials.token
 
-    def create_bucket(self, bucket_name, location=None):
-        """Create a new bucket in a specific project and location"""
+    def get_identity(self) -> str:
+        """
+        Retrieves the identity (email or service account) associated with the current session.
+
+        :return: The email or unique identifier of the user or service account.
+        :rtype: str
+        """
+        try:
+            # Refresh the credentials to make sure they are up-to-date
+            self.__credentials.refresh(transport.requests.Request())
+
+            # The identity is available as a target principal in the credentials
+            identity = self.__credentials.service_account_email or self.__credentials.quota_project_id
+            if not identity:
+                raise ValueError("Unable to retrieve identity from credentials.")
+            return identity
+        except Exception as e:
+            logger.error(f"Failed to retrieve identity: {e}")
+            raise
+
+    def create_bucket(self, bucket_name: str, location: Optional[str] = None) -> bool:
+        """
+        Attempts to create a new storage bucket in the specified or default location.
+
+        :param str bucket_name: The name of the bucket to create.
+        :param Optional[str] location: The location in which to create the bucket.
+        Falls back to the instance's default location if not specified.
+        :return: True if the bucket was successfully created, False if an error occurred.
+        :rtype: bool
+        """
         final_location = location or self.location
         try:
             bucket = self.storage_client.bucket(bucket_name)
+            # Specify location when creating the bucket
+            # Fallback to default (multi-regional) if no location specified
             if final_location:
-                bucket.create(location=final_location)  # Specify location when creating the bucket
+                bucket.create(location=final_location)
             else:
-                bucket.create()  # Fallback to default (multi-regional) if no location specified
+                bucket.create()
             return True
-        except Exception as e:
+        except gcloud_exceptions.GoogleCloudError as e:
             logger.error(f"Failed to create bucket: {e}")
             return False
 
-    def delete_bucket(self, bucket_name):
-        """Deletes a bucket in a specific project"""
+    def set_uniform_bucket_level_access(self, bucket_name: str) -> None:
+        """
+        Enables uniform bucket-level access to ensure the bucket is private.
+
+        :param str bucket_name: The name of the storage bucket to configure.
+        """
+        try:
+            # Retrieve the bucket by name
+            bucket = self.storage_client.bucket(bucket_name)
+
+            # Enable uniform bucket-level access
+            bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+            bucket.update()
+
+            logger.info(f"Uniform bucket-level access enabled for bucket {bucket_name}.")
+        except gcloud_exceptions.GoogleCloudError as e:
+            logger.error(f"Failed to set uniform bucket-level access for bucket {bucket_name}: {e}")
+
+    def delete_bucket(self, bucket_name: str) -> bool:
+        """
+        Attempts to delete a specified storage bucket from the GCP project.
+
+        :param str bucket_name: The name of the bucket to delete.
+        :return: True if the bucket was successfully deleted, False if an error occurred.
+        :rtype: bool
+        """
         try:
             bucket = self.storage_client.bucket(bucket_name)
             bucket.delete()
             return True
-        except Exception as e:
+        except gcloud_exceptions.GoogleCloudError as e:
             logger.error(f"Failed to delete bucket: {e}")
             return False
+
+    def enforce_bucket_security_policy(self, bucket_name: str, identities: tuple[str] = ()) -> None:
+        """
+        Enforces strict access control policies on the specified GCP storage bucket to ensure that only the
+        current user, project owner, and any specified identities have administrative access.
+
+        :param str bucket_name: The name of the storage bucket to secure.
+        :param tuple[str] identities: A list of additional identities (e.g., user emails or service accounts)
+        to which the access restrictions will apply.
+        :return: A status message indicating whether the security policy was successfully applied.
+        :rtype: str
+
+        This method configures the IAM policy of the specified bucket to limit access strictly to the current
+        authenticated user, project owner, and any additional specified identities. All other access bindings
+        are removed, ensuring that only the specified identities can access or modify the bucket's contents.
+        This is particularly important for securing sensitive infrastructure-as-code (IaC) state files in
+        multi-tenant environments.
+        """
+        try:
+            # Retrieve the current identity (e.g., user email or service account)
+            current_identity = self.get_identity()
+            bucket = self.storage_client.bucket(bucket_name)
+
+            # Retrieve the current IAM policy
+            policy = bucket.get_iam_policy(requested_policy_version=3)
+
+            # Clear existing bindings
+            policy.bindings.clear()
+
+            # Combine the current identity, project owner, and any additional identities into the members set
+            members = (
+                    {
+                        f"user:{current_identity}",
+                        f"projectOwner:{self.project_id}"
+                    }
+                    |
+                    {
+                        f"user:{identity}" for identity in identities
+                    }
+            )
+
+            # Add the new policy binding
+            policy.bindings.append({
+                "role": "roles/storage.admin",
+                "members": members
+            })
+
+            # Update the bucket's IAM policy
+            bucket.set_iam_policy(policy)
+
+        except gcloud_exceptions.GoogleCloudError as e:
+            logger.error(f"Failed to enforce security policy on the bucket: {e}")
+            raise
 
     def find_zone_by_dns_name(self, dns_name: str) -> Optional[dns.ManagedZone]:
         """
         Find a DNS zone by its DNS name. Uses a substring match to accommodate for the
         trailing dot in fully qualified domain names (FQDNs) used in DNS.
 
+        :param dns_name: The DNS name of the zone to find, with or without the trailing dot.
+        :type dns_name: str
+        :return: The DNS zone object if found, or None if no such zone exists.
+        :rtype: Optional[dns.ManagedZone]
+
         The trailing dot in a DNS name signifies the root of the DNS hierarchy. Google
         Cloud DNS, following standard DNS practices, includes this dot in the dns_name of
         a zone. Thus, to ensure accurate matching, especially when the provided dns_name
         might not include the trailing dot, a substring match is used.
-
-        Args:
-            dns_name (str): The DNS name of the zone to find, with or without the trailing dot.
-
-        Returns:
-            Optional[dns.Zone]: The found zone object or None if not found.
         """
         zones = self.dns_client.list_zones()
         for zone in zones:
@@ -85,34 +218,22 @@ class GcpSdk:
         """
         Retrieves the name servers and visibility status for a DNS zone identified by its DNS name.
 
-        This method first finds the DNS zone by its name. If the zone is found, it fetches the zone's details to determine
-        its visibility status (public or private) based on the presence of the 'privateVisibilityConfig' attribute.
-        It returns the zone's name servers, DNS name, and visibility status. If the zone is not found or an error occurs,
-        it returns an empty list of name servers, None for the DNS name, and False for the visibility status.
+        :param dns_name: The DNS name of the zone to query.
+        :type dns_name: str
+        :return: A tuple containing the list of name servers, the DNS name, and a boolean indicating the visibility
+         status (True for private, False for public).
+        :rtype: Tuple[List[str], Optional[str], bool]
 
-        Args:
-            dns_name (str): The DNS name of the zone to query.
-
-        Returns:
-            Tuple[List[str], Optional[str], bool]: A tuple containing the list of name servers, the DNS name,
-            and a boolean indicating the zone's visibility (True for private, False for public).
+        This method first finds the DNS zone by its name. If the zone is found, it fetches the zone's details to
+        determine its public or private based on the presence of the 'privateVisibilityConfig' attribute.
+        It returns the zone's name servers, DNS name, and visibility status. If the zone is not found or an error
+        occurs, it returns an empty list of name servers, None for the DNS name, and False for the visibility status.
         """
-        # ToDo: Discuss implementation (It can be done without brute force, but need to pass exact zone name)
         # Initialize the DNS zone object
         zone = self.find_zone_by_dns_name(dns_name)
         if not zone:
             logger.error(f"No zone found with DNS name {dns_name}")
             return [], None, False
-
-        # Attempt to load the zone's details
-        # try:
-        #    managed_zone = zone.reload()  # Fetches the latest zone details from the server
-        # except GoogleCloudError as e:
-        #    logger.error(f"Failed to get details for zone {dns_name}: {e}")
-        #    return [], None, False
-        # except NotFound as e:
-        #    logger.error(f"Zone not found: {zone_name} - {e}")
-        #    return [], None, False
 
         # Determine if the zone is private by checking private attributes
         is_private = zone._properties.get('visibility') == 'private'
@@ -122,36 +243,45 @@ class GcpSdk:
 
     def set_hosted_zone_liveness(self, zone_name: str, domain_name: str) -> bool:
         """
-        Sets a TXT record for liveness check and verifies its propagation in a Google Cloud DNS zone.
+        Sets a TXT record for a liveness check and verifies its propagation in a specified DNS zone.
 
-        Args:
-            zone_name (str): The name of the DNS hosted zone.
-
-        Returns:
-            bool: True if the liveness check passes, else False.
+        :param zone_name: The name of the DNS hosted zone where the liveness check will be set.
+        :param domain_name: The domain name for which the TXT record is set.
+        :type zone_name: str
+        :type domain_name: str
+        :return: True if the TXT record is successfully propagated, otherwise False.
+        :rtype: bool
         """
-        record_name = f'cgdevx-liveness'
         try:
-            self._set_txt_record(zone_name, record_name, self.DOMAIN_PROPAGATION_RECORD_VALUE, domain_name)
+            self._set_txt_record(
+                zone_name, self.DOMAIN_PROPAGATION_RECORD_NAME, self.DOMAIN_PROPAGATION_RECORD_VALUE, domain_name
+            )
         except gcloud_exceptions:
             return False
 
-        is_propagated = self._wait_for_record_propagation(domain_name, record_name,
-                                                          self.DOMAIN_PROPAGATION_RECORD_VALUE)
+        is_propagated = self._wait_for_record_propagation(
+            domain_name, self.DOMAIN_PROPAGATION_RECORD_NAME, self.DOMAIN_PROPAGATION_RECORD_VALUE
+        )
         if is_propagated:
-            logger.info(f"TXT record for {record_name} propagated successfully.")
+            logger.info(f"TXT record for {self.DOMAIN_PROPAGATION_RECORD_NAME} propagated successfully.")
         else:
-            logger.warning(f"TXT record for {record_name} did not propagate within the expected time.")
+            logger.warning(
+                f"TXT record for {self.DOMAIN_PROPAGATION_RECORD_NAME} did not propagate within the expected time."
+            )
         return is_propagated
 
     def _set_txt_record(self, zone_name: str, record_name: str, value: str, domain_name: str) -> None:
         """
-        Ensure a TXT record with the specified value is set in the DNS zone.
+        Sets a TXT record with a specified value in the DNS zone.
 
-        Args:
-            zone_name (str): The name of the DNS zone where the TXT record will be set.
-            record_name (str): The name of the TXT record to set.
-            value (str): The value to be assigned to the TXT record.
+        :param zone_name: The DNS zone where the record will be set.
+        :param record_name: The TXT record name.
+        :param value: The value assigned to the TXT record.
+        :param domain_name: The domain name associated with the record.
+        :type zone_name: str
+        :type record_name: str
+        :type value: str
+        :type domain_name: str
         """
         try:
             zone = self.dns_client.zone(zone_name)
@@ -184,15 +314,16 @@ class GcpSdk:
 
     def _wait_for_record_propagation(self, domain_name: str, record_name: str, expected_value: str) -> bool:
         """
-        Periodically checks if the TXT record has propagated and its value matches the expected one.
+        Periodically checks for the propagation of a TXT record with a specified value.
 
-        Args:
-            hosted_zone_name (str): The name of the DNS hosted zone.
-            record_name (str): The name of the TXT record to check.
-            expected_value (str): The value that the TXT record should contain.
-
-        Returns:
-            bool: True if the expected value is found within the time frame, False otherwise.
+        :param domain_name: The domain name associated with the record.
+        :param record_name: The TXT record name.
+        :param expected_value: The value expected in the TXT record once propagated.
+        :type domain_name: str
+        :type record_name: str
+        :type expected_value: str
+        :return: True if the record is found with the expected value within the retry count, otherwise False.
+        :rtype: bool
         """
         for _ in range(self.RETRY_COUNT):
             time.sleep(self.RETRY_SLEEP)
@@ -209,14 +340,17 @@ class GcpSdk:
 
     def test_iam_permissions(self, permissions: List[str], resource: Optional[str] = None) -> List[str]:
         """
-        Test whether the caller has the specified permissions for a resource or at the project level if no resource is provided.
+        Tests whether the caller has the specified permissions for a given resource or at the project level
+        if no specific resource is provided.
 
-        Args:
-            permissions (list): The permissions to test.
-            resource (str, optional): The resource for which to test permissions. Defaults to the project.
+        This method uses the Cloud Resource Manager API to check IAM permissions.
 
-        Returns:
-            list: Permissions that the caller is granted from the input list.
+        :param permissions: The list of IAM permissions to test.
+        :type permissions: List[str]
+        :param resource: The specific GCP resource for which to test the permissions, defaults to the project itself.
+        :type resource: Optional[str]
+        :return: A list of permissions that the caller is granted from the provided list.
+        :rtype: List[str]
         """
         if not resource:
             resource = f"{self.project_id}"
@@ -238,14 +372,16 @@ class GcpSdk:
 
     def test_bucket_iam_permissions(self, bucket_name: str, permissions: List[str]) -> List[str]:
         """
-        Test IAM permissions for a specific bucket.
+        Tests IAM permissions for a specific GCP storage bucket.
 
-        Args:
-            bucket_name (str): The name of the bucket to test permissions on.
-            permissions (List[str]): The permissions to check.
+        This method is particularly useful for verifying access controls on bucket resources.
 
-        Returns:
-            List[str]: Permissions that the caller is granted.
+        :param bucket_name: The name of the bucket on which to test permissions.
+        :type bucket_name: str
+        :param permissions: The list of IAM permissions to check.
+        :type permissions: List[str]
+        :return: A list of permissions that the caller is granted.
+        :rtype: List[str]
         """
         bucket = self.storage_client.bucket(bucket_name)
         try:
@@ -262,15 +398,20 @@ class GcpSdk:
             resource: Optional[str] = None
     ) -> List[str]:
         """
-        Determine which of the specified permissions are not granted for a resource, based on the resource type.
+        Determines which specified permissions are not granted for a resource, based on its type.
 
-        Args:
-            permissions (list): The permissions to check.
-            resource_type (ResourceTypeLiteral): The type of the resource (PROJECT or BUCKET), default to PROJECT.
-            resource (str, optional): The GCP resource for which to check permissions.
+        This function is crucial for security operations, ensuring that only authorized actions are permissible on
+        critical resources.
 
-        Returns:
-            list: Permissions that are not granted to the caller.
+        :param permissions: The permissions to check.
+        :type permissions: List[str]
+        :param resource_type: The type of the resource, either PROJECT or BUCKET. Defaults to PROJECT.
+        :type resource_type: Literal[GcpResourceType.PROJECT, GcpResourceType.BUCKET]
+        :param resource: The GCP resource for which to check permissions. If not specified, it defaults based on the
+        resource type.
+        :type resource: Optional[str]
+        :return: A list of permissions that are not granted.
+        :rtype: List[str]
         """
         if resource_type == GcpResourceType.PROJECT:
             granted_permissions = self.test_iam_permissions(permissions, resource=resource)

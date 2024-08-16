@@ -284,10 +284,20 @@ class AzureManager(CloudProviderManager):
 
     @trace()
     def create_gpu_operator_parameters(self):
-      return '''# azure
+        return '''# azure
         - name: "driver.enabled"
           value: "false"
         - name: "toolkit.enabled"
           value: "false"
         - name: "operator.runtimeClass"
           value: "nvidia-container-runtime"'''
+
+    @trace()
+    def get_cloud_provider_k8s_dns_deployment_name(self) -> str:
+        """
+        Retrieves the name of the Kubernetes DNS deployment specific to Azure.
+
+        :return: A string "coredns", indicating the DNS deployment name for Azure.
+        :rtype: str
+        """
+        return "coredns"

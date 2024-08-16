@@ -5,7 +5,7 @@ module "ci_sa" {
   display_name                    = "argo-workflow"
   project                         = local.project_id
   service_account_namespace       = "argo-server"
-  roles                            = ["roles/storage.objectAdmin"]
+  roles                           = ["roles/storage.objectAdmin"]
 }
 
 module "cert_manager_sa" {
@@ -15,7 +15,7 @@ module "cert_manager_sa" {
   display_name                    = "cert-manager"
   project                         = local.project_id
   service_account_namespace       = "cert-manager"
-  roles                            = ["roles/dns.admin"]
+  roles                           = ["roles/dns.admin"]
 }
 
 module "external_dns_sa" {
@@ -25,7 +25,7 @@ module "external_dns_sa" {
   display_name                    = "external-dns"
   project                         = local.project_id
   service_account_namespace       = "external-dns"
-  roles                            = ["roles/dns.admin"]
+  roles                           = ["roles/dns.admin"]
 }
 
 module "secret_manager_sa" {
@@ -35,7 +35,10 @@ module "secret_manager_sa" {
   display_name                    = "vault"
   project                         = local.project_id
   service_account_namespace       = "vault"
-  roles                           = ["roles/cloudkms.viewer", "roles/cloudkms.cryptoKeyEncrypterDecrypter", "roles/cloudkms.publicKeyViewer", "roles/resourcemanager.tagViewer"]
+  roles                           = [
+    "roles/cloudkms.viewer", "roles/cloudkms.cryptoKeyEncrypterDecrypter", "roles/cloudkms.publicKeyViewer",
+    "roles/resourcemanager.tagViewer"
+  ]
 }
 
 module "iac_pr_automation_sa" {
@@ -45,5 +48,5 @@ module "iac_pr_automation_sa" {
   display_name                    = "atlantis"
   project                         = local.project_id
   service_account_namespace       = "atlantis"
-  roles                            = ["roles/editor", "roles/iam.securityAdmin"]
+  roles                           = ["roles/editor", "roles/iam.securityAdmin"]
 }

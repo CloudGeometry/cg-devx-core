@@ -79,7 +79,7 @@ output "secret_manager_unseal_key_ring" {
 # artifact storage
 ################################################################################
 output "artifacts_storage" {
-  value       =  google_storage_bucket.artifacts_repository.id
+  value       = google_storage_bucket.artifacts_repository.id
   description = "Continuous Integration Artifact Repository storage backend"
 }
 

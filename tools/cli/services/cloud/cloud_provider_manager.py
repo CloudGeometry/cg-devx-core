@@ -179,3 +179,15 @@ class CloudProviderManager(ABC):
         :return: Additional GPU operator parameters
         """
         pass
+
+    @abstractmethod
+    def get_cloud_provider_k8s_dns_deployment_name(self) -> str:
+        """
+        Abstract method to retrieve the name of the Kubernetes DNS deployment for the active cloud provider.
+        Implementations of this method in subclasses should return the specific DNS deployment name
+        used by their respective cloud provider.
+
+        :return: A string representing the DNS deployment name appropriate to the cloud provider.
+        :rtype: str
+        """
+        pass

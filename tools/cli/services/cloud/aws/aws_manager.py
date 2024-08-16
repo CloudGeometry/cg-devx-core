@@ -192,3 +192,13 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_gpu_operator_parameters(self):
         return ''
+
+    @trace()
+    def get_cloud_provider_k8s_dns_deployment_name(self) -> str:
+        """
+        Retrieves the name of the Kubernetes DNS deployment specific to AWS.
+
+        :return: A string "coredns", indicating the DNS deployment name for AWS.
+        :rtype: str
+        """
+        return "coredns"

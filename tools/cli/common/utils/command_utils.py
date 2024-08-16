@@ -1,5 +1,4 @@
 import os
-import os
 import time
 import webbrowser
 from logging import Logger
@@ -10,7 +9,7 @@ import click
 import requests
 from requests import HTTPError
 
-from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER
+from common.const.common_path import LOCAL_FOLDER
 from common.const.parameter_names import CLOUD_REGION, CLOUD_PROFILE, CLOUD_ACCOUNT_ACCESS_KEY, \
     CLOUD_ACCOUNT_ACCESS_SECRET, DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, GIT_ACCESS_TOKEN, \
     GIT_ORGANIZATION_NAME
@@ -83,6 +82,17 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
             project_id=state.get_input_param(CLOUD_PROFILE),
             location=state.get_input_param(CLOUD_REGION)
         )
+
+        # In the case of GCP, we also need to check if all additional CLI components are in place
+        not_installed_components: list[str] = cloud_manager.validate_gcloud_additional_components_installation()
+        if not_installed_components:
+            formatted_components = ", ".join(not_installed_components)
+            install_command = "gcloud components install " + " ".join(not_installed_components)
+            raise click.ClickException(
+                f"The following GCP CLI component(s) are missing: {formatted_components}. "
+                f"You can install them to proceed by running: \"{install_command}\""
+            )
+
         domain_manager: DNSManager = GcpDnsManager(project_id=state.get_input_param(CLOUD_PROFILE))
         state.parameters["<GCP_PROJECT_ID>"] = state.get_input_param(CLOUD_PROFILE)
 
