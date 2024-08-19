@@ -12,7 +12,6 @@ from common.utils.k8s_utils import get_kr8s_pod_instance_by_name
 from services.k8s.k8s import KubeClient
 
 
-@exponential_backoff(base_delay=5)
 async def get_argocd_token_via_k8s_portforward(
         user: str,
         password: str,
@@ -49,7 +48,6 @@ async def get_argocd_token_via_k8s_portforward(
         return await get_argocd_token(user, password, f'localhost:{local_port}')
 
 
-@exponential_backoff(base_delay=5)
 async def get_argocd_token(user: str, password: str, endpoint: str = "localhost:8080") -> Optional[str]:
     """
     Asynchronously retrieves an ArgoCD authentication token from a specified endpoint using HTTP POST requests.

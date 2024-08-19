@@ -2,10 +2,13 @@ import time
 from typing import List, Optional, Literal, Tuple
 
 from google.auth import default, transport
+from google.auth.exceptions import GoogleAuthError
 from google.cloud import dns
 from google.cloud import exceptions as gcloud_exceptions
 from google.cloud import storage
 from google.cloud.container_v1 import ClusterManagerClient
+from google.oauth2.credentials import Credentials
+from google.oauth2.id_token import verify_oauth2_token
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
 
@@ -60,24 +63,114 @@ class GcpSdk:
         self.__credentials.refresh(transport.requests.Request())
         return self.__credentials.token
 
-    def get_identity(self) -> str:
+    def retrieve_user_email(self) -> str:
         """
-        Retrieves the identity (email or service account) associated with the current session.
+        Retrieves the email address associated with the current OAuth2 user credentials.
 
-        :return: The email or unique identifier of the user or service account.
+        This method attempts to extract the user's email from the OAuth2 credentials using Google's ID token verification process.
+        If the credentials are expired or invalid, it will refresh them before proceeding.
+
+        :return: The email address associated with the user credentials.
         :rtype: str
+        :raises: GoogleCloudError, ValueError, Exception if unable to retrieve the email.
         """
         try:
-            # Refresh the credentials to make sure they are up-to-date
-            self.__credentials.refresh(transport.requests.Request())
+            # Refresh credentials if necessary
+            self.ensure_credentials_are_valid()
 
-            # The identity is available as a target principal in the credentials
-            identity = self.__credentials.service_account_email or self.__credentials.quota_project_id
-            if not identity:
-                raise ValueError("Unable to retrieve identity from credentials.")
-            return identity
+            # Extract and return the email from OAuth2 credentials
+            return self.extract_email_from_oauth2_token()
+
+        except gcloud_exceptions.GoogleCloudError as e:
+            logger.error(f"Failed to retrieve user email due to Google Cloud error: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"Value error occurred: {e}")
+            raise
         except Exception as e:
-            logger.error(f"Failed to retrieve identity: {e}")
+            logger.error(f"An unexpected error occurred while retrieving the user's email: {e}")
+            raise
+
+    def identify_principal(self) -> str:
+        """
+        Identifies and retrieves the principal identity associated with the current session.
+
+        This method determines whether the current credentials are linked to a service account or a user account,
+        and returns the corresponding email or identifier. It handles both OAuth2 and service account credentials.
+
+        :return: The email or identifier of the service account or user.
+        :rtype: str
+        :raises: GoogleCloudError, ValueError, Exception if unable to retrieve the identity.
+        """
+        try:
+            # Ensure credentials are current
+            self.ensure_credentials_are_valid()
+
+            # Determine and return the identity based on credential type
+            if hasattr(self.__credentials, 'service_account_email'):
+                return self.__credentials.service_account_email
+            elif hasattr(self.__credentials, 'quota_project_id'):
+                return self.retrieve_user_email()
+            else:
+                raise ValueError("Unable to determine identity from the provided credentials.")
+        except gcloud_exceptions.GoogleCloudError as e:
+            logger.error(f"Failed to retrieve identity due to Google Cloud error: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"Value error occurred: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while identifying the principal: {e}")
+            raise
+
+    def ensure_credentials_are_valid(self):
+        """
+        Ensures that the current credentials are valid and refreshed.
+
+        This method checks if the credentials are expired or invalid, and refreshes them if necessary.
+        It's a critical step before performing any authenticated operations to avoid unauthorized requests.
+
+        :raises: GoogleAuthError, Exception if unable to refresh the credentials.
+        """
+        try:
+            if self.__credentials.token is None or self.__credentials.expired:
+                self.__credentials.refresh(transport.requests.Request())
+        except GoogleAuthError as e:
+            logger.error(f"Failed to refresh credentials: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while refreshing credentials: {e}")
+            raise
+
+    def extract_email_from_oauth2_token(self) -> str:
+        """
+        Extracts the user's email address from the OAuth2 credentials' ID token.
+
+        This method verifies the ID token associated with the OAuth2 credentials and extracts the email address.
+        It's specifically designed for handling OAuth2 user credentials.
+
+        :return: The user's email address.
+        :rtype: str
+        :raises: GoogleAuthError, ValueError, Exception if unable to verify the ID token or extract the email.
+        """
+        try:
+            if isinstance(self.__credentials, Credentials):
+                id_info = verify_oauth2_token(
+                    self.__credentials.id_token,
+                    transport.requests.Request(),
+                    self.__credentials.client_id
+                )
+                return id_info.get('email')
+            else:
+                raise ValueError("The provided credentials do not include a valid ID token.")
+        except GoogleAuthError as e:
+            logger.error(f"Failed to verify the ID token and extract the email: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"Value error occurred: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while extracting the email from the ID token: {e}")
             raise
 
     def create_bucket(self, bucket_name: str, location: Optional[str] = None) -> bool:
@@ -144,8 +237,8 @@ class GcpSdk:
         current user, project owner, and any specified identities have administrative access.
 
         :param str bucket_name: The name of the storage bucket to secure.
-        :param tuple[str] identities: A list of additional identities (e.g., user emails or service accounts)
-        to which the access restrictions will apply.
+        :param tuple[str] identities: A list of additional service account identities to which the access restrictions
+         will apply.
         :return: A status message indicating whether the security policy was successfully applied.
         :rtype: str
 
@@ -157,7 +250,7 @@ class GcpSdk:
         """
         try:
             # Retrieve the current identity (e.g., user email or service account)
-            current_identity = self.get_identity()
+            current_identity = self.identify_principal()
             bucket = self.storage_client.bucket(bucket_name)
 
             # Retrieve the current IAM policy
@@ -174,7 +267,7 @@ class GcpSdk:
                     }
                     |
                     {
-                        f"user:{identity}" for identity in identities
+                        f"serviceAccount:{identity}" for identity in identities
                     }
             )
 
