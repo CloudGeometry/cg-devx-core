@@ -43,7 +43,7 @@ class DNSManager(ABC):
 
 def get_domain_ns_records(domain_name: str, name_servers=None):
     if name_servers is None:
-        name_servers = ["8.8.8.8"]
+        name_servers = ["9.9.9.9", "8.8.8.8", "1.1.1.1"]
     rv = dns.resolver.Resolver()
     rv.nameservers = name_servers
     answers = rv.resolve(domain_name, dns.rdatatype.NS)
@@ -53,7 +53,7 @@ def get_domain_ns_records(domain_name: str, name_servers=None):
 @exponential_backoff()
 def get_domain_txt_records_dot(domain_name: str, name_servers=None):
     if name_servers is None:
-        name_servers = ["8.8.8.8"]
+        name_servers = ["9.9.9.9", "8.8.8.8", "1.1.1.1"]
     rv = dns.resolver.Resolver()
     rv.nameservers = name_servers
     try:

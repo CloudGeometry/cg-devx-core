@@ -1,12 +1,14 @@
+import asyncio
 import re
 import time
 import webbrowser
+from typing import List
 
 import click
 import hvac
 import yaml
 from alive_progress import alive_bar
-from typing import List
+
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
@@ -27,13 +29,13 @@ from common.tracing_decorator import trace
 from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
     set_envs, unset_envs, wait, wait_http_endpoint_readiness, prepare_git_provider_env_vars
 from common.utils.generators import random_string_generator
-from common.utils.k8s_utils import find_pod_by_name_fragment, get_kr8s_pod_instance_by_name
+from common.utils.k8s_utils import find_pod_by_name_fragment
 from common.utils.optional_services_manager import OptionalServices, build_argo_exclude_string
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
 from services.dns.dns_provider_manager import DNSManager
 from services.k8s.config_builder import create_k8s_config, write_k8s_config
-from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token
+from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token_via_k8s_portforward
 from services.k8s.k8s import KubeClient, write_ca_cert
 from services.k8s.kctl_wrapper import KctlWrapper
 from services.keys.key_manager import KeyManager
@@ -101,7 +103,7 @@ def setup(
             p = StateStore(d)
 
         except yaml.YAMLError as e:
-            raise click.ClickException(e)
+            raise click.ClickException(str(e))
     else:
         # TODO: merge file with param override
         p = StateStore({
@@ -178,7 +180,6 @@ def setup(
     # end preflight check section
     else:
         click.echo("1/12: Skipped pre-flight checks.")
-
     dep_man: DependencyManager = DependencyManager()
 
     if not p.has_checkpoint("dependencies"):
@@ -273,7 +274,8 @@ def setup(
         p.internals["DNS_ZONE_IS_PRIVATE"] = is_dns_zone_private
 
         p.fragments["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(
-            location=dns_zone_name, is_private=is_dns_zone_private)
+            location=dns_zone_name, is_private=is_dns_zone_private
+        )
 
         click.echo("Creating tf backend storage. Done!")
 
@@ -344,7 +346,8 @@ def setup(
         # run hosting provider tf to create K8s cluster
         hp_tf_env_vars = {
             **{},  # add vars here
-            **cloud_provider_auth_env_vars}
+            **cloud_provider_auth_env_vars
+        }
         # set envs as required by tf
         set_envs(hp_tf_env_vars)
 
@@ -378,12 +381,14 @@ def setup(
         # artifact storage
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
         # kms keys
-        sec_man_key = hp_out["secret_manager_seal_key"]
-        p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
+        p.parameters["<SECRET_MANAGER_UNSEAL_RN>"] = hp_out["secret_manager_unseal_key"]
+        p.parameters["<SECRET_MANAGER_UNSEAL_KEY_RING>"] = hp_out["secret_manager_unseal_key_ring"]
         # TODO: find a better way to pass cloud provider specific params
-        p.fragments["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_seal_snippet(sec_man_key,
-                                                                               name=p.parameters[
-                                                                                   "<PRIMARY_CLUSTER_NAME>"])
+        p.fragments["# <SECRET_MANAGER_UNSEAL>"] = cloud_man.create_seal_snippet(
+            key_id=p.parameters["<SECRET_MANAGER_UNSEAL_RN>"],
+            name=p.parameters["<PRIMARY_CLUSTER_NAME>"],
+            key_ring=p.parameters["<SECRET_MANAGER_UNSEAL_KEY_RING>"]
+        )
 
         # unset envs as no longer needed
         unset_envs(hp_tf_env_vars)
@@ -407,6 +412,17 @@ def setup(
             # `az aks get-credentials --name my-cluster --resource-group my-rg --admin`
             # get config from tf output
             kctl_config_path = write_k8s_config(hp_out["kube_config_raw"])
+        elif p.cloud_provider == CloudProviders.GCP:
+            command, command_args = cloud_man.get_k8s_auth_command()
+            kubeconfig_params = {
+                "<ENDPOINT>": f'{p.internals["CC_CLUSTER_ENDPOINT"]}:443',
+                "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
+                "<CLUSTER_NAME>": p.parameters["<PRIMARY_CLUSTER_NAME>"],
+                "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
+            }
+            kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+        else:
+            raise NotImplementedError(f"Cloud provider \"{p.cloud_provider}\" is not yet supported.")
 
         p.internals["KCTL_CONFIG_PATH"] = kctl_config_path
 
@@ -445,13 +461,13 @@ def setup(
 
             argocd_bootstrap_name = "argocd-bootstrap"
             argocd_core_project_name = "core"
-
+            dns_deployment_name = cloud_man.get_cloud_provider_k8s_dns_deployment_name()
             # get CoreDNS deployments to validate cluster
-            coredns_deployment = kube_client.get_deployment("kube-system", "coredns")
+            dns_deployment = kube_client.get_deployment("kube-system", dns_deployment_name)
             bar()
 
             # wait for deployment readiness
-            kube_client.wait_for_deployment(coredns_deployment)
+            kube_client.wait_for_deployment(dns_deployment)
             bar()  # Add a few here
 
             kube_client.create_namespace(ARGOCD_NAMESPACE)
@@ -569,15 +585,16 @@ def setup(
                 name_fragment="argocd-server",
                 namespace=ARGOCD_NAMESPACE
             )
-            kr8s_pod = get_kr8s_pod_instance_by_name(
-                pod_name=k8s_pod.metadata.name,
-                namespace=ARGOCD_NAMESPACE,
-                kubeconfig=p.internals["KCTL_CONFIG_PATH"]
-            )
-            with kr8s_pod.portforward(remote_port=8080, local_port=8080):
-                # Make an API request to the forwarded port
-                argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
-                p.internals["ARGOCD_TOKEN"] = argocd_token
+            # Transitioned to asynchronous functions to address compatibility issues with the kr8s library.
+            # Previously, the synchronous interaction with kr8s sometimes led to deadlocks and errors because the kr8s
+            # library is inherently asynchronous.
+            argocd_token = asyncio.run(get_argocd_token_via_k8s_portforward(
+                user=p.internals["ARGOCD_USER"],
+                password=p.internals["ARGOCD_PASSWORD"],
+                k8s_pod=k8s_pod,
+                kube_config_path=p.internals["KCTL_CONFIG_PATH"]
+            ))
+            p.internals["ARGOCD_TOKEN"] = argocd_token
             bar()
             # create argocd "core" project
             # TODO: explicitly whitelist project repositories
@@ -818,6 +835,9 @@ def setup(
             kube_client.wait_for_stateful_set(sonar_ss)
             bar()
 
+            sonar_pod = kube_client.get_pod(SONARQUBE_NAMESPACE, "sonarqube-sonarqube-0")
+            kube_client.wait_for_pod(sonar_pod)
+
             sonar_ingress = kube_client.get_ingress(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
             kube_client.wait_for_ingress(sonar_ingress)
             bar()
@@ -903,6 +923,10 @@ def init_k8s_client(cloud_man, p):
         kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"],
                                  api_key=k8s_token,
                                  endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
+    elif p.cloud_provider == CloudProviders.GCP:
+        kube_client = KubeClient(
+            config_file=p.internals["KCTL_CONFIG_PATH"]
+        )
     else:
         kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
     return kube_client
@@ -941,11 +965,20 @@ def show_credentials(p):
     return
 
 
+def get_provider_specific_optional_services(cloud_provider: str) -> list:
+    if cloud_provider == CloudProviders.AWS:
+        return [OptionalServices.ClusterAutoScaler]
+    elif cloud_provider == CloudProviders.Azure:
+        return [OptionalServices.ClusterAutoScaler]
+    return []
+
+
 @trace()
 def prepare_parameters(p):
     # TODO: move to appropriate place
-
-    exclude_string = build_argo_exclude_string(p.get_input_param(OPTIONAL_SERVICES))
+    optional_services = p.get_input_param(OPTIONAL_SERVICES) or []
+    optional_services.extend(get_provider_specific_optional_services(p.cloud_provider))
+    exclude_string = build_argo_exclude_string(optional_services)
     p.parameters["<CD_SERVICE_EXCLUDE_LIST>"] = exclude_string
     if exclude_string:
         p.fragments["# <CD_SERVICE_EXCLUDE_SNIPPET>"] = """directory:

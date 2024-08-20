@@ -6,26 +6,29 @@ from kubernetes import client as k8s_client, config as k8s_config
 from kubernetes.client.rest import ApiException
 
 from common.logging_config import logger
-from common.retry_decorator import exponential_backoff
 
 
 def find_pod_by_name_fragment(
         kube_config_path: str, name_fragment: str, namespace: str = "default"
 ) -> Optional[k8s_client.V1Pod]:
     """
-    Retrieves the first pod matching a name fragment within a specified Kubernetes namespace that is in a 'Running' state.
+    Retrieves the first pod matching a name fragment within a specified Kubernetes namespace that is in a 'Running'
+    state.
 
-    Args:
-        kube_config_path (str): The file path to the Kubernetes configuration file.
-        name_fragment (str): Part of the pod's name to search for.
-        namespace (str): The Kubernetes namespace in which to search for the pod.
+    :param kube_config_path: The file path to the Kubernetes configuration file.
+    :type kube_config_path: str
+    :param name_fragment: Part of the pod's name to search for.
+    :type name_fragment: str
+    :param namespace: The Kubernetes namespace in which to search for the pod, defaults to "default".
+    :type namespace: str
+    :return: The first matching pod object if found, otherwise None.
+    :rtype: Optional[k8s_client.V1Pod]
 
-    Returns:
-        k8s_client.V1Pod | None: The first matching pod object if found, otherwise None.
+    :raises FileNotFoundError: If the Kubernetes configuration file cannot be found.
+    :raises ApiException: If the Kubernetes API call fails.
 
-    Raises:
-        FileNotFoundError: If the Kubernetes configuration file cannot be found.
-        ApiException: If the Kubernetes API call fails.
+    This function logs the process of loading the Kubernetes configuration, searching for pods, and the result of the
+    search.
     """
     try:
         logger.info(f"Loading Kubernetes configuration from {kube_config_path}")
@@ -52,26 +55,29 @@ def find_pod_by_name_fragment(
         raise
 
 
-@exponential_backoff(base_delay=5)
-def get_kr8s_pod_instance_by_name(pod_name: str, kubeconfig: str, namespace: str = "DEFAULT") -> kr8s.objects.Pod:
+async def get_kr8s_pod_instance_by_name(pod_name: str, kubeconfig: str, namespace: str = "DEFAULT") -> kr8s.objects.Pod:
     """
-    Retrieves a Kubernetes Pod by its full name from a specified namespace. Raises an error if the Pod cannot be found.
+    Asynchronously retrieves a Kubernetes Pod by its full name from a specified namespace.
+    This function will raise an error if the Pod cannot be found.
 
-    Args:
-        pod_name (str): The full name of the Pod to retrieve.
-        kubeconfig (str): The file path to the Kubernetes configuration file.
-        namespace (str): The namespace from which to retrieve the Pod.
+    :param pod_name: The full name of the Pod to retrieve.
+    :type pod_name: str
+    :param kubeconfig: The file path to the Kubernetes configuration file.
+    :type kubeconfig: str
+    :param namespace: The namespace from which to retrieve the Pod, defaults to "DEFAULT".
+    :type namespace: str
+    :return: The Pod object if found.
+    :rtype: kr8s.objects.Pod
 
-    Returns:
-        Pod: The Pod object if found.
+    :raises NotFoundError: If no Pod with the specified name is found in the given namespace.
 
-    Raises:
-        NotFoundError: If no Pod with the specified name is found in the given namespace.
+    The function logs attempts to retrieve the Pod, and either logs a success message or raises an error depending on
+    the outcome.
     """
     logger.info(f"Attempting to retrieve pod '{pod_name}' from namespace '{namespace}'")
     try:
-        _ = kr8s.api(kubeconfig=kubeconfig)
-        pod = kr8s.objects.Pod.get(pod_name, namespace=namespace)
+        _ = await kr8s.asyncio.api(kubeconfig=kubeconfig)
+        pod = await kr8s.asyncio.objects.Pod.get(pod_name, namespace=namespace)
         if not pod:
             logger.error(f"No Pod found with name {pod_name} in namespace {namespace}.")
             raise NotFoundError(f"No Pod found with name {pod_name} in namespace {namespace}.")

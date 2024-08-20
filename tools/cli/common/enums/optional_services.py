@@ -11,6 +11,7 @@ class OptionalServices(str, enum.Enum):
     VPA = "vpa"
     KEDA = "keda"
     KUBEVIRT = "kubevirt"
+    ClusterAutoScaler = 'cluster-auto-scaler'
 
     @classmethod
     def has_value(cls, value) -> bool:

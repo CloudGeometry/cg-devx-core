@@ -58,7 +58,7 @@ spec:
                     leader_api_addr = "http://vault-2.vault-internal:8200"
                   }
                 }
-                # <SECRET_MANAGER_SEAL>
+                # <SECRET_MANAGER_UNSEAL>
                 service_registration "kubernetes" {}
           ingress:
             enabled: true
