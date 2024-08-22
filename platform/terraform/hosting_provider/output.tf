@@ -90,3 +90,14 @@ output "artifact_storage" {
   value       = module.hosting-provider.artifacts_storage
   description = "Continuous Integration Artifact Repository storage backend"
 }
+
+output "artifact_storage_endpoint" {
+  value       = module.hosting-provider.artifacts_storage_endpoint
+  description = "Continuous Integration Artifact Repository storage backend access endpoint"
+}
+
+output "artifacts_storage_access_key" {
+  value       = module.hosting-provider.artifacts_storage_access_key
+  sensitive   = true
+  description = "Continuous Integration Artifact Repository storage account primary access key"
+}

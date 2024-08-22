@@ -202,3 +202,18 @@ class AWSManager(CloudProviderManager):
         :rtype: str
         """
         return "coredns"
+
+    def create_ci_artifact_store_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''s3:
+      bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
+      endpoint: s3.amazonaws.com
+      insecure: false
+      keyFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"
+      region: <CLOUD_REGION>
+      useSDKCreds: true
+      encryptionOptions:
+        enableEncryption: false''')

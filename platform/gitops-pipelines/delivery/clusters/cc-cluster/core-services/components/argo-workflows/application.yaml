@@ -107,19 +107,8 @@ spec:
             scopes: [email, openid, groups, user, profile]
             rbac:
               enabled: true
-        useDefaultArtifactRepo: true
+        useDefaultArtifactRepo: false
         useStaticCredentials: false
-        artifactRepository:
-          archiveLogs: false
-          s3:
-            insecure: false
-            bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
-            keyFormat: argo-workflows/artifacts/{{workflow.creationTimestamp.Y}}/{{workflow.creationTimestamp.m}}/{{workflow.creationTimestamp.d}}/{{workflow.uid}}/{{workflow.name}}/{{pod.name}}
-            endpoint: s3.amazonaws.com
-            region: <CLOUD_REGION>
-            useSDKCreds: true
-            encryptionOptions:
-              enableEncryption: false
     chart: argo-workflows
   destination:
     server: https://kubernetes.default.svc

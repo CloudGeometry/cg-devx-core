@@ -290,6 +290,18 @@ output "artifacts_storage" {
   value       = module.artifacts_repository.s3_bucket_id
 }
 
+output "artifacts_storage_endpoint" {
+  description = "The artifact storage S3 bucket domain name"
+  value       = module.artifacts_repository.s3_bucket_bucket_domain_name
+}
+
+# stub value for module compatibility
+output "artifacts_storage_access_key" {
+  value       = ""
+  sensitive   = true
+  description = "Continuous Integration Artifact Repository storage account primary access key"
+}
+
 # stub value for module compatibility
 output "kube_config_raw" {
   value       = ""

@@ -35,8 +35,9 @@ resource "vault_generic_secret" "ci_secrets" {
 
   data_json = jsonencode(
     {
-      SSH_PRIVATE_KEY       = var.vcs_bot_ssh_private_key,
-      PERSONAL_ACCESS_TOKEN = var.vcs_token,
+      SSH_PRIVATE_KEY             = var.vcs_bot_ssh_private_key,
+      PERSONAL_ACCESS_TOKEN       = var.vcs_token,
+      ARTIFACT_STORAGE_ACCESS_KEY = var.cloud_binary_artifacts_store_access_key,
     }
   )
 
@@ -48,7 +49,7 @@ resource "vault_generic_secret" "cd_secrets" {
 
   data_json = jsonencode(
     {
-      cd_webhook_secret         = var.cd_webhook_secret,
+      cd_webhook_secret = var.cd_webhook_secret,
     }
   )
 

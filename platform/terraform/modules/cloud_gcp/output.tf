@@ -83,6 +83,19 @@ output "artifacts_storage" {
   description = "Continuous Integration Artifact Repository storage backend"
 }
 
+output "artifacts_storage_endpoint" {
+  value       = google_storage_bucket.artifacts_repository.url
+  description = "Continuous Integration Artifact Repository storage account primary endpoint"
+}
+
+# stub value for module compatibility
+output "artifacts_storage_access_key" {
+  value       = ""
+  sensitive   = true
+  description = "Continuous Integration Artifact Repository storage account primary access key"
+}
+
+
 # stub value for module compatibility
 output "cluster_oidc_provider_arn" {
   value       = ""

@@ -380,6 +380,8 @@ def setup(
 
         # artifact storage
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
+        p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>"] = hp_out["artifact_storage_endpoint"]
+        p.internals["CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"] = hp_out["artifacts_storage_access_key"]
         # kms keys
         p.parameters["<SECRET_MANAGER_UNSEAL_RN>"] = hp_out["secret_manager_unseal_key"]
         p.parameters["<SECRET_MANAGER_UNSEAL_KEY_RING>"] = hp_out["secret_manager_unseal_key_ring"]
@@ -751,6 +753,9 @@ def setup(
 
         if "TF_BACKEND_STORAGE_ACCESS_KEY" in p.internals:
             sec_man_tf_params["tf_backend_storage_access_key"] = p.internals["TF_BACKEND_STORAGE_ACCESS_KEY"]
+
+        if "CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY" in p.internals:
+            sec_man_tf_params["cloud_binary_artifacts_store_access_key"] = p.internals["CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"]
 
         tf_wrapper.apply(sec_man_tf_params)
 

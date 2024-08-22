@@ -144,6 +144,7 @@ def bootstrap(
         owner_email = state_store.parameters["<OWNER_EMAIL>"]
         ci_iam_role_rn = state_store.parameters["<CI_IAM_ROLE_RN>"]
         artifact_store = state_store.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"]
+        artifact_store_endpoint = state_store.parameters["<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>"]
         ci_ingress_url = state_store.parameters["<CI_INGRESS_URL>"]
 
         click.echo("1/11: Configuration loaded.")
@@ -191,6 +192,7 @@ def bootstrap(
         "<WL_SERVICE_PORT>": str(wl_svc_port),
         "# <K8S_ROLE_MAPPING>": cloud_man.create_k8s_cluster_role_mapping_snippet(),
         "# <ADDITIONAL_LABELS>": cloud_man.create_additional_labels(),
+        "# <CI_ARTIFACT_REPOSITORY_CONFIG>": cloud_man.create_ci_artifact_store_config_snippet(),
         "# <TF_WL_SECRETS_REMOTE_BACKEND>": cloud_man.create_iac_backend_snippet(
             location=tf_backend_storage_name,
             service=f"workloads/{wl_name}/secrets"
@@ -217,7 +219,8 @@ def bootstrap(
         "<WL_IAM_ROLE_RN>": construct_wl_iam_role(
             state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
         ),
-        "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store
+        "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store,
+        "<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>": artifact_store_endpoint
     }
 
     # set cloud provider specific params

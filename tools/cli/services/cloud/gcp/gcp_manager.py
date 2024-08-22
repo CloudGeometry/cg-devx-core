@@ -357,3 +357,10 @@ class GcpManager(CloudProviderManager):
         :rtype: str
         """
         return "kube-dns"
+
+    def create_ci_artifact_store_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''''')

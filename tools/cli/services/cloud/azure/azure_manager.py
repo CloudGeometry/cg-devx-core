@@ -301,3 +301,17 @@ class AzureManager(CloudProviderManager):
         :rtype: str
         """
         return "coredns"
+
+    def create_ci_artifact_store_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''azure:
+      endpoint: <CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>
+      container: <CLOUD_BINARY_ARTIFACTS_STORE>
+      blobNameFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"
+      # useSDKCreds: true
+      accountKeySecret:
+        name: ci_secrets
+        key: ARTIFACT_STORAGE_ACCESS_KEY''')
