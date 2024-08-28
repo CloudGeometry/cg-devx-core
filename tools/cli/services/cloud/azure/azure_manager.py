@@ -313,5 +313,5 @@ class AzureManager(CloudProviderManager):
       blobNameFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"
       # useSDKCreds: true
       accountKeySecret:
-        name: ci_secrets
+        name: ci-secrets
         key: ARTIFACT_STORAGE_ACCESS_KEY''')
