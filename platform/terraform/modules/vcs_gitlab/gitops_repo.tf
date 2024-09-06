@@ -10,5 +10,6 @@ module "gitops-repo" {
   cd_webhook_secret            = var.cd_webhook_secret
   vcs_subscription_plan        = var.vcs_subscription_plan
   vcs_owner                    = data.gitlab_group.owner.group_id
-  branch_protection            = true
+  branch_protection            = var.vcs_subscription_plan ? true : false
+  allow_push_to_protected      = true
 }

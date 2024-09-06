@@ -9,10 +9,13 @@ terraform {
   }
 }
 
+data "gitlab_current_user" "current" {}
+
 resource "gitlab_project" "repo" {
   name        = var.repo_name
   description = var.description
 
+  default_branch                   = "main"
   visibility_level                 = var.visibility
   initialize_with_readme           = var.auto_init
   archive_on_destroy               = var.archive_on_destroy
@@ -40,6 +43,15 @@ resource "gitlab_branch_protection" "this" {
   branch            = "main"
   allow_force_push  = false
   push_access_level = "no one"
+
+  dynamic "allowed_to_push" {
+    for_each = var.vcs_subscription_plan && var.allow_push_to_protected ? [1] : [] 
+
+    content {
+      user_id = data.gitlab_current_user.current.id
+    }
+    
+  }
 }
 
 output "repo_name" {

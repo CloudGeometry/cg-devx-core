@@ -64,7 +64,7 @@ data "gitlab_user" "user" {
 
 
 resource "gitlab_group_membership" "team_membership" {
-  for_each = toset(var.gitlab_team_slugs)
+  for_each = var.username != "cgdevx-bot" ?  toset(var.gitlab_team_slugs) : []
   
   group_id     = "${var.vcs_owner}/${each.value}"
   user_id      = data.gitlab_user.user.user_id

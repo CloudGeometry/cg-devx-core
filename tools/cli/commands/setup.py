@@ -771,12 +771,11 @@ def setup(
         # run security manager tf to create secrets and roles
         user_man_tf_env_vars = {
             **{
-                "GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-                "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME),
                 "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
                 "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
             },
-            **cloud_provider_auth_env_vars}
+            **cloud_provider_auth_env_vars,
+            **git_provider_env_vars}
         # set envs as required by tf
         set_envs(user_man_tf_env_vars)
 

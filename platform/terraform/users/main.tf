@@ -1,6 +1,9 @@
 terraform {
   # Remote backend configuration
   # <TF_USERS_REMOTE_BACKEND>
+  required_providers {
+    # <GIT_REQUIRED_PROVIDER>
+  }
 }
 
 # Configure Git Provider
