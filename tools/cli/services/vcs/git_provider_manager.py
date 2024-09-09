@@ -85,3 +85,18 @@ class GitProviderManager(ABC):
         :return: Atlantis configuration section
         """
         pass
+
+    @abstractmethod
+    def get_repository_root(self) -> str:
+        """
+        Retrieves the base URL segment for repositories under the specified organization or group.
+
+        This method returns the starting segment of the URL used to access repositories within a specific organization
+        or group via its web interface. It provides a foundational URL segment, which can be used as the base in
+        constructing URLs for specific repositories or further navigation within the organization or group.
+
+        :return: The base segment of the URL for the specified organization or group, suitable for constructing more
+        specific repository URLs.
+        :rtype: str
+        """
+        pass

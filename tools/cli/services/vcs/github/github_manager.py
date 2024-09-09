@@ -180,3 +180,18 @@ class GitHubProviderManager(GitProviderManager):
       GITHUB_OWNER                         = "<GIT_ORGANIZATION_NAME>",
       GITHUB_TOKEN                         = var.vcs_token,
       # ----""")
+
+    def get_repository_root(self) -> str:
+        """
+        Retrieves the base URL segment for GitHub repositories under the specified organization.
+
+        This method returns the starting segment of the URL used to access repositories within a specific GitHub
+        organization via its web interface.
+        It provides a foundational URL segment, which can be used as the base in constructing URLs for specific
+        repositories or further navigation within the GitHub organization.
+
+        :return: The base segment of the GitHub URL for the specified organization, suitable for constructing more
+        specific repository URLs.
+        :rtype: str
+        """
+        return f"github.com/{self.__org_name}"
