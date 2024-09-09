@@ -207,7 +207,7 @@ def setup(
         click.echo("2/12: Skipped dependencies check.")
 
     # promote input params
-    prepare_parameters(p)
+    prepare_parameters(p, git_man)
     p.save_checkpoint()
 
     tm = GitOpsTemplateManager(p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_URL),
@@ -954,7 +954,7 @@ def get_git_provider_specific_optional_services(git_provider: GitProviders) -> l
 
 
 @trace()
-def prepare_parameters(p):
+def prepare_parameters(p, git_man):
     # TODO: move to appropriate place
 
     optional_services = p.get_input_param(OPTIONAL_SERVICES) or []
@@ -976,7 +976,7 @@ def prepare_parameters(p):
     p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME).lower()
     org_name = p.get_input_param(GIT_ORGANIZATION_NAME).lower()
     p.parameters["<GIT_ORGANIZATION_NAME>"] = org_name
-    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{org_name}'
+    p.parameters["<GIT_REPOSITORY_ROOT>"] = git_man.get_repository_root()
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME).lower()
     p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
     p.parameters["<TERRAFORM_VERSION>"] = TERRAFORM_VERSION

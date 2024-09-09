@@ -1,6 +1,7 @@
 import json
 import textwrap
 from typing import Dict, Optional, Union, Tuple
+from urllib.parse import quote_plus
 
 import requests
 from requests.exceptions import HTTPError
@@ -9,6 +10,8 @@ from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
 from common.enums.git_plans import GitSubscriptionPlans
 from common.tracing_decorator import trace
 from services.vcs.git_provider_manager import GitProviderManager
+
+from common.logging_config import logger
 
 
 class GitLabProviderManager(GitProviderManager):
@@ -208,7 +211,38 @@ class GitLabProviderManager(GitProviderManager):
 
     @trace()
     def create_pr(self, repo_name: str, head_branch: str, base_branch: str, title: str, body: str) -> str:
-        pass
+        """
+        Create a merge request on GitLab.
+
+        :param repo_name: Name of the repository where the merge request will be created.
+        :param head_branch: The source branch from which changes will be pulled.
+        :param base_branch: The target branch to which changes will be merged.
+        :param title: Title of the merge request.
+        :param body: Description of the merge request.
+        :return: A string indicating the URL of the created merge request or an error message.
+        """
+        headers = self._get_headers()
+        # Use urllib.parse.quote_plus to ensure that the repo_name and group_name are URL-encoded safely
+        # This prevents issues with special characters in the URL path
+        url = f"{self.__BASE_API_URI}/projects/{quote_plus(self.__group_name + '/' + repo_name)}/merge_requests"
+        payload = {
+            "source_branch": head_branch,
+            "target_branch": base_branch,
+            "title": title,
+            "description": body
+        }
+        try:
+            response = requests.post(url=url, headers=headers, json=payload)
+            response.raise_for_status()
+            return response.json()["web_url"]
+        except HTTPError as e:
+            logger.error(f"Failed to create merge request: {e}")
+            raise
+        except requests.RequestException as e:
+            logger.error(f"Network error occurred while creating merge request: {e}")
+            raise
+        except KeyError as e:
+            logger.error(f"KeyError occurred while creating merge request: {e}")
 
     def create_iac_pr_automation_config_snippet(self):
         """
@@ -222,3 +256,18 @@ class GitLabProviderManager(GitProviderManager):
       ATLANTIS_GITLAB_WEBHOOK_SECRET       = var.atlantis_repo_webhook_secret,
       GITLAB_TOKEN                         = var.vcs_token,
       # ----""")
+
+    def get_repository_root(self) -> str:
+        """
+        Retrieves the base URL segment for GitLab repositories under the specified group.
+
+        This method returns the starting segment of the URL used to access repositories within a specific GitLab group
+        via its web interface.
+        It provides a foundational URL segment, which can be used as the base in constructing URLs for specific
+        repositories or further navigation within the GitLab group.
+
+        :return: The base segment of the GitLab URL for the specified group, suitable for constructing more specific
+        repository URLs.
+        :rtype: str
+        """
+        return f"gitlab.com/{self.__group_name}"
