@@ -18,7 +18,7 @@ spec:
                 key: SSH_PRIVATE_KEY
               depth: 1
       container:
-        image: "{{workflow.parameters.dockerhub-registry-proxy}}/oxsecurity/megalinter:latest"
+        image: "{{workflow.parameters.dockerhub-registry-proxy}}/oxsecurity/megalinter:v8"
         imagePullPolicy: IfNotPresent
         env:
           - name: DEFAULT_WORKSPACE
