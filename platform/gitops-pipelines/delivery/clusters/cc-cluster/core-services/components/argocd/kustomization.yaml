@@ -6,6 +6,8 @@ resources:
 - argocd-ui-ingress.yaml
 - externalsecrets.yaml
 - argocd-oidc-restart-job.yaml
+- deploykf-assets-pvc.yaml
+- deploykf-plugin.yaml
 
 transformers:
   - label-transformer.yaml
@@ -15,6 +17,8 @@ patches:
 - path: argocd-cmd-params-cm.yaml
 - path: argocd-rbac-cm.yaml
 - path: argocd-secret.yaml
+- path: deploykf-repo-server-patch.yaml
+- path: argocd-repo-server-settings.yaml
 
 generatorOptions:
   disableNameSuffixHash: true

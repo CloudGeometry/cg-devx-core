@@ -1,0 +1,243 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: deploykf-app-of-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: deploykf-app-of-apps
+    app.kubernetes.io/part-of: deploykf
+  annotations:
+    argocd.argoproj.io/sync-wave: '220'
+spec:
+
+  ## NOTE: if not "default", you MUST ALSO set the `argocd.project` value
+  project: "default"
+
+  source:
+    ## source git repo configuration
+    ##  - we use the 'deploykf/deploykf' repo so we can read its 'sample-values.yaml'
+    ##    file, but you may use any repo (even one with no files)
+    ##
+    repoURL: "https://github.com/deployKF/deployKF.git"
+    targetRevision: "v0.1.4"
+    path: "."
+
+    ## plugin configuration
+    ##
+    plugin:
+      name: "deploykf"
+      parameters:
+
+        ## the deployKF generator version
+        ##  - available versions: https://github.com/deployKF/deployKF/releases
+        ##
+        - name: "source_version"
+          string: "0.1.4"
+
+        ## paths to values files within the `repoURL` repository
+        ##  - the values in these files are merged, with later files taking precedence
+        ##  - we strongly recommend using 'sample-values.yaml' as the base of your values
+        ##    so you can easily upgrade to newer versions of deployKF
+        ##
+        - name: "values_files"
+          array:
+            - "./sample-values.yaml"
+
+        ## a string containing the contents of a values file
+        ##  - this parameter allows defining values without needing to create a file in the repo
+        ##  - these values are merged with higher precedence than those defined in `values_files`
+        ##
+        - name: "values"
+          string: |
+            ##
+            ## This demonstrates how you might structure overrides for the 'sample-values.yaml' file.
+            ## For a more comprehensive example, see the 'sample-values-overrides.yaml' in the main repo.
+            ##
+            ## Notes:
+            ##  - YAML maps are RECURSIVELY merged across values files
+            ##  - YAML lists are REPLACED in their entirety across values files
+            ##  - Do NOT include empty/null sections, as this will remove ALL values from that section.
+            ##    To include a section without overriding any values, set it to an empty map: `{}`
+            ##
+
+            ## --------------------------------------------------------------------------------
+            ##                                      argocd
+            ## --------------------------------------------------------------------------------
+            argocd:
+              namespace: argocd-workflows
+              project: core
+
+            ## --------------------------------------------------------------------------------
+            ##                                    kubernetes
+            ## --------------------------------------------------------------------------------
+            kubernetes:
+              {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+            ## --------------------------------------------------------------------------------
+            ##                              deploykf-dependencies
+            ## --------------------------------------------------------------------------------
+            deploykf_dependencies:
+
+              ## --------------------------------------
+              ##             cert-manager
+              ## --------------------------------------
+              cert_manager:
+                enabled: false
+                namespace: cert-manager
+
+                ## extra manifests
+                ##  - a list of strings containing extra Kubernetes resource manifests
+                ##  - strings can include deployKF templates `{{< ... >}}` and Helm templates `{{ ... }}`
+                ##
+                extraManifests: []
+
+                ## istio gateway certificate issuer configs
+                ##  - if you wish to use your own ClusterIssuer, set `clusterIssuer.enabled` to false
+                ##    and set `clusterIssuer.issuerName` to the name of your issuer, (this still works when you
+                ##    bring your own cert-manager deployment by setting `cert_manager.enabled` to false)
+                ##
+                clusterIssuer:
+                  enabled: true
+                  issuerName: letsencrypt-prod
+
+              ## --------------------------------------
+              ##                 istio
+              ## --------------------------------------
+              istio:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+              ## --------------------------------------
+              ##                kyverno
+              ## --------------------------------------
+              kyverno:
+                enabled: true
+                admissionController:
+                  replicas: 3
+                  resources:
+                    limits:
+                      memory: 1024Mi
+                    requests:
+                      cpu: 100m
+                      memory: 512Mi
+
+            ## --------------------------------------------------------------------------------
+            ##                                  deploykf-core
+            ## --------------------------------------------------------------------------------
+            deploykf_core:
+
+              ## --------------------------------------
+              ##             deploykf-auth
+              ## --------------------------------------
+              deploykf_auth:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+              ## --------------------------------------
+              ##        deploykf-istio-gateway
+              ## --------------------------------------
+              deploykf_istio_gateway:
+                gateway:
+                  hostname: deploykf.<DOMAIN>
+                  ports:
+                    http: 80
+                    https: 443
+                  tls:
+                    matchSNI: false
+                gatewayService:
+                  name: "deploykf-gateway"
+                  type: "ClusterIP"
+                  annotations: {}
+                extraManifests:
+                  - |
+                    apiVersion: networking.k8s.io/v1
+                    kind: Ingress
+                    metadata:
+                      name: deploykf-gateway
+                      annotations:
+                        cert-manager.io/cluster-issuer: letsencrypt-prod
+                        nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+
+                        ## nginx wil NOT proxy the SNI by default
+                        ## see: https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/#backend-certificate-authentication
+                        nginx.ingress.kubernetes.io/proxy-ssl-name: "deploykf.<DOMAIN>"
+                        nginx.ingress.kubernetes.io/proxy-ssl-server-name: "on"
+
+                        ## this config is needed due to a bug in ingress-nginx
+                        ## see: https://github.com/kubernetes/ingress-nginx/issues/6728
+                        nginx.ingress.kubernetes.io/proxy-ssl-secret: "deploykf-istio-gateway/deploykf-istio-gateway-cert"
+                    spec:
+                      ingressClassName: nginx
+                      tls:
+                        ## NOTE: this secret is created as part of the deployKF installation
+                        - secretName: "deploykf-istio-gateway-cert"
+                      rules:
+                        - host: "deploykf.<DOMAIN>"
+                          http:
+                            paths:
+                              - path: "/"
+                                pathType: Prefix
+                                backend:
+                                  service:
+                                    name: "deploykf-gateway"
+                                    port:
+                                      name: https
+                        - host: "*.deploykf.<DOMAIN>"
+                          http:
+                            paths:
+                              - path: "/"
+                                pathType: Prefix
+                                backend:
+                                  service:
+                                    name: "deploykf-gateway"
+                                    port:
+                                      name: https
+
+
+              ## --------------------------------------
+              ##      deploykf-profiles-generator
+              ## --------------------------------------
+              deploykf_profiles_generator:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+            ## --------------------------------------------------------------------------------
+            ##                                   deploykf-opt
+            ## --------------------------------------------------------------------------------
+            deploykf_opt:
+
+              ## --------------------------------------
+              ##            deploykf-minio
+              ## --------------------------------------
+              deploykf_minio:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+              ## --------------------------------------
+              ##            deploykf-mysql
+              ## --------------------------------------
+              deploykf_mysql:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+            ## --------------------------------------------------------------------------------
+            ##                                  kubeflow-tools
+            ## --------------------------------------------------------------------------------
+            kubeflow_tools:
+
+              ## --------------------------------------
+              ##                 katib
+              ## --------------------------------------
+              katib:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+              ## --------------------------------------
+              ##               notebooks
+              ## --------------------------------------
+              notebooks:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+              ## --------------------------------------
+              ##               pipelines
+              ## --------------------------------------
+              pipelines:
+                {} # <-- REMOVE THIS, IF YOU INCLUDE VALUES UNDER THIS SECTION!
+
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: "deploykf"
