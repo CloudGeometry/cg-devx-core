@@ -1,5 +1,5 @@
 locals {
-  b64_docker_auth      = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
+  b64_docker_auth = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
   harbor_admin_user    = "admin"
   grafana_admin_user   = "admin"
   atlantis_admin_user  = "admin"
@@ -35,8 +35,9 @@ resource "vault_generic_secret" "ci_secrets" {
 
   data_json = jsonencode(
     {
-      SSH_PRIVATE_KEY       = var.vcs_bot_ssh_private_key,
-      PERSONAL_ACCESS_TOKEN = var.vcs_token,
+      SSH_PRIVATE_KEY             = var.vcs_bot_ssh_private_key,
+      PERSONAL_ACCESS_TOKEN       = var.vcs_token,
+      ARTIFACT_STORAGE_ACCESS_KEY = var.cloud_binary_artifacts_store_access_key,
     }
   )
 
@@ -48,7 +49,7 @@ resource "vault_generic_secret" "cd_secrets" {
 
   data_json = jsonencode(
     {
-      cd_webhook_secret         = var.cd_webhook_secret,
+      cd_webhook_secret = var.cd_webhook_secret,
     }
   )
 
@@ -63,33 +64,34 @@ resource "vault_generic_secret" "atlantis_secrets" {
 
   data_json = jsonencode(
     {
-      ARGO_SERVER_URL                      = "argo.argo.svc.cluster.local:2746",
+      ARGO_SERVER_URL                                = "argo.argo.svc.cluster.local:2746",
       # github specific section
-      ATLANTIS_GH_HOSTNAME                 = "github.com",
-      ATLANTIS_GH_TOKEN                    = var.vcs_token,
-      ATLANTIS_GH_USER                     = "<GIT_USER_LOGIN>",
-      ATLANTIS_GH_WEBHOOK_SECRET           = var.atlantis_repo_webhook_secret,
-      GITHUB_OWNER                         = "<GIT_ORGANIZATION_NAME>",
-      GITHUB_TOKEN                         = var.vcs_token,
+      ATLANTIS_GH_HOSTNAME                           = "github.com",
+      ATLANTIS_GH_TOKEN                              = var.vcs_token,
+      ATLANTIS_GH_USER                               = "<GIT_USER_LOGIN>",
+      ATLANTIS_GH_WEBHOOK_SECRET                     = var.atlantis_repo_webhook_secret,
+      GITHUB_OWNER                                   = "<GIT_ORGANIZATION_NAME>",
+      GITHUB_TOKEN                                   = var.vcs_token,
       # ----
-      TF_VAR_cd_webhook_secret             = var.cd_webhook_secret,
-      TF_VAR_atlantis_repo_webhook_secret  = var.atlantis_repo_webhook_secret,
-      TF_VAR_atlantis_repo_webhook_url     = var.atlantis_repo_webhook_url,
-      TF_VAR_vcs_token                     = var.vcs_token,
-      TF_VAR_cluster_endpoint              = var.cluster_endpoint,
-      TF_VAR_tf_backend_storage_access_key = var.tf_backend_storage_access_key,
-      TF_VAR_cluster_ssh_public_key        = var.cluster_ssh_public_key,
+      TF_VAR_cd_webhook_secret                       = var.cd_webhook_secret,
+      TF_VAR_atlantis_repo_webhook_secret            = var.atlantis_repo_webhook_secret,
+      TF_VAR_atlantis_repo_webhook_url               = var.atlantis_repo_webhook_url,
+      TF_VAR_vcs_token                               = var.vcs_token,
+      TF_VAR_cluster_endpoint                        = var.cluster_endpoint,
+      TF_VAR_tf_backend_storage_access_key           = var.tf_backend_storage_access_key,
+      TF_VAR_cluster_ssh_public_key                  = var.cluster_ssh_public_key,
+      TF_VAR_cloud_binary_artifacts_store_access_key = var.cloud_binary_artifacts_store_access_key,
       # <IAC_PR_AUTOMATION_CONFIG>
-      TF_VAR_hosted_zone_name              = "<DOMAIN_NAME>",
-      TF_VAR_vcs_bot_ssh_public_key        = var.vcs_bot_ssh_public_key,
-      TF_VAR_vcs_bot_ssh_private_key       = var.vcs_bot_ssh_private_key,
+      TF_VAR_hosted_zone_name                        = "<DOMAIN_NAME>",
+      TF_VAR_vcs_bot_ssh_public_key                  = var.vcs_bot_ssh_public_key,
+      TF_VAR_vcs_bot_ssh_private_key                 = var.vcs_bot_ssh_private_key,
       # harbor specific section
-      TF_VAR_registry_oidc_client_id       = module.harbor.vault_oidc_client_id,
-      TF_VAR_registry_oidc_client_secret   = module.harbor.vault_oidc_client_secret,
-      TF_VAR_registry_main_robot_password  = random_password.harbor_main_robot_password.result,
-      HARBOR_URL                           = "https://<REGISTRY_INGRESS_URL>",
-      HARBOR_USERNAME                      = local.harbor_admin_user,
-      HARBOR_PASSWORD                      = random_password.harbor_password.result,
+      TF_VAR_registry_oidc_client_id                 = module.harbor.vault_oidc_client_id,
+      TF_VAR_registry_oidc_client_secret             = module.harbor.vault_oidc_client_secret,
+      TF_VAR_registry_main_robot_password            = random_password.harbor_main_robot_password.result,
+      HARBOR_URL                                     = "https://<REGISTRY_INGRESS_URL>",
+      HARBOR_USERNAME                                = local.harbor_admin_user,
+      HARBOR_PASSWORD                                = random_password.harbor_password.result,
       # ----
 
       # vault specific section

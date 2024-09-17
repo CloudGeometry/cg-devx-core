@@ -90,6 +90,18 @@ output "artifacts_storage" {
   description = "Continuous Integration Artifact Repository storage backend"
 }
 
+output "artifacts_storage_endpoint" {
+  value       = azurerm_storage_account.storage_account.primary_blob_endpoint
+  description = "Continuous Integration Artifact Repository storage account primary endpoint"
+}
+
+output "artifacts_storage_access_key" {
+  value       = azurerm_storage_account.storage_account.primary_access_key
+  sensitive   = true
+  description = "Continuous Integration Artifact Repository storage account primary access key"
+}
+
+
 # stub value for module compatibility
 output "cluster_oidc_provider_arn" {
   value       = ""

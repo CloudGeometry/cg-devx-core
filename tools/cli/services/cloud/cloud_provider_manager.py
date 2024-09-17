@@ -191,3 +191,11 @@ class CloudProviderManager(ABC):
         :rtype: str
         """
         pass
+
+    @abstractmethod
+    def create_ci_artifact_store_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
+        :return: Artifact storage configuration section
+        """
+        pass

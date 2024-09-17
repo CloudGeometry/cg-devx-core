@@ -69,3 +69,9 @@ variable "tf_backend_storage_access_key" {
   type        = string
   default     = ""
 }
+
+variable "cloud_binary_artifacts_store_access_key" {
+  description = "Specifies the access key for CI artifact store backend storage. Only applicable to AKS."
+  type        = string
+  default     = ""
+}
