@@ -135,6 +135,7 @@ def delete(
                 org_name=state_store.parameters["<GIT_ORGANIZATION_NAME>"],
                 wl_repo_name=wl_gitops_repo_name,
                 ssh_pkey_path=state_store.internals["DEFAULT_SSH_PRIVATE_KEY_PATH"],
+                repo_manager=git_man
             )
 
             wl_gitops_repo_folder = wl_gitops_manager.clone_wl()

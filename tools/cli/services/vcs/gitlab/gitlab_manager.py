@@ -8,10 +8,9 @@ from requests.exceptions import HTTPError
 
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
 from common.enums.git_plans import GitSubscriptionPlans
+from common.logging_config import logger
 from common.tracing_decorator import trace
 from services.vcs.git_provider_manager import GitProviderManager
-
-from common.logging_config import logger
 
 
 class GitLabProviderManager(GitProviderManager):
@@ -271,3 +270,25 @@ class GitLabProviderManager(GitProviderManager):
         :rtype: str
         """
         return f"gitlab.com/{self.__group_name}"
+
+    def get_repository_url(self, org_name: str, repo_name: str) -> str:
+        """
+        Retrieve the SSH URL of a GitLab repository.
+
+        :param org_name: The name of the GitLab organization or group.
+        :param repo_name: The name of the repository.
+        :return: The SSH URL of the repository.
+        :raises HTTPError: If there is an issue with the API request.
+        """
+        headers = self._get_headers()
+        try:
+            response = requests.get(
+                url=f"{self.__BASE_API_URI}/projects/{quote_plus(f'{org_name}/{repo_name}')}",
+                headers=headers
+            )
+            response.raise_for_status()
+            project_data = response.json()
+            return project_data["ssh_url_to_repo"]
+        except (KeyError, requests.RequestException) as e:
+            logger.error(f"Error retrieving repository URL: {e}")
+            raise

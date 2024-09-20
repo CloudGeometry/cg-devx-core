@@ -5,6 +5,7 @@ from common.enums.git_plans import GitSubscriptionPlans
 
 class GitProviderManager(ABC):
     """Git provider wrapper to standardise Git management."""
+
     @property
     def organization(self) -> str:
         pass
@@ -98,5 +99,17 @@ class GitProviderManager(ABC):
         :return: The base segment of the URL for the specified organization or group, suitable for constructing more
         specific repository URLs.
         :rtype: str
+        """
+        pass
+
+    @abstractmethod
+    def get_repository_url(self, org_name: str, repo_name: str) -> str:
+        """
+        Retrieve the SSH URL of a Git repository.
+
+        :param org_name: The name of the Git organization or group.
+        :param repo_name: The name of the repository.
+        :return: The SSH URL of the repository.
+        :raises HTTPError: If there is an issue with the API request.
         """
         pass

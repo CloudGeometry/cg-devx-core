@@ -3,6 +3,7 @@ import textwrap
 from urllib.error import HTTPError
 
 import requests
+from ghrepo import GHRepo
 
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
 from common.enums.git_plans import GitSubscriptionPlans
@@ -195,3 +196,14 @@ class GitHubProviderManager(GitProviderManager):
         :rtype: str
         """
         return f"github.com/{self.__org_name}"
+
+    def get_repository_url(self, org_name: str, repo_name: str) -> str:
+        """
+        Retrieve the SSH URL of a GitHub repository.
+
+        :param org_name: The name of the GitHub organization or group.
+        :param repo_name: The name of the repository.
+        :return: The SSH URL of the repository.
+        :raises HTTPError: If there is an issue with the API request.
+        """
+        return GHRepo(owner=org_name, name=repo_name).ssh_url
