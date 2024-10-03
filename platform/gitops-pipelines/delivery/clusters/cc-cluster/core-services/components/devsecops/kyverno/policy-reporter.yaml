@@ -13,7 +13,7 @@ spec:
   source:
     chart: policy-reporter
     repoURL: https://kyverno.github.io/policy-reporter
-    targetRevision: v2.19.4
+    targetRevision: v2.24.2
     helm:
       releaseName: policy-reporter
       values: |
