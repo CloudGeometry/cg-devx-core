@@ -364,5 +364,5 @@ class GcpManager(CloudProviderManager):
         :return: Artifact storage configuration section
         """
         return textwrap.dedent('''gcs:
-    bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
-    keyFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"''')
+      bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
+      keyFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"''')
