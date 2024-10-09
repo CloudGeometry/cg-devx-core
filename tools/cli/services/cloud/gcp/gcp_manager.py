@@ -363,4 +363,6 @@ class GcpManager(CloudProviderManager):
         Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
         :return: Artifact storage configuration section
         """
-        return textwrap.dedent('''''')
+        return textwrap.dedent('''gcs:
+        bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
+        keyFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/''')

@@ -5,12 +5,14 @@ resource "google_service_account" "this" {
   project      = var.project
 }
 
-# Bind Service Account to Kubernetes Service Account
-resource "google_service_account_iam_member" "this" {
+# Bind Service Account to multiple Kubernetes Service Accounts
+resource "google_service_account_iam_member" "k8s_bindings" {
+  for_each = { for ksa in var.kubernetes_service_accounts : "${ksa.namespace}-${ksa.name}" => ksa }
+
   service_account_id = google_service_account.this.name
   role               = data.google_iam_role.workload_identity_user.name
 
-  member = "serviceAccount:${var.project}.svc.id.goog[${var.service_account_namespace}/${var.kubernetes_service_account_name}]"
+  member = "serviceAccount:${var.project}.svc.id.goog[${each.value.namespace}/${each.value.name}]"
 }
 
 # Role Memberships
@@ -39,7 +41,6 @@ resource "google_kms_key_ring_iam_member" "this-crypto_key_encrypter_decrypter" 
 
   member = "serviceAccount:${google_service_account.this.email}"
 }
-
 
 # Bind Service Account to Key Ring
 resource "google_kms_key_ring_iam_member" "this" {
