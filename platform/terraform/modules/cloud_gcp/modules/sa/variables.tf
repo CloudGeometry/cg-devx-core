@@ -3,9 +3,12 @@ variable "service_account_name" {
   type        = string
 }
 
-variable "kubernetes_service_account_name" {
-  description = "The Kubernetes Service Account name."
-  type        = string
+variable "kubernetes_service_accounts" {
+  description = "List of Kubernetes service accounts to map to GCP service account"
+  type        = list(object({
+    namespace = string
+    name      = string
+  }))
 }
 
 variable "display_name" {
@@ -15,12 +18,6 @@ variable "display_name" {
 
 variable "project" {
   description = "Google Project ID"
-  type        = string
-}
-
-
-variable "service_account_namespace" {
-  description = "The Kubernetes Namespace for the role."
   type        = string
 }
 
