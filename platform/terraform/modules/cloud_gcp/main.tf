@@ -22,7 +22,13 @@ locals {
   tags                    = var.tags
   node_labels_substr      = join(",", formatlist("%s=%s", keys(var.cluster_node_labels), values(var.cluster_node_labels)))
   default_node_group_name = "${local.name}-node-group"
-  gke_node_groups         = [
+  ci_sa_workloads         = [
+    for key, _ in var.workloads : {
+      namespace = "wl-${key}-build"
+      name      = "argo-workflow"
+    }
+  ]
+  gke_node_groups = [
     for node_group in var.node_groups :
     {
       name           = node_group.name == "" ? local.default_node_group_name : node_group.name
