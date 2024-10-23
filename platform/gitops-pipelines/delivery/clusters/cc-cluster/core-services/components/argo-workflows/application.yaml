@@ -43,6 +43,7 @@ spec:
           pullPolicy: IfNotPresent
           pullSecrets:
             - name: proxy-docker-config
+            - name: docker-config
         mainContainer:
           resources:
             requests:

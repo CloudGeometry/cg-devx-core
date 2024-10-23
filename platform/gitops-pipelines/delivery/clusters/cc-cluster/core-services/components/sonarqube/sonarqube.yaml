@@ -19,6 +19,9 @@ spec:
     helm:
       releaseName: sonarqube
       values: |
+        image:
+          pullSecrets:
+            - name: docker-config
         persistence:
           enabled: false
         plugins:

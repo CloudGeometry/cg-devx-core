@@ -21,7 +21,8 @@ spec:
           cg-devx.metadata.version: 1.17.0-next.2
         global:
           imageRegistry: ""
-          imagePullSecrets: []
+          imagePullSecrets: 
+            - docker-config
         kubeVersion: ""
         nameOverride: ""
         fullnameOverride: ""

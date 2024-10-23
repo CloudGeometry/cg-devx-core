@@ -20,6 +20,8 @@ spec:
       releaseName: harbor
       values: |
         externalURL: https://<REGISTRY_INGRESS_URL>
+        imagePullSecrets:
+          - name: docker-config
         expose:
           type: ingress
           tls:
