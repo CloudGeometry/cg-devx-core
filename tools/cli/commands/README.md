@@ -46,6 +46,7 @@ for checkpointing, allowing the command to be rerun if necessary.
 | -gtb, --gitops-template-branch | TEXT                                    | GitOps repository template branch             |
 | -dw, --setup-demo-workload     | Flag                                    | Flag to set up a demo workload                |
 | -ops, --optional-services      | TEXT                                    | Setup optional services                       |
+| -ra, --image-registry-auth     | TEXT                                    | Image registry auth config, JSON              |
 | -f, --config-file              | FILENAME                                | File to load setup parameters from            |
 | --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Logging verbosity level, defaults to CRITICAL |
 
@@ -95,6 +96,13 @@ git-provider: github
 git-org: acmeinc
 git-access-token: ghp_xxx
 gitops-repo-name: gitops-repo-name
+optional-services:
+  - keda
+  - vpa
+image-registry-auth:
+  docker.io:
+    name: user
+    token: token
 ```
 
 ### Troubleshooting
