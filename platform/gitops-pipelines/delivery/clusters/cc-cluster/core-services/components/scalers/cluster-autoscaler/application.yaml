@@ -14,6 +14,9 @@ spec:
     helm:
       values: |-
         affinity: {}
+        image:
+         pullSecrets:
+          - name: docker-config
         additionalLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin

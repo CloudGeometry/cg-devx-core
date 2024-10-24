@@ -19,6 +19,9 @@ spec:
     helm:
       releaseName: trivy-operator
       values: |
+        image:
+          pullSecrets:
+            - name: docker-config
         trivy:
           ignoreUnfixed: false
           labels:

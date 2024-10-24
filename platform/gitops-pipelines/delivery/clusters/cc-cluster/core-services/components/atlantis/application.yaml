@@ -69,6 +69,8 @@ spec:
             apply_requirements: [mergeable]
         volumeClaim:
           dataStorage: 20Gi
+        imagePullSecrets:
+         - docker-config
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: atlantis

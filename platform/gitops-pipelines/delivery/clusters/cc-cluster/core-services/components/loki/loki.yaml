@@ -16,6 +16,8 @@ spec:
     chart: loki
     helm:
       values: |-
+        imagePullSecrets: 
+          - name: docker-config
         loki:
           auth_enabled: false
           commonConfig:

@@ -13,6 +13,9 @@ spec:
     chart: reloader
     helm:
       values: |-
+        global:
+          imagePullSecrets: 
+            - name: docker-config
         reloader:
           ignoreSecrets: false
           reloadStrategy: annotations

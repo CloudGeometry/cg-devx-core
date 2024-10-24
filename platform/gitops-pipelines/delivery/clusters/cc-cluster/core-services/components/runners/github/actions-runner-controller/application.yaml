@@ -40,7 +40,8 @@ spec:
           # It's added to spec.ImagePullSecrets of self-hosted runner pods.
           actionsRunnerImagePullSecrets: []
 
-        imagePullSecrets: []
+        imagePullSecrets: 
+          - name: docker-config
         nameOverride: ""
         fullnameOverride: ""
 

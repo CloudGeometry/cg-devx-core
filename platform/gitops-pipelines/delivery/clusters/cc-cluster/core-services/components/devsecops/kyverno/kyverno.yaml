@@ -23,6 +23,9 @@ spec:
           cg-devx.metadata.service: policy-engine.kyverno
           cg-devx.metadata.chart-version: 3.2.7
           cg-devx.metadata.version: 1.12.6
+        global:
+          imagePullSecrets:
+           - name: docker-config
   syncPolicy:
     automated:
       prune: true

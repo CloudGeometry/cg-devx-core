@@ -19,6 +19,8 @@ spec:
     helm:
       releaseName: kubecost
       values: |
+        imagePullSecrets:
+         - name: docker-config
         global:
           additionalLabels:
             cg-devx.cost-allocation.cost-center: platform
