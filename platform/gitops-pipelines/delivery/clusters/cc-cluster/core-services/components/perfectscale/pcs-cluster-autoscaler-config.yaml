@@ -1,0 +1,21 @@
+apiVersion: perfectscale.io/v1
+kind: ClusterAutomationConfig
+metadata:
+  name: cluster-automation-config
+spec:
+  automation:
+    operational:
+      stopAllAutomation: false
+    workloadTypes:
+      Deployment:
+        operational:
+          automationMode: "Disabled"
+          restrictions:
+      StatefulSet:
+        operational:
+          automationMode: "Disabled"
+          restrictions:
+      DaemonSet:
+        operational:
+          automationMode: "Disabled"
+          restrictions:
