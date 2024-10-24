@@ -54,9 +54,13 @@ for checkpointing, allowing the command to be rerun if necessary.
 - keda
 - kubevirt
 - nvidia-gpu-operator
+- perfectscale
 - vpa
 
 > **Note!**: Use kebab-case for all parameter names.
+
+When installing PerfectScale, you should set `clientId` and `clientSecret` in your secret store (
+path `secret/perfectscale-secret`) to values provided in PerfectScale UI.
 
 ### Examples
 
