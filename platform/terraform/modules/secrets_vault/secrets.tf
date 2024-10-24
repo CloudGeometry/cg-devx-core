@@ -8,7 +8,7 @@ locals {
 }
 
 resource "vault_generic_secret" "docker_config" {
-  path = "secret/dockerconfigjson"
+    path = "secret/dockerconfigjson"
 
   data_json = jsonencode(
     {
@@ -16,18 +16,6 @@ resource "vault_generic_secret" "docker_config" {
         { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" }},
         local.image_registry_auth)
       })
-    }
-  )
-
-  depends_on = [vault_mount.secret]
-}
-
-resource "vault_generic_secret" "registry_auth" {
-  path = "secret/registry-auth"
-
-  data_json = jsonencode(
-    {
-      auth = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } } }),
     }
   )
 
