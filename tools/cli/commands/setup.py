@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 import time
 import webbrowser
@@ -107,6 +108,10 @@ def setup(
             raise click.ClickException(str(e))
     else:
         # TODO: merge file with param override
+        try:
+            reg_auth = json.loads(image_registry_auth)
+        except ValueError as e:
+            raise click.ClickException(f"Parameter image-registry-auth is not a correct JSON string: {e}")
         p = StateStore({
             OWNER_EMAIL: email,
             CLOUD_PROVIDER: cloud_provider,
@@ -128,7 +133,7 @@ def setup(
             GITOPS_REPOSITORY_TEMPLATE_BRANCH: gitops_template_branch,
             DEMO_WORKLOAD: install_demo,
             OPTIONAL_SERVICES: optional_services,
-            IMAGE_REGISTRY_AUTH: image_registry_auth
+            IMAGE_REGISTRY_AUTH: reg_auth
         })
 
     # validate parameters
@@ -1097,11 +1102,11 @@ def setup_param_validator(params: StateStore) -> bool:
 
     if params.get_input_param(IMAGE_REGISTRY_AUTH):
         for k, v in params.get_input_param(IMAGE_REGISTRY_AUTH).items():
-            if "name" not in v and "token" not in v:
+            if "login" not in v and "token" not in v:
                 click.echo(f"Image registry auth {k} has incorrect structure")
                 return False
-            if not v["name"] and not v["token"]:
-                click.echo(f"Image registry {k} should have name and token specified")
+            if not v["login"] and not v["token"]:
+                click.echo(f"Image registry {k} should have login and token specified")
                 return False
 
     return True

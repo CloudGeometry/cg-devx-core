@@ -76,6 +76,14 @@ cgdevxcli setup --email user@cgdevx.io \
                 --gitops-repo-name gitops-repo-name
 ```
 
+With optional parameters:
+
+```bash
+--image-registry-auth "{ \"docker.io\": { \"login\": \"user\", \"token\": \"token\" } }"
+--optional-services keda
+--optional-services vpa
+```
+
 Using a parameter file:
 
 ```bash
@@ -101,7 +109,7 @@ optional-services:
   - vpa
 image-registry-auth:
   docker.io:
-    name: user
+    login: user
     token: token
 ```
 
