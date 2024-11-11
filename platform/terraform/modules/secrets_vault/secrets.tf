@@ -236,3 +236,16 @@ resource "vault_generic_secret" "oauth2_cookie_secret" {
 
   depends_on = [vault_mount.secret]
 }
+
+resource "vault_generic_secret" "perfectscale_secret" {
+  path = "secret/perfectscale-secret"
+
+  data_json = jsonencode(
+    {
+      clientId = "",
+      clientSecret = "",
+    }
+  )
+
+  depends_on = [vault_mount.secret]
+}
