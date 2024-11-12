@@ -17,6 +17,9 @@ spec:
     helm:
       skipCrds: true
       values: |-
+        global:
+          imagePullSecrets: 
+            - name: docker-config
         commonLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin

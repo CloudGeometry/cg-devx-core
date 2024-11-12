@@ -4,26 +4,18 @@ locals {
   grafana_admin_user   = "admin"
   atlantis_admin_user  = "admin"
   sonarqube_admin_user = "admin"
+  image_registry_auth  = tomap({ for key, value in var.image_registry_auth: key => base64encode("${value.login}:${value.token}") })
 }
 
 resource "vault_generic_secret" "docker_config" {
-  path = "secret/dockerconfigjson"
+    path = "secret/dockerconfigjson"
 
   data_json = jsonencode(
     {
-      dockerconfig = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } } }),
-    }
-  )
-
-  depends_on = [vault_mount.secret]
-}
-
-resource "vault_generic_secret" "registry_auth" {
-  path = "secret/registry-auth"
-
-  data_json = jsonencode(
-    {
-      auth = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } } }),
+      dockerconfig = jsonencode({ "auths" : merge(
+        { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" }},
+        local.image_registry_auth)
+      })
     }
   )
 

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 import time
 import webbrowser
@@ -19,7 +20,7 @@ from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVI
     CLOUD_ACCOUNT_ACCESS_SECRET, CLOUD_REGION, PRIMARY_CLUSTER_NAME, DNS_REGISTRAR, DNS_REGISTRAR_ACCESS_TOKEN, \
     DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, DOMAIN_NAME, GIT_PROVIDER, GIT_ORGANIZATION_NAME, \
     GIT_ACCESS_TOKEN, GITOPS_REPOSITORY_NAME, GITOPS_REPOSITORY_TEMPLATE_URL, GITOPS_REPOSITORY_TEMPLATE_BRANCH, \
-    DEMO_WORKLOAD, OPTIONAL_SERVICES
+    DEMO_WORKLOAD, OPTIONAL_SERVICES, IMAGE_REGISTRY_AUTH
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
@@ -74,6 +75,7 @@ from services.vcs.git_provider_manager import GitProviderManager
               is_flag=True)
 @click.option('--optional-services', '-ops', 'optional_services', help='Optional services', type=click.STRING,
               multiple=True)
+@click.option('--image-registry-auth', '-ra', 'image_registry_auth', help='Image registry auth map')
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -84,7 +86,7 @@ def setup(
         cloud_region: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
         dns_reg_key: str, dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
         gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool,
-        optional_services: List[str], config: click.File, verbosity: str
+        optional_services: List[str], image_registry_auth, config: click.File, verbosity: str
 ):
     """Creates new CG DevX installation."""
     click.echo("Setup CG DevX installation...")
@@ -106,6 +108,10 @@ def setup(
             raise click.ClickException(str(e))
     else:
         # TODO: merge file with param override
+        try:
+            reg_auth = json.loads(image_registry_auth)
+        except ValueError as e:
+            raise click.ClickException(f"Parameter image-registry-auth is not a correct JSON string: {e}")
         p = StateStore({
             OWNER_EMAIL: email,
             CLOUD_PROVIDER: cloud_provider,
@@ -126,7 +132,8 @@ def setup(
             GITOPS_REPOSITORY_TEMPLATE_URL: gitops_template_url,
             GITOPS_REPOSITORY_TEMPLATE_BRANCH: gitops_template_branch,
             DEMO_WORKLOAD: install_demo,
-            OPTIONAL_SERVICES: optional_services
+            OPTIONAL_SERVICES: optional_services,
+            IMAGE_REGISTRY_AUTH: reg_auth
         })
 
     # validate parameters
@@ -757,6 +764,9 @@ def setup(
         if "CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY" in p.internals:
             sec_man_tf_params["cloud_binary_artifacts_store_access_key"] = p.internals["CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"]
 
+        if "IMAGE_REGISTRY_AUTH" in p.internals:
+            sec_man_tf_params["image_registry_auth"] = p.internals["IMAGE_REGISTRY_AUTH"]
+
         tf_wrapper.apply(sec_man_tf_params)
 
         sec_man_out = tf_wrapper.output()
@@ -996,6 +1006,7 @@ def prepare_parameters(p):
     p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
     p.parameters["<GIT_PROVIDER>"] = p.git_provider
     p.internals["GIT_ACCESS_TOKEN"] = p.get_input_param(GIT_ACCESS_TOKEN)
+    p.internals["IMAGE_REGISTRY_AUTH"] = p.get_input_param(IMAGE_REGISTRY_AUTH)
     p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME).lower()
     org_name = p.get_input_param(GIT_ORGANIZATION_NAME).lower()
     p.parameters["<GIT_ORGANIZATION_NAME>"] = org_name
@@ -1088,5 +1099,14 @@ def setup_param_validator(params: StateStore) -> bool:
             click.echo(
                 f"Features list parsing error: unsupported features found - {str.join(', ', incorrect_services)}")
             return False
+
+    if params.get_input_param(IMAGE_REGISTRY_AUTH):
+        for k, v in params.get_input_param(IMAGE_REGISTRY_AUTH).items():
+            if "login" not in v and "token" not in v:
+                click.echo(f"Image registry auth {k} has incorrect structure")
+                return False
+            if not v["login"] and not v["token"]:
+                click.echo(f"Image registry {k} should have login and token specified")
+                return False
 
     return True

@@ -35,4 +35,5 @@ module "secrets" {
   cluster_ssh_public_key                  = var.cluster_ssh_public_key
   tf_backend_storage_access_key           = var.tf_backend_storage_access_key
   cloud_binary_artifacts_store_access_key = var.cloud_binary_artifacts_store_access_key
+  image_registry_auth                     = var.image_registry_auth
 }

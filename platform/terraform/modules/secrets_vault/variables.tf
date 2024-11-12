@@ -82,3 +82,9 @@ variable "cloud_binary_artifacts_store_access_key" {
   type        = string
   default     = ""
 }
+
+variable "image_registry_auth" {
+  description = "Specifies the access keys for image registries"
+  type        = map(object({login = string, token = string}))
+  default     = {}
+}
