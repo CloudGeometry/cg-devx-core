@@ -178,7 +178,7 @@ class PlatformGitOpsRepo:
         })
 
         # prepare ArgoCD manifest
-        wl_gitops_repo = GHRepo(self._git_man.organization, wl_gitops_repo_name)
+        wl_gitops_repo = self._git_man.get_repository_url(self._git_man.organization, wl_gitops_repo_name)
         params = {
             "<WL_NAME>": wl_name,
             "<WL_GITOPS_REPOSITORY_GIT_URL>": wl_gitops_repo.ssh_url,
