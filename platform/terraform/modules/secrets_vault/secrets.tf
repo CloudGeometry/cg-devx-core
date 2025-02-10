@@ -4,7 +4,7 @@ locals {
   grafana_admin_user   = "admin"
   atlantis_admin_user  = "admin"
   sonarqube_admin_user = "admin"
-  image_registry_auth  = tomap({ for key, value in var.image_registry_auth: key => base64encode("${value.login}:${value.token}") })
+  image_registry_auth  = tomap({ for key, value in var.image_registry_auth == null ? {} : var.image_registry_auth: key => base64encode("${value.login}:${value.token}") })
 }
 
 resource "vault_generic_secret" "docker_config" {
