@@ -10,7 +10,7 @@ resource "aws_iam_policy" "ci" {
       {
         "Action" : "s3:*",
         "Effect" : "Allow",
-        "Resource" : [ module.artifacts_repository.s3_bucket_arn, "${module.artifacts_repository.s3_bucket_arn}/*" ]
+        "Resource" : [module.artifacts_repository.s3_bucket_arn, "${module.artifacts_repository.s3_bucket_arn}/*"]
       }
     ]
   })
@@ -61,6 +61,20 @@ resource "aws_iam_policy" "secret_manager_policy" {
   tags = local.tags
 }
 
+resource "aws_iam_policy" "backups_manager_policy" {
+  name        = "${local.name}-backups-manager-policy"
+  description = "Cloud Native Backups Manager IAM policy"
 
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Action" : "s3:*",
+        "Effect" : "Allow",
+        "Resource" : [module.backups_repository.s3_bucket_arn, "${module.backups_repository.s3_bucket_arn}/*"]
+      }
+    ]
+  })
 
-
+  tags = local.tags
+}

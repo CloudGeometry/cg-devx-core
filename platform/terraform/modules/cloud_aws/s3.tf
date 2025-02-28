@@ -32,3 +32,25 @@ module "artifacts_repository" {
     }
   ]
 }
+
+module "backups_repository" {
+  source = "terraform-aws-modules/s3-bucket/aws"
+
+  bucket = "${local.name}-backups-repository-${random_string.random_suffix.id}"
+  acl    = "private"
+
+  control_object_ownership = true
+  object_ownership         = "ObjectWriter"
+
+  force_destroy  = true
+  lifecycle_rule = [
+    {
+      id     = "delete-after-90-days"
+      status = "Enabled"
+
+      expiration = {
+        days = 90
+      }
+    }
+  ]
+}

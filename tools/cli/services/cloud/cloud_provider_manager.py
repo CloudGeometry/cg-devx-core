@@ -199,3 +199,11 @@ class CloudProviderManager(ABC):
         :return: Artifact storage configuration section
         """
         pass
+
+    @abstractmethod
+    def create_velero_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration snippet for Velero
+        :return: Artifact storage configuration section
+        """
+        pass

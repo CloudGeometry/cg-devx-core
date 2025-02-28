@@ -147,7 +147,8 @@ class AzureManager(CloudProviderManager):
         self._azure_sdk.create_storage(
             container_name=self.iac_backend_storage_container_name,
             storage_account_name=storage_account_name,
-            resource_group_name=resource_group_name)
+            resource_group_name=resource_group_name
+        )
 
         keys = self._azure_sdk.get_storage_account_keys(resource_group_name, storage_account_name)
         self._azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
@@ -315,3 +316,41 @@ class AzureManager(CloudProviderManager):
       accountKeySecret:
         name: ci-secrets
         key: ARTIFACT_STORAGE_ACCESS_KEY''')
+
+    def create_velero_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration snippet for Velero for Azure.
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent(f'''configuration:
+          backupStorageLocation:
+            - name: default
+              provider: velero.io/azure
+              bucket: <CLOUD_CLUSTER_BACKUPS_STORE>
+              config:
+                resourceGroup: <CLOUD_CLUSTER_RESOURCE_GROUP>
+                storageAccount: <CLOUD_CLUSTER_STORAGE_ACCOUNT>
+                subscriptionId: <AZ_SUBSCRIPTION_ID>
+                useAAD: "true"
+          volumeSnapshotLocation:
+            - name: default
+              provider: velero.io/azure
+              config:
+                subscriptionId: <AZ_SUBSCRIPTION_ID>
+                resourceGroup: <CLOUD_CLUSTER_RESOURCE_GROUP>
+                incremental: "true"
+        initContainers:
+          - name: velero-plugin-for-microsoft-azure
+            image: velero/velero-plugin-for-microsoft-azure:v1.11.1
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        podLabels:
+          azure.workload.identity/use: "true"
+        credentials:
+          secretContents:
+            cloud: |
+              AZURE_SUBSCRIPTION_ID=<AZ_SUBSCRIPTION_ID>
+              AZURE_RESOURCE_GROUP=<CLOUD_CLUSTER_NODE_RESOURCE_GROUP>
+              AZURE_CLOUD_NAME=AzurePublicCloud''')

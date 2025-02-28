@@ -9,7 +9,8 @@ provider "kubernetes" {
 
 # GKE Cluster Configuration
 module "gke" {
-  source = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
+  version = "34.0.0"
 
   name            = local.name
   project_id      = local.project_id

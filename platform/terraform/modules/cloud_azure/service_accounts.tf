@@ -98,3 +98,33 @@ module "cluster_autoscaler_sa" {
     "cg-devx.metadata.service" : "cluster-autoscaler"
   })
 }
+
+# Cluster Backups Manager
+module "backups_manager_sa" {
+  source = "./modules/aks_rbac"
+
+  oidc_issuer_url         = local.oidc_issuer_url
+  resource_group_name     = local.resource_group_name
+  resource_group_location = local.resource_group_location
+  name                    = "velero"
+  service_account_name    = "velero"
+  role_definitions        = [
+    {
+      "name"  = "Storage Blob Data Contributor",
+      "scope" = "/resourceGroups/${local.resource_group_name}/providers/Microsoft.Storage/storageAccounts/${azurerm_storage_account.storage_account.name}"
+    },
+    {
+      "name"  = "Contributor",
+      "scope" = "/resourceGroups/${local.resource_group_name}"
+    },
+    {
+      "name"  = "Contributor",
+      "scope" = "/resourceGroups/${local.node_resource_group}"
+    }
+  ]
+  namespace = "velero"
+  tags      = merge(local.tags, {
+    "cg-devx.metadata.service" : "backups-manager"
+  })
+  depends_on = [azurerm_storage_account.storage_account]
+}

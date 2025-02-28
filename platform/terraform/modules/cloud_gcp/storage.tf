@@ -22,3 +22,21 @@ resource "google_storage_bucket" "artifacts_repository" {
   }
   force_destroy = true
 }
+
+resource "google_storage_bucket" "backups_repository" {
+  name     = "${local.name}-backups-repository-${random_string.uniq_bucket_suffix.result}"
+  location = local.region
+
+  lifecycle_rule {
+    condition {
+      age = 90
+    }
+    action {
+      type = "Delete"
+    }
+  }
+  versioning {
+    enabled = false
+  }
+  force_destroy = true
+}
