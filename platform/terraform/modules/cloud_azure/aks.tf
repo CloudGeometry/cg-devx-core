@@ -26,7 +26,7 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   image_cleaner_enabled            = false
   azure_policy_enabled             = true
   http_application_routing_enabled = false
-  node_resource_group              = "${local.name}-vmss-rg"
+  node_resource_group              = local.node_resource_group
 
   default_node_pool {
     name                   = local.default_node_group.name
@@ -99,16 +99,16 @@ resource "azurerm_kubernetes_cluster_node_pool" "node_pool" {
 
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks_cluster.id
 
-  name            = each.key
-  vm_size         = each.value.instance_types
-  zones           = local.azs
-  vnet_subnet_id  = azurerm_subnet.private_subnet.id
-  max_count       = each.value.max_size
-  min_count       = each.value.min_size
-  node_count      = each.value.desired_size
-  os_disk_size_gb = each.value.disc_size
-  node_labels     = var.cluster_node_labels
-  node_taints = each.value.gpu_enabled == true ? ["group-type=gpu-enabled:NoSchedule"] : []
+  name                  = each.key
+  vm_size               = each.value.instance_types
+  zones                 = local.azs
+  vnet_subnet_id        = azurerm_subnet.private_subnet.id
+  max_count             = each.value.max_size
+  min_count             = each.value.min_size
+  node_count            = each.value.desired_size
+  os_disk_size_gb       = each.value.disc_size
+  node_labels           = var.cluster_node_labels
+  node_taints           = each.value.gpu_enabled == true ? ["group-type=gpu-enabled:NoSchedule"] : []
   orchestrator_version  = var.cluster_version
   tags                  = local.tags
   enable_node_public_ip = false

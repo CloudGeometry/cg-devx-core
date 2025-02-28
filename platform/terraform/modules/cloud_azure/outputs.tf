@@ -41,6 +41,11 @@ output "cluster_autoscaler_irsa_role" {
   value       = module.cluster_autoscaler_sa.app_client_id
 }
 
+output "backups_manager_irsa_role" {
+  description = "Cluster Backup Manager IAM role for a K8s service account"
+  value       = module.backups_manager_sa.app_client_id
+}
+
 ################################################################################
 # cluster
 ################################################################################
@@ -108,3 +113,30 @@ output "cluster_oidc_provider_arn" {
   sensitive   = true
   description = "Cluster OIDC provider stub."
 }
+
+################################################################################
+# backups storage
+################################################################################
+output "backups_storage" {
+  description = "The backups storage container name"
+  value       = azurerm_storage_container.backups_repository.name
+}
+
+output "storage_account" {
+  description = "The backups storage account name"
+  value       = azurerm_storage_account.storage_account.name
+}
+
+output "resource_group" {
+  value       = azurerm_resource_group.rg.name
+  description = "Resource group name"
+}
+
+output "node_resource_group" {
+  value       = local.node_resource_group
+  description = "Node resource group name"
+}
+
+
+
+

@@ -16,6 +16,7 @@ data "azurerm_client_config" "current" {}
 locals {
   name                         = var.cluster_name
   vnet_name                    = "${var.cluster_name}-vnet"
+  node_resource_group          = "${local.name}-vmss-rg"
   log_analytics_retention_days = 30
   tags                         = var.tags
   azs                          = [for i in range(1, var.az_count + 1) : tostring(i)]

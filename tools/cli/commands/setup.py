@@ -267,6 +267,8 @@ def setup(
 
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
+        p.fragments["# <VELERO_CLOUD_PROVIDER_SPECIFIC_SNIPPET>"] = cloud_man.create_velero_config_snippet()
+
         p.fragments["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
         p.fragments["# <BASE_ADDITIONAL_ANNOTATIONS>"] = cloud_man.create_additional_labels()
         p.fragments["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
@@ -373,6 +375,8 @@ def setup(
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
         p.parameters["<SECRET_MANAGER_IAM_ROLE_RN>"] = hp_out["secret_manager_role"]
         p.parameters["<CLUSTER_AUTOSCALER_IAM_ROLE_RN>"] = hp_out["cluster_autoscaler_role"]
+        p.parameters["<BACKUPS_MANAGER_IAM_ROLE_RN>"] = hp_out["backups_manager_role"]
+
         # cluster
         p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
@@ -389,6 +393,12 @@ def setup(
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>"] = hp_out["artifact_storage_endpoint"]
         p.internals["CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"] = hp_out["artifacts_storage_access_key"]
+
+        # backups storage
+        p.parameters["<CLOUD_CLUSTER_BACKUPS_STORE>"] = hp_out["backups_storage"]
+
+
+
         # kms keys
         p.parameters["<SECRET_MANAGER_UNSEAL_RN>"] = hp_out["secret_manager_unseal_key"]
         p.parameters["<SECRET_MANAGER_UNSEAL_KEY_RING>"] = hp_out["secret_manager_unseal_key_ring"]
@@ -421,6 +431,9 @@ def setup(
             # `az aks get-credentials --name my-cluster --resource-group my-rg --admin`
             # get config from tf output
             kctl_config_path = write_k8s_config(hp_out["kube_config_raw"])
+            p.parameters["<CLOUD_CLUSTER_STORAGE_ACCOUNT>"] = hp_out["storage_account"]
+            p.parameters["<CLOUD_CLUSTER_RESOURCE_GROUP>"] = hp_out["resource_group"]
+            p.parameters["<CLOUD_CLUSTER_NODE_RESOURCE_GROUP>"] = hp_out["node_resource_group"]
         elif p.cloud_provider == CloudProviders.GCP:
             command, command_args = cloud_man.get_k8s_auth_command()
             kubeconfig_params = {
@@ -762,7 +775,8 @@ def setup(
             sec_man_tf_params["tf_backend_storage_access_key"] = p.internals["TF_BACKEND_STORAGE_ACCESS_KEY"]
 
         if "CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY" in p.internals:
-            sec_man_tf_params["cloud_binary_artifacts_store_access_key"] = p.internals["CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"]
+            sec_man_tf_params["cloud_binary_artifacts_store_access_key"] = p.internals[
+                "CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"]
 
         if "IMAGE_REGISTRY_AUTH" in p.internals:
             sec_man_tf_params["image_registry_auth"] = p.internals["IMAGE_REGISTRY_AUTH"]

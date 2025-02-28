@@ -217,3 +217,29 @@ class AWSManager(CloudProviderManager):
       useSDKCreds: true
       encryptionOptions:
         enableEncryption: false''')
+
+    def create_velero_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration snippet for Velero
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''configuration:
+          backupStorageLocation:
+            - name: default
+              provider: velero.io/aws
+              bucket: <CLOUD_CLUSTER_BACKUPS_STORE>
+              config:
+                region: <CLOUD_REGION>
+          volumeSnapshotLocation:
+            - name: default
+              provider: velero.io/aws
+              config:
+                region: <CLOUD_REGION>
+        initContainers:
+          - name: plugin-for-aws
+            image: velero/velero-plugin-for-aws:v1.11.0
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        credentials:
+          useSecret: false''')
