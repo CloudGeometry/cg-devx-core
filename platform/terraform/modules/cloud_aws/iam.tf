@@ -77,8 +77,8 @@ module "iam_ci_role" {
 
 # IaC PR automation
 module "iac_pr_automation_irsa_role" {
-  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-iac_pr_automation-role"
+  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name      = "${local.name}-iac_pr_automation-role"
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
@@ -98,7 +98,7 @@ module "cert_manager_irsa_role" {
   role_name                  = "${local.name}-cert-manager-role"
   attach_cert_manager_policy = true
   #  cert_manager_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
-  oidc_providers = {
+  oidc_providers             = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["cert-manager:cert-manager"]
@@ -124,8 +124,8 @@ module "external_dns_irsa_role" {
 }
 # secret_manager
 module "secret_manager_irsa_role" {
-  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name = "${local.name}-secret_manager-role"
+  source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name      = "${local.name}-secret_manager-role"
   oidc_providers = {
     main = {
       provider_arn               = module.eks.oidc_provider_arn
@@ -150,6 +150,23 @@ module "cluster_autoscaler_irsa_role" {
     ex = {
       provider_arn               = module.eks.oidc_provider_arn
       namespace_service_accounts = ["cluster-autoscaler:cluster-autoscaler"]
+    }
+  }
+}
+
+# Cluster Backups Manager
+module "backups_manager_irsa_role" {
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  role_name = "${local.name}-backups-manager-role"
+
+  role_policy_arns = {
+    policy = aws_iam_policy.backups_manager_policy.arn
+  }
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["velero:velero"]
     }
   }
 }

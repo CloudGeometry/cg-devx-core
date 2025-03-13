@@ -366,3 +366,29 @@ class GcpManager(CloudProviderManager):
         return textwrap.dedent('''gcs:
       bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
       keyFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"''')
+
+    def create_velero_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration snippet for Velero
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''configuration:
+          backupStorageLocation:
+            - name: default
+              provider: velero.io/gcp
+              bucket: <CLOUD_CLUSTER_BACKUPS_STORE>
+              config:
+                region: <CLOUD_REGION>
+          volumeSnapshotLocation:
+            - name: default
+              provider: velero.io/gcp
+              config:
+                region: <CLOUD_REGION>
+        initContainers:
+          - name: velero-plugin-for-gcp
+            image: velero/velero-plugin-for-gcp:v1.11.1
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        credentials:
+          useSecret: false''')

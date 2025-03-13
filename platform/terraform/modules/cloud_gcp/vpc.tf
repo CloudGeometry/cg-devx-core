@@ -1,6 +1,6 @@
 module "vpc" {
   source       = "terraform-google-modules/network/google"
-  version      = "~> 9.0.0"
+  version      = "9.3.0"
   project_id   = local.project_id
   network_name = "${local.name}-vpc"
   routing_mode = "GLOBAL"

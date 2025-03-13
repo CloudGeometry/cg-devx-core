@@ -34,6 +34,11 @@ output "cluster_autoscaler_irsa_role" {
   description = "Cluster Autoscaler IAM Role ARN"
 }
 
+output "backups_manager_irsa_role" {
+  description = "Cluster Backup Manager IAM role for a K8s service account"
+  value       = module.backups_manager_sa.service_account_email
+}
+
 ################################################################################
 # cluster
 ################################################################################
@@ -87,6 +92,13 @@ output "artifacts_storage_endpoint" {
   value       = google_storage_bucket.artifacts_repository.url
   description = "Continuous Integration Artifact Repository storage account primary endpoint"
 }
+################################################################################
+# backups storage
+################################################################################
+output "backups_storage" {
+  description = "The backups storage S3 bucket name"
+  value       = google_storage_bucket.backups_repository.id
+}
 
 # stub value for module compatibility
 output "artifacts_storage_access_key" {
@@ -108,4 +120,22 @@ output "kube_config_raw" {
   value       = ""
   sensitive   = true
   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
+}
+
+# stub value for module compatibility
+output "storage_account" {
+  value       = ""
+  description = "The backups storage account name"
+}
+
+# stub value for module compatibility
+output "resource_group" {
+  value       = ""
+  description = "Resource group name"
+}
+
+# stub value for module compatibility
+output "node_resource_group" {
+  value       = ""
+  description = "Node resource group name"
 }

@@ -74,3 +74,18 @@ module "iac_pr_automation_sa" {
   ]
   roles = ["roles/editor", "roles/iam.securityAdmin"]
 }
+
+# Cluster Backups Manager
+module "backups_manager_sa" {
+  source                      = "./modules/sa"
+  service_account_name        = "${local.name}-backups"
+  display_name                = "backups"
+  project                     = local.project_id
+  kubernetes_service_accounts = [
+    {
+      namespace = "velero"
+      name      = "velero"
+    }
+  ]
+  roles = ["roles/storage.objectAdmin"]
+}
