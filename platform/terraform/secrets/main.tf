@@ -34,4 +34,5 @@ module "secrets" {
   cluster_ssh_public_key        = var.cluster_ssh_public_key
   tf_backend_storage_access_key = var.tf_backend_storage_access_key
   vcs_runner_token              = var.vcs_runner_token
+  vcs_k8s_agent_token           = var.vcs_k8s_agent_token
 }

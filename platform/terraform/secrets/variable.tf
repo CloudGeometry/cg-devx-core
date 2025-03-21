@@ -75,3 +75,9 @@ variable "vcs_runner_token" {
   type        = string
   default     = ""
 }
+
+variable "vcs_k8s_agent_token" {
+  description = "VCS kubernetes agent token for GitLab"
+  type        = string
+  default     = ""
+}

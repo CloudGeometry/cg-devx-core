@@ -273,12 +273,13 @@ class GitLabProviderManager(GitProviderManager):
 
     def get_repository_url(self, org_name: str, repo_name: str) -> str:
         """
-        Retrieve the SSH URL of a GitLab repository.
+        Retrieve the SSH URL of a GitLab repository. If the repository does not exist,
+        construct the SSH URL manually.
 
         :param org_name: The name of the GitLab organization or group.
         :param repo_name: The name of the repository.
         :return: The SSH URL of the repository.
-        :raises HTTPError: If there is an issue with the API request.
+        :raises HTTPError: For API errors other than a missing repository.
         """
         headers = self._get_headers()
         try:
@@ -289,6 +290,14 @@ class GitLabProviderManager(GitProviderManager):
             response.raise_for_status()
             project_data = response.json()
             return project_data["ssh_url_to_repo"]
+        except requests.HTTPError as e:
+            if response.status_code == 404:
+                # Manually construct the SSH URL if the repository is not found
+                logger.warning(f"Repository {org_name}/{repo_name} not found. Constructing URL manually.")
+                return f"git@gitlab.com:{org_name}/{repo_name}.git"
+            else:
+                logger.error(f"HTTP error retrieving repository URL: {e}")
+                raise
         except (KeyError, requests.RequestException) as e:
             logger.error(f"Error retrieving repository URL: {e}")
             raise

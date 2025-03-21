@@ -16,3 +16,9 @@ output "vcs_runner_token" {
   value = ""
   sensitive = true
 }
+
+output "vcs_k8s_agent_token" {
+  #This output is empty. It's here for vcs_gitlab module compatibility.
+  value = ""
+  sensitive = true
+}
