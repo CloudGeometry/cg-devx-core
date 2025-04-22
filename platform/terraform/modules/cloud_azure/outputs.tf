@@ -41,6 +41,11 @@ output "cluster_autoscaler_irsa_role" {
   value       = module.cluster_autoscaler_sa.app_client_id
 }
 
+output "backups_manager_irsa_role" {
+  description = "Cluster Backup Manager IAM role for a K8s service account"
+  value       = module.backups_manager_sa.app_client_id
+}
+
 ################################################################################
 # cluster
 ################################################################################
@@ -72,7 +77,13 @@ output "cluster_node_groups" {
 ################################################################################
 output "secret_manager_unseal_key" {
   value       = azurerm_key_vault_key.secret_manager_unseal_kms_key.name
-  description = "Secret Manager seal key"
+  description = "Secret Manager unseal key"
+  sensitive   = true
+}
+
+output "secret_manager_unseal_key_ring" {
+  value       = ""
+  description = "Secret Manager unseal key ring"
   sensitive   = true
 }
 
@@ -84,9 +95,48 @@ output "artifacts_storage" {
   description = "Continuous Integration Artifact Repository storage backend"
 }
 
+output "artifacts_storage_endpoint" {
+  value       = azurerm_storage_account.storage_account.primary_blob_endpoint
+  description = "Continuous Integration Artifact Repository storage account primary endpoint"
+}
+
+output "artifacts_storage_access_key" {
+  value       = azurerm_storage_account.storage_account.primary_access_key
+  sensitive   = true
+  description = "Continuous Integration Artifact Repository storage account primary access key"
+}
+
+
 # stub value for module compatibility
 output "cluster_oidc_provider_arn" {
   value       = ""
   sensitive   = true
   description = "Cluster OIDC provider stub."
 }
+
+################################################################################
+# backups storage
+################################################################################
+output "backups_storage" {
+  description = "The backups storage container name"
+  value       = azurerm_storage_container.backups_repository.name
+}
+
+output "storage_account" {
+  description = "The backups storage account name"
+  value       = azurerm_storage_account.storage_account.name
+}
+
+output "resource_group" {
+  value       = azurerm_resource_group.rg.name
+  description = "Resource group name"
+}
+
+output "node_resource_group" {
+  value       = local.node_resource_group
+  description = "Node resource group name"
+}
+
+
+
+

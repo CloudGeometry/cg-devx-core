@@ -147,7 +147,8 @@ class AzureManager(CloudProviderManager):
         self._azure_sdk.create_storage(
             container_name=self.iac_backend_storage_container_name,
             storage_account_name=storage_account_name,
-            resource_group_name=resource_group_name)
+            resource_group_name=resource_group_name
+        )
 
         keys = self._azure_sdk.get_storage_account_keys(resource_group_name, storage_account_name)
         self._azure_sdk.set_storage_account_versioning(storage_account_name, resource_group_name)
@@ -284,10 +285,72 @@ class AzureManager(CloudProviderManager):
 
     @trace()
     def create_gpu_operator_parameters(self):
-      return '''# azure
+        return '''# azure
         - name: "driver.enabled"
           value: "false"
         - name: "toolkit.enabled"
           value: "false"
         - name: "operator.runtimeClass"
           value: "nvidia-container-runtime"'''
+
+    @trace()
+    def get_cloud_provider_k8s_dns_deployment_name(self) -> str:
+        """
+        Retrieves the name of the Kubernetes DNS deployment specific to Azure.
+
+        :return: A string "coredns", indicating the DNS deployment name for Azure.
+        :rtype: str
+        """
+        return "coredns"
+
+    def create_ci_artifact_store_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''azure:
+      endpoint: <CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>
+      container: <CLOUD_BINARY_ARTIFACTS_STORE>
+      blobNameFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"
+      # useSDKCreds: true
+      accountKeySecret:
+        name: ci-secrets
+        key: ARTIFACT_STORAGE_ACCESS_KEY''')
+
+    def create_velero_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration snippet for Velero for Azure.
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent(f'''configuration:
+          backupStorageLocation:
+            - name: default
+              provider: velero.io/azure
+              bucket: <CLOUD_CLUSTER_BACKUPS_STORE>
+              config:
+                resourceGroup: <CLOUD_CLUSTER_RESOURCE_GROUP>
+                storageAccount: <CLOUD_CLUSTER_STORAGE_ACCOUNT>
+                subscriptionId: <AZ_SUBSCRIPTION_ID>
+                useAAD: "true"
+          volumeSnapshotLocation:
+            - name: default
+              provider: velero.io/azure
+              config:
+                subscriptionId: <AZ_SUBSCRIPTION_ID>
+                resourceGroup: <CLOUD_CLUSTER_RESOURCE_GROUP>
+                incremental: "true"
+        initContainers:
+          - name: velero-plugin-for-microsoft-azure
+            image: velero/velero-plugin-for-microsoft-azure:v1.11.1
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        podLabels:
+          azure.workload.identity/use: "true"
+        credentials:
+          secretContents:
+            cloud: |
+              AZURE_SUBSCRIPTION_ID=<AZ_SUBSCRIPTION_ID>
+              AZURE_RESOURCE_GROUP=<CLOUD_CLUSTER_NODE_RESOURCE_GROUP>
+              AZURE_CLOUD_NAME=AzurePublicCloud''')

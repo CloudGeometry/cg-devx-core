@@ -13,7 +13,7 @@ spec:
   source:
     chart: kyverno
     repoURL: https://kyverno.github.io/kyverno
-    targetRevision: v3.0.0
+    targetRevision: v3.2.7
     helm:
       releaseName: kyverno
       values: |
@@ -21,8 +21,11 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: policy-engine.kyverno
-          cg-devx.metadata.chart-version: 3.0.0
-          cg-devx.metadata.version: 1.10.0
+          cg-devx.metadata.chart-version: 3.2.7
+          cg-devx.metadata.version: 1.12.6
+        global:
+          imagePullSecrets:
+           - name: docker-config
   syncPolicy:
     automated:
       prune: true

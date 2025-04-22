@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-application-controller
+imagePullSecrets:
+ - name: docker-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-applicationset-controller
+imagePullSecrets:
+ - name: docker-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-notifications-controller
+imagePullSecrets:
+ - name: docker-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-redis-ha
+imagePullSecrets:
+ - name: docker-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-redis-ha-haproxy
+imagePullSecrets:
+ - name: docker-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-repo-server
+imagePullSecrets:
+ - name: docker-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-server
+imagePullSecrets:
+ - name: docker-config

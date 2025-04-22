@@ -10,33 +10,56 @@
 
 # Welcome to CG DevX
 
-Here, at CloudGeometry, we use CG DevX as a Reference Architecture for simplifying the creation and management of DevOps
-and Cloud resources, and we've decided to make it available to the public.
+**CG DevX** is an application delivery platform built with best in class open source tooling, used to simplify the 
+challenges of modern cloud-native development. By integrating powerful tools like Kubernetes and Terraform, CG DevX 
+reduces the manual effort often associated with managing microservices, containers, and CI/CD pipelines, so that 
+developers need to worry less about tedious and error-prone tasks.
 
-While we consider it to be pretty exciting, it's important that you realize that this public version is a pre-alpha
-release; there's no guarantee that it will work for you, and it's very likely that things will change before the general
-release.
+Designed for scalability and flexibility, CG DevX empowers teams to modernize their applications, automate processes,
+and increase reliability – all without needing to overhaul their existing infrastructure or introduce unnecessary complexity.
 
-## What is CG DevX?
+### **Key Features**
 
-CG DevX is an all-in-one platform designed to simplify and enhance the development, deployment, and management of
-cloud-native applications. Whether you are an experienced platform engineer or just a beginner DevOps starting your
-cloud-native journey, CG DevX provides the tools and capabilities to empower your team and streamline your workflows.
+* **Cloud-Native Ready**: Pre-packaged with Kubernetes, Helm, and Terraform, CG DevX accelerates cloud-native adoption
+  and simplifies the app delivery process.
+* **Workload Management**: Out-of-the-box integration with Prometheus and Grafana for seamless observability and
+  real-time performance metrics.
+* **Modular & Flexible**: The platform’s modular design allows developers to integrate their existing tools while
+  offering the adaptability needed for continuous improvement.
+* **GitOps Integration**: Enables infrastructure automation using a Git-driven approach to increase operational consistency.
 
-Do you want to try it yourself? Follow our [quickstart guide](QUICKSTART.md).
+## Why CG DevX?
 
-For comprehensive list of features please see
-this [page](https://cloudgeometry.github.io/cg-devx-docs/capabilities/capabilities/).
+CG DevX is tailored for teams looking to streamline their application delivery workflows without getting bogged down 
+in operational complexity. It frees developers from the burden of repetitive tasks and minimizes the risk of manual errors 
+by providing:
+
+* Automation to reduce the operational overhead involved in cloud-native deployments.
+* Accelerated development cycles with pre-configured modules that help teams move faster.
+* A community-driven, open-source foundation focused on delivering reliable, scalable, and secure application environments.
+  
+### Getting Started
+
+To try CG DevX, check out our [Quickstart Guide](QUICKSTART.md).
+
+Get a detailed look at all [features](https://cloudgeometry.github.io/cg-devx-docs/capabilities/capabilities/), or visit
+our [documentation](https://github.com/CloudGeometry/cg-devx-docs).
 
 ## Contributing
 
-Interested in contributing to CG DevX? We're always interested in hearing ideas. Please feel free to message us
-at [cgdevx@cloudgeometry.io](mailto:cgdevx@cloudgeometry.io?subject=[GitHub]%20Contributing%20to%20CGDevX) or simply
-create a pull request, and we'll be happy to look at it!
+We welcome contributions to the CG DevX project. Whether you're interested in fixing bugs, adding features, or improving 
+documentation, join us in building an open, extensible platform for cloud-native development.  Please feel free to 
+message us at [cgdevx@cloudgeometry.io](mailto:cgdevx@cloudgeometry.io?subject=[GitHub]%20Contributing%20to%20CGDevX) or 
+simply create a pull request, and we'll be happy to look at it. Check out our 
+[Contributing guide](https://github.com/CloudGeometry/cg-devx-core/blob/main/CONTRIBUTING.md) for more details.
+
+### License
+
+CG DevX is licensed under the Apache 2.0 License. See LICENSE for more information.
 
 ## Acknowledgements
 
-In the spirit of open source, we build on the work of others, just as we expect others to build on the work we do. To
+In the spirit of open source, we build on the work of others, just as we expect others to build on the work we do. To 
 that end, we wanted to acknowledge the projects whose code is included in this release:
 
 | Project                                                                    | Description                        |

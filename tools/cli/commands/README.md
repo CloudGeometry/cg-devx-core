@@ -46,6 +46,7 @@ for checkpointing, allowing the command to be rerun if necessary.
 | -gtb, --gitops-template-branch | TEXT                                    | GitOps repository template branch             |
 | -dw, --setup-demo-workload     | Flag                                    | Flag to set up a demo workload                |
 | -ops, --optional-services      | TEXT                                    | Setup optional services                       |
+| -ra, --image-registry-auth     | TEXT                                    | Image registry auth config, JSON              |
 | -f, --config-file              | FILENAME                                | File to load setup parameters from            |
 | --verbosity                    | [DEBUG, INFO, WARNING, ERROR, CRITICAL] | Logging verbosity level, defaults to CRITICAL |
 
@@ -54,9 +55,13 @@ for checkpointing, allowing the command to be rerun if necessary.
 - keda
 - kubevirt
 - nvidia-gpu-operator
+- perfectscale
 - vpa
 
 > **Note!**: Use kebab-case for all parameter names.
+
+When installing PerfectScale, you should set `clientId` and `clientSecret` in your secret store (
+path `secret/perfectscale-secret`) to values provided in PerfectScale UI.
 
 ### Examples
 
@@ -73,6 +78,14 @@ cgdevxcli setup --email user@cgdevx.io \
                 --git-org acmeinc \
                 --git-access-token ghp_xxx \
                 --gitops-repo-name gitops-repo-name
+```
+
+With optional parameters:
+
+```bash
+--image-registry-auth "{ \"docker.io\": { \"login\": \"user\", \"token\": \"token\" } }"
+--optional-services keda
+--optional-services vpa
 ```
 
 Using a parameter file:
@@ -95,6 +108,13 @@ git-provider: github
 git-org: acmeinc
 git-access-token: ghp_xxx
 gitops-repo-name: gitops-repo-name
+optional-services:
+  - keda
+  - vpa
+image-registry-auth:
+  docker.io:
+    login: user
+    token: token
 ```
 
 ### Troubleshooting

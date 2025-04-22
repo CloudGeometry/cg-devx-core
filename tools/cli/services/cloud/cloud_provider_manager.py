@@ -111,8 +111,8 @@ class CloudProviderManager(ABC):
     @abstractmethod
     def get_k8s_auth_command(self):
         """
-        Returns kubeconfig cluster aut command
-        :return: command
+        Returns kubeconfig cluster auth command
+        :return: list with command
         """
         pass
 
@@ -177,5 +177,33 @@ class CloudProviderManager(ABC):
         """
         Creates Cloud Provider specific configuration section for Nvidia GPU operator
         :return: Additional GPU operator parameters
+        """
+        pass
+
+    @abstractmethod
+    def get_cloud_provider_k8s_dns_deployment_name(self) -> str:
+        """
+        Abstract method to retrieve the name of the Kubernetes DNS deployment for the active cloud provider.
+        Implementations of this method in subclasses should return the specific DNS deployment name
+        used by their respective cloud provider.
+
+        :return: A string representing the DNS deployment name appropriate to the cloud provider.
+        :rtype: str
+        """
+        pass
+
+    @abstractmethod
+    def create_ci_artifact_store_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
+        :return: Artifact storage configuration section
+        """
+        pass
+
+    @abstractmethod
+    def create_velero_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration snippet for Velero
+        :return: Artifact storage configuration section
         """
         pass

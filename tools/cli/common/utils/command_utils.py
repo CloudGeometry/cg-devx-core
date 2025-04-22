@@ -1,5 +1,4 @@
 import os
-import os
 import time
 import webbrowser
 from logging import Logger
@@ -10,7 +9,7 @@ import click
 import requests
 from requests import HTTPError
 
-from common.const.common_path import LOCAL_GITOPS_FOLDER, LOCAL_FOLDER
+from common.const.common_path import LOCAL_FOLDER
 from common.const.parameter_names import CLOUD_REGION, CLOUD_PROFILE, CLOUD_ACCOUNT_ACCESS_KEY, \
     CLOUD_ACCOUNT_ACCESS_SECRET, DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, GIT_ACCESS_TOKEN, \
     GIT_ORGANIZATION_NAME
@@ -23,8 +22,10 @@ from common.state_store import StateStore
 from services.cloud.aws.aws_manager import AWSManager
 from services.cloud.azure.azure_manager import AzureManager
 from services.cloud.cloud_provider_manager import CloudProviderManager
+from services.cloud.gcp.gcp_manager import GcpManager
 from services.dns.azure_dns.azure_dns import AzureDNSManager
 from services.dns.dns_provider_manager import DNSManager
+from services.dns.gcp_dns.gcp_dns import GcpDnsManager
 from services.dns.route53.route53 import Route53Manager
 from services.platform_gitops import PlatformGitOpsRepo
 from services.vcs.git_provider_manager import GitProviderManager
@@ -73,6 +74,27 @@ def init_cloud_provider(state: StateStore) -> tuple[CloudProviderManager, DNSMan
         )
         domain_manager: DNSManager = AzureDNSManager(state.get_input_param(CLOUD_PROFILE))
         state.parameters["<AZ_SUBSCRIPTION_ID>"] = subscription_id
+    elif state.cloud_provider == CloudProviders.GCP:
+        if not GcpManager.detect_cli_presence():
+            raise click.ClickException("Cloud CLI is missing")
+
+        cloud_manager: GcpManager = GcpManager(
+            project_id=state.get_input_param(CLOUD_PROFILE),
+            location=state.get_input_param(CLOUD_REGION)
+        )
+
+        # In the case of GCP, we also need to check if all additional CLI components are in place
+        not_installed_components: list[str] = cloud_manager.validate_gcloud_additional_components_installation()
+        if not_installed_components:
+            formatted_components = ", ".join(not_installed_components)
+            install_command = "gcloud components install " + " ".join(not_installed_components)
+            raise click.ClickException(
+                f"The following GCP CLI component(s) are missing: {formatted_components}. "
+                f"You can install them to proceed by running: \"{install_command}\""
+            )
+
+        domain_manager: DNSManager = GcpDnsManager(project_id=state.get_input_param(CLOUD_PROFILE))
+        state.parameters["<GCP_PROJECT_ID>"] = state.get_input_param(CLOUD_PROFILE)
 
     return cloud_manager, domain_manager
 

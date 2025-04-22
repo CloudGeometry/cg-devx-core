@@ -9,15 +9,15 @@ spec:
   project: core
   source:
     repoURL: https://actions-runner-controller.github.io/actions-runner-controller
-    targetRevision: 0.20.2
+    targetRevision: 0.23.7
     helm:
       values: |-
         labels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: code-quality.sonarqube
-          cg-devx.metadata.chart-version: 0.20.2
-          cg-devx.metadata.version: 0.25.2
+          cg-devx.metadata.chart-version: 0.23.7
+          cg-devx.metadata.version: 0.27.6
 
         replicaCount: 1
 
@@ -40,7 +40,8 @@ spec:
           # It's added to spec.ImagePullSecrets of self-hosted runner pods.
           actionsRunnerImagePullSecrets: []
 
-        imagePullSecrets: []
+        imagePullSecrets: 
+          - name: docker-config
         nameOverride: ""
         fullnameOverride: ""
 
@@ -56,7 +57,10 @@ spec:
           annotations: {}
           name: ""
 
-        podAnnotations: {}
+        podAnnotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/path: /metrics
+          prometheus.io/port: "8443"
 
         podSecurityContext:
           {}
@@ -71,7 +75,8 @@ spec:
 
         metrics:
           serviceAnnotations: {}
-          serviceMonitor: false
+          serviceMonitor:
+            enable: false
           serviceMonitorLabels: {}
           port: 8443
           proxy:

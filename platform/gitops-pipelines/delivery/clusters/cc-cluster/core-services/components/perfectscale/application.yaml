@@ -1,0 +1,62 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: perfectscale
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "180"
+spec:
+  project: core
+  source:
+    repoURL: https://perfectscale-io.github.io
+    chart: exporter
+    targetRevision: v1.0.41
+    helm:
+      values: |-
+        secret:
+          name: perfectscale-secret
+        settings:
+          clusterName: cg-devx-perfectscale
+        additionalLabels: 
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: scaler.perfectscale
+          cg-devx.metadata.chart-version: 1.0.41
+          cg-devx.metadata.version: 1.0.0
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: perfectscale
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: psc-autoscaler
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "180"
+spec:
+  project: core
+  source:
+    repoURL: https://perfectscale-io.github.io
+    chart: psc-autoscaler
+    targetRevision: v1.0.10
+    helm:
+      values: |-
+        secret:
+          create: false
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: perfectscale
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

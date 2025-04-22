@@ -192,3 +192,54 @@ class AWSManager(CloudProviderManager):
     @trace()
     def create_gpu_operator_parameters(self):
         return ''
+
+    @trace()
+    def get_cloud_provider_k8s_dns_deployment_name(self) -> str:
+        """
+        Retrieves the name of the Kubernetes DNS deployment specific to AWS.
+
+        :return: A string "coredns", indicating the DNS deployment name for AWS.
+        :rtype: str
+        """
+        return "coredns"
+
+    def create_ci_artifact_store_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration section for Argo Workflow artifact storage
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''s3:
+      bucket: <CLOUD_BINARY_ARTIFACTS_STORE>
+      endpoint: s3.amazonaws.com
+      insecure: false
+      keyFormat: "{{workflow.parameters.workload-name}}/{{workflow.parameters.tag}}/{{pod.name}}/"
+      region: <CLOUD_REGION>
+      useSDKCreds: true
+      encryptionOptions:
+        enableEncryption: false''')
+
+    def create_velero_config_snippet(self) -> str:
+        """
+        Creates Cloud Provider specific configuration snippet for Velero
+        :return: Artifact storage configuration section
+        """
+        return textwrap.dedent('''configuration:
+          backupStorageLocation:
+            - name: default
+              provider: velero.io/aws
+              bucket: <CLOUD_CLUSTER_BACKUPS_STORE>
+              config:
+                region: <CLOUD_REGION>
+          volumeSnapshotLocation:
+            - name: default
+              provider: velero.io/aws
+              config:
+                region: <CLOUD_REGION>
+        initContainers:
+          - name: plugin-for-aws
+            image: velero/velero-plugin-for-aws:v1.11.0
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        credentials:
+          useSecret: false''')

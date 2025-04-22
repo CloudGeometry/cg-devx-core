@@ -1,0 +1,21 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-backup
+  namespace: velero
+  annotations:
+    argocd.argoproj.io/sync-wave: '5'
+spec:
+  # Schedules the backup to run daily at 2 AM UTC
+  schedule: "0 2 * * *"
+  template:
+    # Sets the retention policy to 7 days (168 hours).
+    ttl: 168h
+    includedNamespaces:
+      - vault
+      - harbor
+    includedResources:
+      - "*"
+    snapshotVolumes: true
+    volumeSnapshotLocations:
+      - default

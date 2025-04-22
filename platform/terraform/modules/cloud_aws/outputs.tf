@@ -57,6 +57,11 @@ output "cluster_autoscaler_irsa_role" {
   description = "Cluster Autoscaler IAM Role ARN"
   value       = module.cluster_autoscaler_irsa_role.iam_role_arn
 }
+output "backups_manager_irsa_role" {
+  description = "Cluster Backup Manager IAM role for a K8s service account"
+  value       = module.backups_manager_irsa_role.iam_role_arn
+}
+
 
 ################################################################################
 # Cluster
@@ -130,6 +135,12 @@ output "kms_key_id" {
 output "kms_key_policy" {
   description = "The IAM resource policy set on the key"
   value       = module.eks.kms_key_policy
+}
+
+output "secret_manager_unseal_key_ring" {
+  value       = ""
+  description = "Secret Manager unseal key ring"
+  sensitive   = true
 }
 
 ################################################################################
@@ -284,9 +295,45 @@ output "artifacts_storage" {
   value       = module.artifacts_repository.s3_bucket_id
 }
 
+output "artifacts_storage_endpoint" {
+  description = "The artifact storage S3 bucket domain name"
+  value       = module.artifacts_repository.s3_bucket_bucket_domain_name
+}
+
+output "backups_storage" {
+  description = "The backups storage S3 bucket name"
+  value       = module.backups_repository.s3_bucket_id
+}
+
+# stub value for module compatibility
+output "artifacts_storage_access_key" {
+  value       = ""
+  sensitive   = true
+  description = "Continuous Integration Artifact Repository storage account primary access key"
+}
+
 # stub value for module compatibility
 output "kube_config_raw" {
   value       = ""
   sensitive   = true
   description = "Contains the Kubernetes config to be used by kubectl and other compatible tools."
 }
+
+# stub value for module compatibility
+output "storage_account" {
+  description = "The backups storage account name"
+  value       = ""
+}
+
+# stub value for module compatibility
+output "resource_group" {
+  value       = ""
+  description = "Resource group name"
+}
+
+# stub value for module compatibility
+output "node_resource_group" {
+  value       = ""
+  description = "Node resource group name"
+}
+

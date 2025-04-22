@@ -33,6 +33,10 @@ output "cluster_autoscaler_role" {
   value       = module.hosting-provider.cluster_autoscaler_irsa_role
   description = "Secrets Manager IAM role for a K8s service account"
 }
+output "backups_manager_role" {
+  value       = module.hosting-provider.backups_manager_irsa_role
+  description = "Cluster Backup Manager IAM role for a K8s service account"
+}
 
 ################################################################################
 # cluster
@@ -64,6 +68,21 @@ output "kube_config_raw" {
   sensitive   = true
 }
 
+output "storage_account" {
+  value       = module.hosting-provider.storage_account
+  description = "The backups storage account name"
+}
+
+output "resource_group" {
+  value       = module.hosting-provider.resource_group
+  description = "Resource group name"
+}
+
+output "node_resource_group" {
+  value       = module.hosting-provider.node_resource_group
+  description = "Node resource group name"
+}
+
 # Cluster OIDC provider ARN for AWS only:
 output "cluster_oidc_provider_arn" {
   value       = module.hosting-provider.cluster_oidc_provider_arn
@@ -73,9 +92,14 @@ output "cluster_oidc_provider_arn" {
 ################################################################################
 # secret manager
 ################################################################################
-output "secret_manager_seal_key" {
+output "secret_manager_unseal_key" {
   value       = module.hosting-provider.secret_manager_unseal_key
   description = "Secret Manager seal key"
+  sensitive   = true
+}
+output "secret_manager_unseal_key_ring" {
+  value       = module.hosting-provider.secret_manager_unseal_key_ring
+  description = "Secret Manager unseal key ring"
   sensitive   = true
 }
 
@@ -86,3 +110,23 @@ output "artifact_storage" {
   value       = module.hosting-provider.artifacts_storage
   description = "Continuous Integration Artifact Repository storage backend"
 }
+
+output "artifact_storage_endpoint" {
+  value       = module.hosting-provider.artifacts_storage_endpoint
+  description = "Continuous Integration Artifact Repository storage backend access endpoint"
+}
+
+output "artifacts_storage_access_key" {
+  value       = module.hosting-provider.artifacts_storage_access_key
+  sensitive   = true
+  description = "Continuous Integration Artifact Repository storage account primary access key"
+}
+
+################################################################################
+# backups storage
+################################################################################
+output "backups_storage" {
+  value       = module.hosting-provider.backups_storage
+  description = "Backups Manager storage backend"
+}
+

@@ -76,8 +76,20 @@ variable "vcs_runner_token" {
   default     = ""
 }
 
+variable "cloud_binary_artifacts_store_access_key" {
+  description = "Specifies the access key for CI artifact store backend storage. Only applicable to AKS."
+  type        = string
+  default     = ""
+}
+
 variable "vcs_k8s_agent_token" {
   description = "VCS kubernetes agent token for GitLab"
   type        = string
   default     = ""
+}
+
+variable "image_registry_auth" {
+  description = "Specifies the access keys for image registries"
+  type        = map(object({login = string, token = string}))
+  default     = {}
 }

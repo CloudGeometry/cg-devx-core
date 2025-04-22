@@ -10,15 +10,15 @@ spec:
   source:
     repoURL: https://runatlantis.github.io/helm-charts
     chart: atlantis
-    targetRevision: 4.15.3
+    targetRevision: 5.4.2
     helm:
       values: |-
         commonLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: atlantis
-          cg-devx.metadata.chart-version: 4.15.3
-          cg-devx.metadata.version: 0.25.0
+          cg-devx.metadata.chart-version: 5.4.2
+          cg-devx.metadata.version: 0.28.5
         statefulSet:
           annotations:
             secret.reloader.stakater.com/reload: "atlantis-envs-secrets"
@@ -35,8 +35,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: atlantis
-            cg-devx.metadata.chart-version: 4.15.3
-            cg-devx.metadata.version: 0.25.0
+            cg-devx.metadata.chart-version: 5.4.2
+            cg-devx.metadata.version: 0.28.5
             # <ADDITIONAL_LABELS>
         resources:
           limits:
@@ -69,6 +69,8 @@ spec:
             apply_requirements: [mergeable]
         volumeClaim:
           dataStorage: 20Gi
+        imagePullSecrets:
+         - docker-config
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: atlantis

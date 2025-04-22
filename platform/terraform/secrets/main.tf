@@ -35,4 +35,7 @@ module "secrets" {
   tf_backend_storage_access_key = var.tf_backend_storage_access_key
   vcs_runner_token              = var.vcs_runner_token
   vcs_k8s_agent_token           = var.vcs_k8s_agent_token
+  cd_webhook_secret                       = var.cd_webhook_secret
+  cloud_binary_artifacts_store_access_key = var.cloud_binary_artifacts_store_access_key
+  image_registry_auth                     = var.image_registry_auth
 }

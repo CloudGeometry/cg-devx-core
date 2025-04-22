@@ -14,6 +14,8 @@ spec:
     helm:
       values: |-
         clusterName: <PRIMARY_CLUSTER_NAME>
+        imagePullSecrets:
+          - name: docker-config
         additionalLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin

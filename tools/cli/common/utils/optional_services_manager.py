@@ -6,7 +6,9 @@ OPTIONAL_SERVICES_MAP = {
     OptionalServices.NvidiaGpuOperator: ["180-nvidia-gpu-operator.yaml"],
     OptionalServices.KEDA: ["180-keda.yaml"],
     OptionalServices.KUBEVIRT: ["180-kubevirt.yaml"],
-    OptionalServices.VPA: ["180-vpa.yaml"]
+    OptionalServices.VPA: ["180-vpa.yaml"],
+    OptionalServices.PerfectScale: ["180-perfectscale.yaml"],
+    OptionalServices.ClusterAutoScaler: ["30-cluster-autoscaler.yaml"]
 }
 
 
@@ -17,6 +19,6 @@ def build_argo_exclude_string(services: [str]) -> str:
     for svc in services:
         oc_to_ignore.pop(svc)
     if oc_to_ignore:
-        return ", ".join([x for xs in list(oc_to_ignore.values()) for x in xs])
+        return ",".join([x for xs in list(oc_to_ignore.values()) for x in xs])
     else:
         return ""

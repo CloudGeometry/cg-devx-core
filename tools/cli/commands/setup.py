@@ -1,12 +1,15 @@
+import asyncio
+import json
 import re
 import time
 import webbrowser
+from typing import List
 
 import click
 import hvac
 import yaml
 from alive_progress import alive_bar
-from typing import List
+
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, \
     LOCAL_TF_FOLDER_SECRETS_MANAGER, LOCAL_TF_FOLDER_USERS, LOCAL_TF_FOLDER_CORE_SERVICES
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH, KUBECTL_VERSION, PLATFORM_USER_NAME, \
@@ -17,7 +20,7 @@ from common.const.parameter_names import CLOUD_PROFILE, OWNER_EMAIL, CLOUD_PROVI
     CLOUD_ACCOUNT_ACCESS_SECRET, CLOUD_REGION, PRIMARY_CLUSTER_NAME, DNS_REGISTRAR, DNS_REGISTRAR_ACCESS_TOKEN, \
     DNS_REGISTRAR_ACCESS_KEY, DNS_REGISTRAR_ACCESS_SECRET, DOMAIN_NAME, GIT_PROVIDER, GIT_ORGANIZATION_NAME, \
     GIT_ACCESS_TOKEN, GITOPS_REPOSITORY_NAME, GITOPS_REPOSITORY_TEMPLATE_URL, GITOPS_REPOSITORY_TEMPLATE_BRANCH, \
-    DEMO_WORKLOAD, OPTIONAL_SERVICES
+    DEMO_WORKLOAD, OPTIONAL_SERVICES, IMAGE_REGISTRY_AUTH
 from common.enums.cloud_providers import CloudProviders
 from common.enums.dns_registrars import DnsRegistrars
 from common.enums.git_providers import GitProviders
@@ -27,13 +30,13 @@ from common.tracing_decorator import trace
 from common.utils.command_utils import init_cloud_provider, init_git_provider, prepare_cloud_provider_auth_env_vars, \
     set_envs, unset_envs, wait, wait_http_endpoint_readiness, prepare_git_provider_env_vars
 from common.utils.generators import random_string_generator
-from common.utils.k8s_utils import find_pod_by_name_fragment, get_kr8s_pod_instance_by_name
+from common.utils.k8s_utils import find_pod_by_name_fragment
 from common.utils.optional_services_manager import OptionalServices, build_argo_exclude_string
 from services.cloud.cloud_provider_manager import CloudProviderManager
 from services.dependency_manager import DependencyManager
 from services.dns.dns_provider_manager import DNSManager
 from services.k8s.config_builder import create_k8s_config, write_k8s_config
-from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token
+from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token_via_k8s_portforward
 from services.k8s.k8s import KubeClient, write_ca_cert
 from services.k8s.kctl_wrapper import KctlWrapper
 from services.keys.key_manager import KeyManager
@@ -72,6 +75,7 @@ from services.vcs.git_provider_manager import GitProviderManager
               is_flag=True)
 @click.option('--optional-services', '-ops', 'optional_services', help='Optional services', type=click.STRING,
               multiple=True)
+@click.option('--image-registry-auth', '-ra', 'image_registry_auth', help='Image registry auth map')
 @click.option('--config-file', '-f', 'config', help='Load parameters from file', type=click.File(mode='r'))
 @click.option('--verbosity', type=click.Choice(
     ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
@@ -82,7 +86,7 @@ def setup(
         cloud_region: str, cluster_name: str, dns_reg: DnsRegistrars, dns_reg_token: str,
         dns_reg_key: str, dns_reg_secret: str, domain: str, git_provider: GitProviders, git_org: str, git_token: str,
         gitops_repo_name: str, gitops_template_url: str, gitops_template_branch: str, install_demo: bool,
-        optional_services: List[str], config: click.File, verbosity: str
+        optional_services: List[str], image_registry_auth, config: click.File, verbosity: str
 ):
     """Creates new CG DevX installation."""
     click.echo("Setup CG DevX installation...")
@@ -101,9 +105,13 @@ def setup(
             p = StateStore(d)
 
         except yaml.YAMLError as e:
-            raise click.ClickException(e)
+            raise click.ClickException(str(e))
     else:
         # TODO: merge file with param override
+        try:
+            reg_auth = json.loads(image_registry_auth)
+        except ValueError as e:
+            raise click.ClickException(f"Parameter image-registry-auth is not a correct JSON string: {e}")
         p = StateStore({
             OWNER_EMAIL: email,
             CLOUD_PROVIDER: cloud_provider,
@@ -124,7 +132,8 @@ def setup(
             GITOPS_REPOSITORY_TEMPLATE_URL: gitops_template_url,
             GITOPS_REPOSITORY_TEMPLATE_BRANCH: gitops_template_branch,
             DEMO_WORKLOAD: install_demo,
-            OPTIONAL_SERVICES: optional_services
+            OPTIONAL_SERVICES: optional_services,
+            IMAGE_REGISTRY_AUTH: reg_auth
         })
 
     # validate parameters
@@ -178,7 +187,6 @@ def setup(
     # end preflight check section
     else:
         click.echo("1/12: Skipped pre-flight checks.")
-
     dep_man: DependencyManager = DependencyManager()
 
     if not p.has_checkpoint("dependencies"):
@@ -260,6 +268,8 @@ def setup(
 
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
+        p.fragments["# <VELERO_CLOUD_PROVIDER_SPECIFIC_SNIPPET>"] = cloud_man.create_velero_config_snippet()
+
         p.fragments["# <ADDITIONAL_LABELS>"] = cloud_man.create_additional_labels()
         p.fragments["# <BASE_ADDITIONAL_ANNOTATIONS>"] = cloud_man.create_additional_labels()
         p.fragments["# <INGRESS_ANNOTATIONS>"] = cloud_man.create_ingress_annotations()
@@ -274,7 +284,8 @@ def setup(
         p.internals["DNS_ZONE_IS_PRIVATE"] = is_dns_zone_private
 
         p.fragments["# <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>"] = cloud_man.create_external_secrets_config(
-            location=dns_zone_name, is_private=is_dns_zone_private)
+            location=dns_zone_name, is_private=is_dns_zone_private
+        )
 
         click.echo("Creating tf backend storage. Done!")
 
@@ -347,7 +358,8 @@ def setup(
         # run hosting provider tf to create K8s cluster
         hp_tf_env_vars = {
             **{},  # add vars here
-            **cloud_provider_auth_env_vars}
+            **cloud_provider_auth_env_vars
+        }
         # set envs as required by tf
         set_envs(hp_tf_env_vars)
 
@@ -366,6 +378,8 @@ def setup(
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
         p.parameters["<SECRET_MANAGER_IAM_ROLE_RN>"] = hp_out["secret_manager_role"]
         p.parameters["<CLUSTER_AUTOSCALER_IAM_ROLE_RN>"] = hp_out["cluster_autoscaler_role"]
+        p.parameters["<BACKUPS_MANAGER_IAM_ROLE_RN>"] = hp_out["backups_manager_role"]
+
         # cluster
         p.internals["CC_CLUSTER_ENDPOINT"] = hp_out["cluster_endpoint"]
         p.internals["CC_CLUSTER_CA_CERT_DATA"] = hp_out["cluster_certificate_authority_data"]
@@ -380,13 +394,23 @@ def setup(
 
         # artifact storage
         p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE>"] = hp_out["artifact_storage"]
+        p.parameters["<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>"] = hp_out["artifact_storage_endpoint"]
+        p.internals["CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"] = hp_out["artifacts_storage_access_key"]
+
+        # backups storage
+        p.parameters["<CLOUD_CLUSTER_BACKUPS_STORE>"] = hp_out["backups_storage"]
+
+
+
         # kms keys
-        sec_man_key = hp_out["secret_manager_seal_key"]
-        p.parameters["<SECRET_MANAGER_SEAL_RN>"] = sec_man_key
+        p.parameters["<SECRET_MANAGER_UNSEAL_RN>"] = hp_out["secret_manager_unseal_key"]
+        p.parameters["<SECRET_MANAGER_UNSEAL_KEY_RING>"] = hp_out["secret_manager_unseal_key_ring"]
         # TODO: find a better way to pass cloud provider specific params
-        p.fragments["# <SECRET_MANAGER_SEAL>"] = cloud_man.create_seal_snippet(sec_man_key,
-                                                                               name=p.parameters[
-                                                                                   "<PRIMARY_CLUSTER_NAME>"])
+        p.fragments["# <SECRET_MANAGER_UNSEAL>"] = cloud_man.create_seal_snippet(
+            key_id=p.parameters["<SECRET_MANAGER_UNSEAL_RN>"],
+            name=p.parameters["<PRIMARY_CLUSTER_NAME>"],
+            key_ring=p.parameters["<SECRET_MANAGER_UNSEAL_KEY_RING>"]
+        )
 
         # unset envs as no longer needed
         unset_envs(hp_tf_env_vars)
@@ -410,6 +434,20 @@ def setup(
             # `az aks get-credentials --name my-cluster --resource-group my-rg --admin`
             # get config from tf output
             kctl_config_path = write_k8s_config(hp_out["kube_config_raw"])
+            p.parameters["<CLOUD_CLUSTER_STORAGE_ACCOUNT>"] = hp_out["storage_account"]
+            p.parameters["<CLOUD_CLUSTER_RESOURCE_GROUP>"] = hp_out["resource_group"]
+            p.parameters["<CLOUD_CLUSTER_NODE_RESOURCE_GROUP>"] = hp_out["node_resource_group"]
+        elif p.cloud_provider == CloudProviders.GCP:
+            command, command_args = cloud_man.get_k8s_auth_command()
+            kubeconfig_params = {
+                "<ENDPOINT>": f'{p.internals["CC_CLUSTER_ENDPOINT"]}:443',
+                "<CLUSTER_AUTH_BASE64>": p.internals["CC_CLUSTER_CA_CERT_DATA"],
+                "<CLUSTER_NAME>": p.parameters["<PRIMARY_CLUSTER_NAME>"],
+                "<CLUSTER_REGION>": p.parameters["<CLOUD_REGION>"]
+            }
+            kctl_config_path = create_k8s_config(command, command_args, cloud_provider_auth_env_vars, kubeconfig_params)
+        else:
+            raise NotImplementedError(f"Cloud provider \"{p.cloud_provider}\" is not yet supported.")
 
         p.internals["KCTL_CONFIG_PATH"] = kctl_config_path
 
@@ -448,13 +486,13 @@ def setup(
 
             argocd_bootstrap_name = "argocd-bootstrap"
             argocd_core_project_name = "core"
-
+            dns_deployment_name = cloud_man.get_cloud_provider_k8s_dns_deployment_name()
             # get CoreDNS deployments to validate cluster
-            coredns_deployment = kube_client.get_deployment("kube-system", "coredns")
+            dns_deployment = kube_client.get_deployment("kube-system", dns_deployment_name)
             bar()
 
             # wait for deployment readiness
-            kube_client.wait_for_deployment(coredns_deployment)
+            kube_client.wait_for_deployment(dns_deployment)
             bar()  # Add a few here
 
             kube_client.create_namespace(ARGOCD_NAMESPACE)
@@ -572,15 +610,16 @@ def setup(
                 name_fragment="argocd-server",
                 namespace=ARGOCD_NAMESPACE
             )
-            kr8s_pod = get_kr8s_pod_instance_by_name(
-                pod_name=k8s_pod.metadata.name,
-                namespace=ARGOCD_NAMESPACE,
-                kubeconfig=p.internals["KCTL_CONFIG_PATH"]
-            )
-            with kr8s_pod.portforward(remote_port=8080, local_port=8080):
-                # Make an API request to the forwarded port
-                argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
-                p.internals["ARGOCD_TOKEN"] = argocd_token
+            # Transitioned to asynchronous functions to address compatibility issues with the kr8s library.
+            # Previously, the synchronous interaction with kr8s sometimes led to deadlocks and errors because the kr8s
+            # library is inherently asynchronous.
+            argocd_token = asyncio.run(get_argocd_token_via_k8s_portforward(
+                user=p.internals["ARGOCD_USER"],
+                password=p.internals["ARGOCD_PASSWORD"],
+                k8s_pod=k8s_pod,
+                kube_config_path=p.internals["KCTL_CONFIG_PATH"]
+            ))
+            p.internals["ARGOCD_TOKEN"] = argocd_token
             bar()
             # create argocd "core" project
             # TODO: explicitly whitelist project repositories
@@ -740,6 +779,13 @@ def setup(
         if "TF_BACKEND_STORAGE_ACCESS_KEY" in p.internals:
             sec_man_tf_params["tf_backend_storage_access_key"] = p.internals["TF_BACKEND_STORAGE_ACCESS_KEY"]
 
+        if "CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY" in p.internals:
+            sec_man_tf_params["cloud_binary_artifacts_store_access_key"] = p.internals[
+                "CLOUD_BINARY_ARTIFACTS_STORE_ACCESS_KEY"]
+
+        if "IMAGE_REGISTRY_AUTH" in p.internals:
+            sec_man_tf_params["image_registry_auth"] = p.internals["IMAGE_REGISTRY_AUTH"]
+
         tf_wrapper.apply(sec_man_tf_params)
 
         sec_man_out = tf_wrapper.output()
@@ -821,6 +867,9 @@ def setup(
             sonar_ss = kube_client.get_stateful_set_objects(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
             kube_client.wait_for_stateful_set(sonar_ss)
             bar()
+
+            sonar_pod = kube_client.get_pod(SONARQUBE_NAMESPACE, "sonarqube-sonarqube-0")
+            kube_client.wait_for_pod(sonar_pod)
 
             sonar_ingress = kube_client.get_ingress(SONARQUBE_NAMESPACE, "sonarqube-sonarqube")
             kube_client.wait_for_ingress(sonar_ingress)
@@ -907,6 +956,10 @@ def init_k8s_client(cloud_man, p):
         kube_client = KubeClient(ca_cert_path=p.internals["CC_CLUSTER_CA_CERT_PATH"],
                                  api_key=k8s_token,
                                  endpoint=p.internals["CC_CLUSTER_ENDPOINT"])
+    elif p.cloud_provider == CloudProviders.GCP:
+        kube_client = KubeClient(
+            config_file=p.internals["KCTL_CONFIG_PATH"]
+        )
     else:
         kube_client = KubeClient(config_file=p.internals["KCTL_CONFIG_PATH"])
     return kube_client
@@ -952,6 +1005,12 @@ def get_git_provider_specific_optional_services(git_provider: GitProviders) -> l
         return [OptionalServices.GitHub]
     elif git_provider == GitProviders.GitLab:
         return [OptionalServices.GitLab]
+
+def get_provider_specific_optional_services(cloud_provider: str) -> list:
+    if cloud_provider == CloudProviders.AWS:
+        return [OptionalServices.ClusterAutoScaler]
+    elif cloud_provider == CloudProviders.Azure:
+        return [OptionalServices.ClusterAutoScaler]
     return []
 
 
@@ -961,6 +1020,7 @@ def prepare_parameters(p, git_man):
 
     optional_services = p.get_input_param(OPTIONAL_SERVICES) or []
     optional_services.extend(get_git_provider_specific_optional_services(p.git_provider))
+    optional_services.extend(get_provider_specific_optional_services(p.cloud_provider))
     exclude_string = build_argo_exclude_string(optional_services)
     p.parameters["<CD_SERVICE_EXCLUDE_LIST>"] = exclude_string
 
@@ -975,6 +1035,7 @@ def prepare_parameters(p, git_man):
     p.parameters["<PRIMARY_CLUSTER_NAME>"] = p.get_input_param(PRIMARY_CLUSTER_NAME)
     p.parameters["<GIT_PROVIDER>"] = p.git_provider
     p.internals["GIT_ACCESS_TOKEN"] = p.get_input_param(GIT_ACCESS_TOKEN)
+    p.internals["IMAGE_REGISTRY_AUTH"] = p.get_input_param(IMAGE_REGISTRY_AUTH)
     p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME).lower()
     org_name = p.get_input_param(GIT_ORGANIZATION_NAME).lower()
     p.parameters["<GIT_ORGANIZATION_NAME>"] = org_name
@@ -1067,5 +1128,14 @@ def setup_param_validator(params: StateStore) -> bool:
             click.echo(
                 f"Features list parsing error: unsupported features found - {str.join(', ', incorrect_services)}")
             return False
+
+    if params.get_input_param(IMAGE_REGISTRY_AUTH):
+        for k, v in params.get_input_param(IMAGE_REGISTRY_AUTH).items():
+            if "login" not in v and "token" not in v:
+                click.echo(f"Image registry auth {k} has incorrect structure")
+                return False
+            if not v["login"] and not v["token"]:
+                click.echo(f"Image registry {k} should have login and token specified")
+                return False
 
     return True

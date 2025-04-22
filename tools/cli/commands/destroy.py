@@ -1,3 +1,4 @@
+import asyncio
 import shutil
 import time
 
@@ -12,8 +13,8 @@ from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.utils.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs, \
     wait, init_git_provider, check_installation_presence, prepare_git_provider_env_vars
-from common.utils.k8s_utils import get_kr8s_pod_instance_by_name, find_pod_by_name_fragment
-from services.k8s.delivery_service_manager import DeliveryServiceManager, get_argocd_token, delete_application
+from common.utils.k8s_utils import find_pod_by_name_fragment
+from services.k8s.delivery_service_manager import DeliveryServiceManager, delete_application_via_k8s_portforward
 from services.k8s.k8s import KubeClient
 from services.platform_gitops import PlatformGitOpsRepo
 from services.tf_wrapper import TfWrapper
@@ -117,22 +118,28 @@ def destroy(verbosity: str):
         except Exception as e:
             pass
         try:
+            deletion_wait_time = 300
             k8s_pod = find_pod_by_name_fragment(
                 kube_config_path=p.internals["KCTL_CONFIG_PATH"],
                 name_fragment="argocd-server",
                 namespace=ARGOCD_NAMESPACE
             )
-            kr8s_pod = get_kr8s_pod_instance_by_name(
-                pod_name=k8s_pod.metadata.name,
-                namespace=ARGOCD_NAMESPACE,
-                kubeconfig=p.internals["KCTL_CONFIG_PATH"]
+            # Transitioned to asynchronous functions to address compatibility issues with the kr8s library.
+            # Previously, the synchronous interaction with kr8s sometimes led to deadlocks and errors because the kr8s
+            # library is inherently asynchronous.
+            asyncio.run(delete_application_via_k8s_portforward(
+                app_name=registry_app_name,
+                user=p.internals["ARGOCD_USER"],
+                password=p.internals["ARGOCD_PASSWORD"],
+                k8s_pod=k8s_pod,
+                kube_config_path=p.internals["KCTL_CONFIG_PATH"]
+            ))
+            click.echo(
+                f"Application deletion successfully initiated. "
+                f"Waiting {deletion_wait_time} seconds for complete removal."
             )
-            with kr8s_pod.portforward(remote_port=8080, local_port=8080):
-                argocd_token = get_argocd_token(p.internals["ARGOCD_USER"], p.internals["ARGOCD_PASSWORD"])
-                delete_application(registry_app_name, argocd_token)
-
-            # need to wait here
-            wait(300)
+            # need to wait for application deletion
+            wait(deletion_wait_time)
         except Exception as e:
             # suppress exception and continue without deleting ArgoCD app
             pass

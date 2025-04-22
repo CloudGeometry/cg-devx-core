@@ -62,9 +62,9 @@
 | <a name="input_cluster_version"></a> [cluster\_version](#input\_cluster\_version) | (Optional) Specifies the EKS Kubernetes version | `string` | `"1.30"` | no |
 | <a name="input_domain_name"></a> [domain\_name](#input\_domain\_name) | Specifies the platform domain name | `string` | n/a | yes |
 | <a name="input_node_group_type"></a> [node\_group\_type](#input\_node\_group\_type) | n/a | `string` | `"EKS"` | no |
-| <a name="input_node_groups"></a> [node\_groups](#input\_node\_groups) | n/a | <pre>list(object({<br>    name           = optional(string, "default")<br>    instance_types = optional(list(string), ["m5.large"])<br>    capacity_type  = optional(string, "on_demand")<br>    min_size       = optional(number, 3)<br>    max_size       = optional(number, 6)<br>    desired_size   = optional(number, 4)<br>  }))</pre> | <pre>[<br>  {<br>    "capacity_type": "on_demand",<br>    "desired_size": 4,<br>    "instance_types": [<br>      "m5.large"<br>    ],<br>    "max_size": 6,<br>    "min_size": 3,<br>    "name": "default"<br>  }<br>]</pre> | no |
+| <a name="input_node_groups"></a> [node\_groups](#input\_node\_groups) | n/a | <pre>list(object({<br>    name           = optional(string, "default")<br>    instance_types = optional(list(string), ["m5.large"])<br>    capacity_type  = optional(string, "on_demand")<br>    min_size       = optional(number, 3)<br>    max_size       = optional(number, 6)<br>    desired_size   = optional(number, 4)<br>    disk_size      = optional(number, 50)<br>    gpu_enabled    = optional(bool, false)<br>  }))</pre> | <pre>[<br>  {<br>    "capacity_type": "on_demand",<br>    "desired_size": 4,<br>    "instance_types": [<br>      "m5.large"<br>    ],<br>    "max_size": 6,<br>    "min_size": 3,<br>    "name": "default"<br>  }<br>]</pre> | no |
 | <a name="input_region"></a> [region](#input\_region) | Specifies the regions | `string` | `"eu-west-1"` | no |
-| <a name="input_tags"></a> [tags](#input\_tags) | (Optional) Specifies the AWS resource tags | `map(string)` | <pre>{<br>  "ProvisionedBy": "CGDevX"<br>}</pre> | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | (Optional) Specifies the AWS resource tags | `map(string)` | <pre>{<br>  "provisioned-by": "cg-devx"<br>}</pre> | no |
 | <a name="input_workloads"></a> [workloads](#input\_workloads) | Workloads configuration | <pre>map(object({<br>    description = optional(string, "")<br>  }))</pre> | `{}` | no |
 
 ## Outputs
@@ -118,6 +118,7 @@
 | <a name="output_public_subnet_id"></a> [public\_subnet\_id](#output\_public\_subnet\_id) | public\_subnet\_id |
 | <a name="output_secret_manager_irsa_role"></a> [secret\_manager\_irsa\_role](#output\_secret\_manager\_irsa\_role) | AWS Secretsmanager IAM Role ARN |
 | <a name="output_secret_manager_unseal_key"></a> [secret\_manager\_unseal\_key](#output\_secret\_manager\_unseal\_key) | The globally unique identifier for the secret manager key |
+| <a name="output_secret_manager_unseal_key_ring"></a> [secret\_manager\_unseal\_key\_ring](#output\_secret\_manager\_unseal\_key\_ring) | Secret Manager unseal key ring |
 | <a name="output_self_managed_node_groups"></a> [self\_managed\_node\_groups](#output\_self\_managed\_node\_groups) | Map of attribute maps for all self managed node groups created |
 | <a name="output_self_managed_node_groups_autoscaling_group_names"></a> [self\_managed\_node\_groups\_autoscaling\_group\_names](#output\_self\_managed\_node\_groups\_autoscaling\_group\_names) | List of the autoscaling group names created by self-managed node groups |
 | <a name="output_vpc_cni_irsa"></a> [vpc\_cni\_irsa](#output\_vpc\_cni\_irsa) | vpc\_cni role ARN |

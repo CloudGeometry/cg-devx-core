@@ -9,6 +9,7 @@ class CloudProviders(str, enum.Enum):
 
     AWS = 'aws'
     Azure = 'azure'
+    GCP = 'gcp'
 
     @classmethod
     def has_value(cls, value) -> bool:

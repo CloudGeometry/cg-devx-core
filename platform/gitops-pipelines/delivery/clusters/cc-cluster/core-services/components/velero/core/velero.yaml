@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: velero
+    server: https://kubernetes.default.svc
+  project: core
+  source:
+    chart: velero
+    repoURL: https://vmware-tanzu.github.io/helm-charts
+    targetRevision: 7.2.1
+    helm:
+      releaseName: velero
+      values: |
+        # <VELERO_CLOUD_PROVIDER_SPECIFIC_SNIPPET>
+        volumes:
+          - name: plugins
+            emptyDir: {}
+        serviceAccount:
+          server:
+            create: true
+            name: velero
+            annotations:
+              <K8S_ROLE_MAPPING>: <BACKUPS_MANAGER_IAM_ROLE_RN>
+        deployNodeAgent: true
+        nodeAgent:
+          privileged: true
+        metrics:
+          enabled: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

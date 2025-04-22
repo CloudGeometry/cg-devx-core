@@ -4,26 +4,18 @@ locals {
   grafana_admin_user   = "admin"
   atlantis_admin_user  = "admin"
   sonarqube_admin_user = "admin"
+  image_registry_auth  = tomap({ for key, value in var.image_registry_auth == null ? {} : var.image_registry_auth: key => base64encode("${value.login}:${value.token}") })
 }
 
 resource "vault_generic_secret" "docker_config" {
-  path = "secret/dockerconfigjson"
+    path = "secret/dockerconfigjson"
 
   data_json = jsonencode(
     {
-      dockerconfig = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } } }),
-    }
-  )
-
-  depends_on = [vault_mount.secret]
-}
-
-resource "vault_generic_secret" "registry_auth" {
-  path = "secret/registry-auth"
-
-  data_json = jsonencode(
-    {
-      auth = jsonencode({ "auths" : { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } } }),
+      dockerconfig = jsonencode({ "auths" : merge(
+        { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" }},
+        local.image_registry_auth)
+      })
     }
   )
 
@@ -35,8 +27,21 @@ resource "vault_generic_secret" "ci_secrets" {
 
   data_json = jsonencode(
     {
-      SSH_PRIVATE_KEY       = var.vcs_bot_ssh_private_key,
-      PERSONAL_ACCESS_TOKEN = var.vcs_token,
+      SSH_PRIVATE_KEY             = var.vcs_bot_ssh_private_key,
+      PERSONAL_ACCESS_TOKEN       = var.vcs_token,
+      ARTIFACT_STORAGE_ACCESS_KEY = var.cloud_binary_artifacts_store_access_key,
+    }
+  )
+
+  depends_on = [vault_mount.secret]
+}
+
+resource "vault_generic_secret" "cd_secrets" {
+  path = "secret/cd-secrets"
+
+  data_json = jsonencode(
+    {
+      cd_webhook_secret = var.cd_webhook_secret,
     }
   )
 
@@ -76,12 +81,12 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_vcs_bot_ssh_public_key        = var.vcs_bot_ssh_public_key,
       TF_VAR_vcs_bot_ssh_private_key       = var.vcs_bot_ssh_private_key,
       # harbor specific section
-      TF_VAR_registry_oidc_client_id       = module.harbor.vault_oidc_client_id,
-      TF_VAR_registry_oidc_client_secret   = module.harbor.vault_oidc_client_secret,
-      TF_VAR_registry_main_robot_password  = random_password.harbor_main_robot_password.result,
-      HARBOR_URL                           = "https://<REGISTRY_INGRESS_URL>",
-      HARBOR_USERNAME                      = local.harbor_admin_user,
-      HARBOR_PASSWORD                      = random_password.harbor_password.result,
+      TF_VAR_registry_oidc_client_id                 = module.harbor.vault_oidc_client_id,
+      TF_VAR_registry_oidc_client_secret             = module.harbor.vault_oidc_client_secret,
+      TF_VAR_registry_main_robot_password            = random_password.harbor_main_robot_password.result,
+      HARBOR_URL                                     = "https://<REGISTRY_INGRESS_URL>",
+      HARBOR_USERNAME                                = local.harbor_admin_user,
+      HARBOR_PASSWORD                                = random_password.harbor_password.result,
       # ----
 
       # vault specific section
@@ -245,6 +250,17 @@ resource "vault_generic_secret" "gitlab_agent_token" {
   data_json = jsonencode(
     {
       token = var.vcs_k8s_agent_token
+    }
+  )
+}
+
+resource "vault_generic_secret" "perfectscale_secret" {
+  path = "secret/perfectscale-secret"
+
+  data_json = jsonencode(
+    {
+      clientId = "",
+      clientSecret = "",
     }
   )
 
