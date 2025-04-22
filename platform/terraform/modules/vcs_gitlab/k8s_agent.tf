@@ -1,6 +1,6 @@
 resource "gitlab_cluster_agent" "gitops" {
   project = module.gitops-repo.repo_id
-  name    = var.cluster_name
+  name    = "cc-cluster-agent"
 
   depends_on = [module.gitops-repo]
 }
@@ -8,8 +8,8 @@ resource "gitlab_cluster_agent" "gitops" {
 resource "gitlab_cluster_agent_token" "gitops" {
   project     = gitlab_cluster_agent.gitops.project
   agent_id    = gitlab_cluster_agent.gitops.agent_id
-  name        = "${var.cluster_name}-token"
-  description = "Token for the ${var.cluster_name}"
+  name        = "cc-cluster-agent-token"
+  description = "Token for the cc-cluster-agent"
 
   depends_on = [gitlab_cluster_agent.gitops]
 }

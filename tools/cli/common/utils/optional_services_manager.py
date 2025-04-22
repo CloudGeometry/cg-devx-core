@@ -2,8 +2,7 @@ from common.enums.optional_services import OptionalServices
 
 OPTIONAL_SERVICES_MAP = {
     OptionalServices.GitHub: ["50-actions-runner-controller.yaml", "60-github-runner.yaml"],
-    OptionalServices.GitLab: ["60-gitlab-runner.yaml"],
-    # OptionalServices.GitLab: ["60-gitlab-runner.yaml", "65-gitlab-agent.yaml"],
+    OptionalServices.GitLab: ["60-gitlab-runner.yaml", "65-gitlab-agent.yaml"],
     OptionalServices.NvidiaGpuOperator: ["180-nvidia-gpu-operator.yaml"],
     OptionalServices.KEDA: ["180-keda.yaml"],
     OptionalServices.KUBEVIRT: ["180-kubevirt.yaml"],
