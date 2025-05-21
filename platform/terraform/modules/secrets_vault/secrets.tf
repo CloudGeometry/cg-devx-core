@@ -41,18 +41,6 @@ resource "vault_generic_secret" "cd_secrets" {
 
   data_json = jsonencode(
     {
-      cd_webhook_secret = var.cd_webhook_secret,
-    }
-  )
-
-  depends_on = [vault_mount.secret]
-}
-
-resource "vault_generic_secret" "cd_secrets" {
-  path = "secret/cd-secrets"
-
-  data_json = jsonencode(
-    {
       cd_webhook_secret         = var.cd_webhook_secret,
     }
   )

@@ -220,7 +220,9 @@ def bootstrap(
             state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
         ),
         "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store,
-        "<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>": artifact_store_endpoint
+        "<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>": artifact_store_endpoint,
+        "<WL_GITOPS_REPO_NAME>": wl_gitops_repo_name,
+        "<GIT_ORGANIZATION_NAME>": git_organisation_name,
     }
 
     # set cloud provider specific params
