@@ -3,10 +3,10 @@ from common.enums.optional_services import OptionalServices
 OPTIONAL_SERVICES_MAP = {
     OptionalServices.NvidiaGpuOperator: ["180-nvidia-gpu-operator.yaml"],
     OptionalServices.KEDA: ["180-keda.yaml"],
-    OptionalServices.KUBEVIRT: ["180-kubevirt.yaml"],
+    OptionalServices.KubeVirt: ["180-kubevirt.yaml"],
     OptionalServices.VPA: ["180-vpa.yaml"],
-    OptionalServices.PerfectScale: ["180-perfectscale.yaml"],
-    OptionalServices.ClusterAutoScaler: ["30-cluster-autoscaler.yaml"]
+    OptionalServices.Perfectscale: ["180-perfectscale.yaml"],
+    OptionalServices.ClusterAutoscaler: ["30-cluster-autoscaler.yaml"]
 }
 
 

@@ -15,7 +15,7 @@ spec:
   source:
     chart: cost-analyzer
     repoURL: https://kubecost.github.io/cost-analyzer/
-    targetRevision: 2.2.2
+    targetRevision: 2.7.2
     helm:
       releaseName: kubecost
       values: |
@@ -26,8 +26,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: cost-management.kubecost
-            cg-devx.metadata.chart-version: 2.2.2
-            cg-devx.metadata.version: 2.2.2
+            cg-devx.metadata.chart-version: 2.7.2
+            cg-devx.metadata.version: 2.7.2
           prometheus:
             enabled: false
             fqdn: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090

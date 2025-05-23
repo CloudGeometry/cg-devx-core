@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns
-    targetRevision: 1.13.1
+    targetRevision: 1.16.1
     helm:
       releaseName: external-dns
       values: |
@@ -24,8 +24,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: external-dns
-          cg-devx.metadata.chart-version: 1.13.1
-          cg-devx.metadata.version: 0.13.6
+          cg-devx.metadata.chart-version: 1.16.1
+          cg-devx.metadata.version: 0.16.1
         # <EXTERNAL_DNS_ADDITIONAL_CONFIGURATION>
         domainFilters:
           - <CC_CLUSTER_FQDN>

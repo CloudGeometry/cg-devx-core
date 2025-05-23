@@ -15,7 +15,7 @@ spec:
   source:
     chart: trivy-operator
     repoURL: https://aquasecurity.github.io/helm-charts/
-    targetRevision: 0.14.1
+    targetRevision: 0.28.1
     helm:
       releaseName: trivy-operator
       values: |
@@ -28,8 +28,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: runtime-vulnerability-analysis
-            cg-devx.metadata.chart-version: 0.14.1
-            cg-devx.metadata.version: 0.14.1
+            cg-devx.metadata.chart-version: 0.28.1
+            cg-devx.metadata.version: 0.28.1
         serviceMonitor:
           # enabled determines whether a serviceMonitor should be deployed
           enabled: true
@@ -37,16 +37,16 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: runtime-vulnerability-analysis
-            cg-devx.metadata.chart-version: 0.14.1
-            cg-devx.metadata.version: 0.14.1
+            cg-devx.metadata.chart-version: 0.28.1
+            cg-devx.metadata.version: 0.28.1
         operator:
           metricsVulnIdEnabled: true
           labels:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: runtime-vulnerability-analysis
-            cg-devx.metadata.chart-version: 0.14.1
-            cg-devx.metadata.version: 0.14.1
+            cg-devx.metadata.chart-version: 0.28.1
+            cg-devx.metadata.version: 0.28.1
   syncPolicy:
     automated:
       prune: true

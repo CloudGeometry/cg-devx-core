@@ -15,7 +15,7 @@ spec:
   source:
     chart: harbor
     repoURL: https://helm.goharbor.io
-    targetRevision: v1.13.0
+    targetRevision: v1.16.3
     helm:
       releaseName: harbor
       values: |
@@ -42,8 +42,8 @@ spec:
               cg-devx.cost-allocation.cost-center: platform
               cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
               cg-devx.metadata.service: oci-registry.harbor
-              cg-devx.metadata.chart-version: 1.13.0
-              cg-devx.metadata.version: 2.9.0
+              cg-devx.metadata.chart-version: 1.16.3
+              cg-devx.metadata.version: 2.12.3
         database:
           type: internal
           internal:
@@ -55,8 +55,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         registry:
           # set the service account to be used, default if left empty
           serviceAccountName: ""
@@ -75,8 +75,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         portal:
           resources:
             requests:
@@ -86,8 +86,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         persistence:
           enabled: true
           imageChartStorage:
@@ -106,8 +106,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         jobservice:
           resources:
             requests:
@@ -117,8 +117,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         redis:
           type: internal
           internal:
@@ -130,16 +130,16 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         notary:
           enabled: false
           podLabels:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         trivy:
           # enabled the flag to enable Trivy scanner
           enabled: true
@@ -147,8 +147,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: oci-registry.harbor
-            cg-devx.metadata.chart-version: 1.13.0
-            cg-devx.metadata.version: 2.9.0
+            cg-devx.metadata.chart-version: 1.16.3
+            cg-devx.metadata.version: 2.12.3
         updateStrategy:
           type: Recreate
         existingSecretAdminPassword: harbor-admin

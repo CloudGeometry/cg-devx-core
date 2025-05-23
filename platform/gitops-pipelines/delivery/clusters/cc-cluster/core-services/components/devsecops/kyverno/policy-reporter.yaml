@@ -13,10 +13,17 @@ spec:
   source:
     chart: policy-reporter
     repoURL: https://kyverno.github.io/policy-reporter
-    targetRevision: v2.24.2
+    targetRevision: v3.1.4
     helm:
       releaseName: policy-reporter
       values: |
+        global:
+          labels:
+            cg-devx.cost-allocation.cost-center: platform
+            cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+            cg-devx.metadata.service: policy-engine.kyverno-policy-reporter
+            cg-devx.metadata.chart-version: 3.1.4
+            cg-devx.metadata.version: 3.1.1          
         ui:
           enabled: true
         kyvernoPlugin:
