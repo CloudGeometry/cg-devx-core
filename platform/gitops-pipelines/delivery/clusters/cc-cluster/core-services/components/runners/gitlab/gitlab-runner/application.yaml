@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: 'https://charts.gitlab.io'
-    targetRevision: 0.64.1
+    targetRevision: 0.77.2
     helm:
       values: |-
         gitlabUrl: https://gitlab.com
@@ -32,12 +32,24 @@ spec:
           config: |
             [[runners]]
               [runners.kubernetes]
-                image = "ubuntu:20.04"
+                image = "ubuntu:24.04"
                 privileged = true
               [[runners.kubernetes.volumes.empty_dir]]
                 name = "docker-certs"
                 mount_path = "/certs/client"
                 medium = "Memory"
+        deploymentLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: vsc.runner
+          cg-devx.metadata.chart-version: 0.77.2
+          cg-devx.metadata.version: 0.27.6
+        podLabels:
+          cg-devx.cost-allocation.cost-center: platform
+          cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
+          cg-devx.metadata.service: vsc.runner
+          cg-devx.metadata.chart-version: 0.77.2
+          cg-devx.metadata.version: 0.27.6    
     chart: gitlab-runner
   syncPolicy:
     automated:
