@@ -994,11 +994,11 @@ def show_credentials(p):
     return
 
 
-def get_provider_specific_optional_services(cloud_provider: str) -> list:
+def get_provider_specific_optional_services(cloud_provider: str) -> list[str]:
     if cloud_provider == CloudProviders.AWS:
-        return [OptionalServices.ClusterAutoScaler]
+        return [OptionalServices.ClusterAutoscaler.value]
     elif cloud_provider == CloudProviders.Azure:
-        return [OptionalServices.ClusterAutoScaler]
+        return [OptionalServices.ClusterAutoscaler.value]
     return []
 
 

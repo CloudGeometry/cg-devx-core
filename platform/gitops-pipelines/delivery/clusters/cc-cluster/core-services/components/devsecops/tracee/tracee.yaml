@@ -15,7 +15,7 @@ spec:
   source:
     chart: tracee
     repoURL: https://aquasecurity.github.io/helm-charts/
-    targetRevision: 0.15.1
+    targetRevision: 0.23.1
     helm:
       releaseName: tracee
       values: |
@@ -25,8 +25,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: runtime-security.tracee
-          cg-devx.metadata.chart-version: 0.15.1
-          cg-devx.metadata.version: 0.15.1
+          cg-devx.metadata.chart-version: 0.23.1
+          cg-devx.metadata.version: 0.23.1
   syncPolicy:
     automated:
       prune: true

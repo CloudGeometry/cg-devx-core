@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://kedacore.github.io/charts
     chart: keda
-    targetRevision: v2.14.2
+    targetRevision: v2.17.1
     helm:
       values: |-
         clusterName: <PRIMARY_CLUSTER_NAME>
@@ -20,8 +20,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: scaler.keda
-          cg-devx.metadata.chart-version: 2.14.2
-          cg-devx.metadata.version: 2.14.0
+          cg-devx.metadata.chart-version: 2.17.1
+          cg-devx.metadata.version: 2.17.1
         crds:
           additionalAnnotations:
             argocd.argoproj.io/sync-options: ServerSideApply=true
