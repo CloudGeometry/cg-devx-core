@@ -6,7 +6,8 @@ OPTIONAL_SERVICES_MAP = {
     OptionalServices.KubeVirt: ["180-kubevirt.yaml"],
     OptionalServices.VPA: ["180-vpa.yaml"],
     OptionalServices.Perfectscale: ["180-perfectscale.yaml"],
-    OptionalServices.ClusterAutoscaler: ["30-cluster-autoscaler.yaml"]
+    OptionalServices.ClusterAutoscaler: ["30-cluster-autoscaler.yaml"],
+    OptionalServices.Backstage: ["55-oauth2-proxy.yaml", "170-backstage.yaml"]
 }
 
 
