@@ -13,6 +13,7 @@ class OptionalServices(str, enum.Enum):
     KubeVirt = 'kubevirt'
     ClusterAutoscaler = 'cluster-auto-scaler'
     Perfectscale = 'perfectscale'
+    Backstage = 'backstage'
 
     @classmethod
     def has_value(cls, value) -> bool:
