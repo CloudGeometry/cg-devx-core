@@ -8,6 +8,7 @@ from git import InvalidGitRepositoryError
 
 from common.const.common_path import LOCAL_TF_FOLDER_VCS, LOCAL_TF_FOLDER_HOSTING_PROVIDER, LOCAL_FOLDER
 from common.const.namespaces import ARGOCD_NAMESPACE
+from common.enums.git_providers import GitProviders
 from common.logging_config import configure_logging
 from common.state_store import StateStore
 from common.utils.command_utils import init_cloud_provider, prepare_cloud_provider_auth_env_vars, set_envs, unset_envs, \
@@ -91,14 +92,29 @@ def destroy(verbosity: str):
             cd_man.turn_off_app_sync(registry_app_name)
             cd_man.turn_off_app_sync("ingress-nginx-components")
             cd_man.turn_off_app_sync("ingress-nginx")
-            cd_man.turn_off_app_sync("github-runner-components")
-            cd_man.turn_off_app_sync("actions-runner-controller-components")
+            # git self-hosted runners
+            if p.git_provider == GitProviders.GitHub:
+                cd_man.turn_off_app_sync("github-runner-components")
+                cd_man.turn_off_app_sync("actions-runner-controller-components")
+            elif p.git_provider == GitProviders.GitLab:
+                cd_man.turn_off_app_sync("gitlab-runner-components")
+                cd_man.turn_off_app_sync("gitlab-agent-components")
+            else:
+                raise Exception('Error: None of the available Git providers were specified')
 
-            # delete app
+            # delete apps
             cd_man.delete_app("ingress-nginx-components")
             cd_man.delete_app("ingress-nginx")
-            cd_man.delete_app("github-runner-components")
-            cd_man.delete_app("actions-runner-controller-components")
+            # git self-hosted runners
+            if p.git_provider == GitProviders.GitHub:
+                cd_man.delete_app("github-runner-components")
+                cd_man.delete_app("actions-runner-controller-components")
+            elif p.git_provider == GitProviders.GitLab:
+                cd_man.delete_app("gitlab-runner-components")
+                cd_man.delete_app("gitlab-agent-components")
+            else:
+                raise Exception('Error: None of the available Git providers were specified')
+
         except Exception as e:
             pass
         try:

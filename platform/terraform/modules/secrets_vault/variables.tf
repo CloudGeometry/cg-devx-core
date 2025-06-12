@@ -54,7 +54,7 @@ variable "vault_token" {
 
 variable "workloads" {
   description = "workloads vault configuration"
-  type        = map(object({
+  type = map(object({
     description = optional(string, "")
   }))
   default = {}
@@ -77,8 +77,20 @@ variable "tf_backend_storage_access_key" {
   default     = ""
 }
 
+variable "vcs_runner_token" {
+  description = "VCS self hosted runner token for GitLab runners"
+  type        = string
+  default     = ""
+}
+
 variable "cloud_binary_artifacts_store_access_key" {
   description = "Specifies the access key for CI artifact store backend storage. Only applicable to AKS."
+  type        = string
+  default     = ""
+}
+
+variable "vcs_k8s_agent_token" {
+  description = "VCS kubernetes agent token for GitLab"
   type        = string
   default     = ""
 }

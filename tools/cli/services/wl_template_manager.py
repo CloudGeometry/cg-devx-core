@@ -2,8 +2,8 @@ import os
 import shutil
 from pathlib import Path
 from typing import Optional, Union, List, Dict
+from urllib.parse import urlparse
 
-from ghrepo import GHRepo
 from git import Repo, GitError, Actor
 
 from common.const.common_path import LOCAL_WORKLOAD_TEMP_FOLDER
@@ -11,6 +11,7 @@ from common.const.const import WL_REPOSITORY_BRANCH, WL_REPOSITORY_URL
 from common.custom_excpetions import RepositoryNotInitializedError
 from common.logging_config import logger
 from common.tracing_decorator import trace
+from services.vcs.git_provider_manager import GitProviderManager
 
 
 class WorkloadManager:
@@ -21,6 +22,7 @@ class WorkloadManager:
             org_name: str,
             wl_repo_name: str,
             ssh_pkey_path: str,
+            repo_manager: GitProviderManager,
             template_url: Optional[str] = WL_REPOSITORY_URL,
             template_branch: Optional[str] = WL_REPOSITORY_BRANCH
     ):
@@ -29,8 +31,9 @@ class WorkloadManager:
         self._git_org_name = org_name
         self.wl_repo_name = wl_repo_name
         self.ssh_pkey_path = ssh_pkey_path
+        self.repo_manager = repo_manager
         self.wl_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / wl_repo_name
-        self.template_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / GHRepo.parse(self._template_url).name
+        self.template_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / self.get_repository_name_from_url(self._template_url)
         self.wl_repo = None
         self.template_repo = None
 
@@ -48,7 +51,7 @@ class WorkloadManager:
         """
         Clone the workload Git repository.
         """
-        wl_repo_url = GHRepo(owner=self._git_org_name, name=self.wl_repo_name).ssh_url
+        wl_repo_url = self.repo_manager.get_repository_url(self._git_org_name, self.wl_repo_name)
         self._prepare_clone_folder(folder=self.wl_repo_folder)
         self.wl_repo = self._clone_repository(url=wl_repo_url, folder=self.wl_repo_folder)
         return self.wl_repo_folder
@@ -146,7 +149,8 @@ class WorkloadManager:
     def update(self):
         if not self.wl_repo:
             self.wl_repo = Repo(self.wl_repo_folder)
-        with self.wl_repo.git.custom_environment(GIT_SSH_COMMAND=f"ssh -o StrictHostKeyChecking=no -i {self.ssh_pkey_path}"):
+        with self.wl_repo.git.custom_environment(
+                GIT_SSH_COMMAND=f"ssh -o StrictHostKeyChecking=no -i {self.ssh_pkey_path}"):
             # clean stale branches
             self.wl_repo.remotes.origin.fetch(prune=True)
             self.wl_repo.heads.main.checkout()
@@ -310,3 +314,26 @@ class WorkloadManager:
             logger.info(f"Folder {folder} removed successfully.")
         else:
             logger.debug(f"Folder {folder} does not exist. No action needed.")
+
+    @staticmethod
+    def get_repository_name_from_url(path: str) -> str:
+        """
+        Extract the repository name from the GIT URL.
+
+        :param path: The SSH or HTTPS URL of the repository.
+        :return: The name of the repository.
+        :raises InvalidRepositoryPathError: If the provided path is not a valid repository URI.
+        """
+        # Parse the URL
+        parsed = urlparse(path)
+
+        # Check if the scheme is either 'ssh' or 'https', and ensure path contains '.git'
+        if parsed.scheme not in ('ssh', 'https', '') or not path.endswith('.git'):
+            raise ValueError(f"Invalid repository path: {path}")
+
+        # Extract repository name
+        repo_name = path.split('/')[-1].replace(".git", "")
+        if not repo_name:
+            raise ValueError(f"Could not extract repository name from path: {path}")
+
+        return repo_name

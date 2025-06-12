@@ -5,6 +5,7 @@ from common.enums.git_plans import GitSubscriptionPlans
 
 class GitProviderManager(ABC):
     """Git provider wrapper to standardise Git management."""
+
     @property
     def organization(self) -> str:
         pass
@@ -75,5 +76,40 @@ class GitProviderManager(ABC):
         """
         Create a pull request
         :return: Pull request URL
+        """
+        pass
+
+    @abstractmethod
+    def create_iac_pr_automation_config_snippet(self):
+        """
+        Creates Git Provider specific configuration section for Atlantis
+        :return: Atlantis configuration section
+        """
+        pass
+
+    @abstractmethod
+    def get_repository_root(self) -> str:
+        """
+        Retrieves the base URL segment for repositories under the specified organization or group.
+
+        This method returns the starting segment of the URL used to access repositories within a specific organization
+        or group via its web interface. It provides a foundational URL segment, which can be used as the base in
+        constructing URLs for specific repositories or further navigation within the organization or group.
+
+        :return: The base segment of the URL for the specified organization or group, suitable for constructing more
+        specific repository URLs.
+        :rtype: str
+        """
+        pass
+
+    @abstractmethod
+    def get_repository_url(self, org_name: str, repo_name: str) -> str:
+        """
+        Retrieve the SSH URL of a Git repository.
+
+        :param org_name: The name of the Git organization or group.
+        :param repo_name: The name of the repository.
+        :return: The SSH URL of the repository.
+        :raises HTTPError: If there is an issue with the API request.
         """
         pass

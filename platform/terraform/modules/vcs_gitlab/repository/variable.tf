@@ -39,7 +39,7 @@ variable "delete_branch_on_merge" {
 
 variable "branch_protection" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "allow_merge_commit" {
@@ -88,4 +88,10 @@ variable "vcs_subscription_plan" {
 
 variable "vcs_owner" {
   type = string
+}
+
+variable "allow_push_to_protected" {
+  description = "True to allow pushing to protected branch"
+  type        = bool
+  default     = false
 }

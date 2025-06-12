@@ -3,6 +3,7 @@ import textwrap
 from urllib.error import HTTPError
 
 import requests
+from ghrepo import GHRepo
 
 from common.const.const import FALLBACK_AUTHOR_NAME, FALLBACK_AUTHOR_EMAIL
 from common.enums.git_plans import GitSubscriptionPlans
@@ -166,3 +167,43 @@ class GitHubProviderManager(GitProviderManager):
             "X-GitHub-Api-Version": "2022-11-28"
         }
         return headers
+
+    def create_iac_pr_automation_config_snippet(self):
+        """
+        Creates GitHub specific configuration section for Atlantis
+        :return: Atlantis configuration section
+        """
+        return textwrap.dedent("""# github specific section
+      ATLANTIS_GH_HOSTNAME                 = "github.com",
+      ATLANTIS_GH_TOKEN                    = var.vcs_token,
+      ATLANTIS_GH_USER                     = "<GIT_USER_LOGIN>",
+      ATLANTIS_GH_WEBHOOK_SECRET           = var.atlantis_repo_webhook_secret,
+      GITHUB_OWNER                         = "<GIT_ORGANIZATION_NAME>",
+      GITHUB_TOKEN                         = var.vcs_token,
+      # ----""")
+
+    def get_repository_root(self) -> str:
+        """
+        Retrieves the base URL segment for GitHub repositories under the specified organization.
+
+        This method returns the starting segment of the URL used to access repositories within a specific GitHub
+        organization via its web interface.
+        It provides a foundational URL segment, which can be used as the base in constructing URLs for specific
+        repositories or further navigation within the GitHub organization.
+
+        :return: The base segment of the GitHub URL for the specified organization, suitable for constructing more
+        specific repository URLs.
+        :rtype: str
+        """
+        return f"github.com/{self.__org_name}"
+
+    def get_repository_url(self, org_name: str, repo_name: str) -> str:
+        """
+        Retrieve the SSH URL of a GitHub repository.
+
+        :param org_name: The name of the GitHub organization or group.
+        :param repo_name: The name of the repository.
+        :return: The SSH URL of the repository.
+        :raises HTTPError: If there is an issue with the API request.
+        """
+        return GHRepo(owner=org_name, name=repo_name).ssh_url

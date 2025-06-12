@@ -215,7 +215,7 @@ def setup(
         click.echo("2/12: Skipped dependencies check.")
 
     # promote input params
-    prepare_parameters(p)
+    prepare_parameters(p, git_man)
     p.save_checkpoint()
 
     tm = GitOpsTemplateManager(p.get_input_param(GITOPS_REPOSITORY_TEMPLATE_URL),
@@ -263,7 +263,8 @@ def setup(
 
         p.fragments["# <TF_HOSTING_PROVIDER>"] = cloud_man.create_hosting_provider_snippet()
 
-        p.fragments["# <IAC_PR_AUTOMATION_CONFIG>"] = cloud_man.create_iac_pr_automation_config_snippet()
+        p.fragments["# <CLOUD_PROVIDER_IAC_PR_AUTOMATION_CONFIG>"] = cloud_man.create_iac_pr_automation_config_snippet()
+        p.fragments["# <VCS_IAC_PR_AUTOMATION_CONFIG>"] = git_man.create_iac_pr_automation_config_snippet()
 
         p.parameters["<K8S_ROLE_MAPPING>"] = cloud_man.create_k8s_cluster_role_mapping_snippet()
 
@@ -337,6 +338,8 @@ def setup(
         # store out params
         p.parameters["<GIT_REPOSITORY_GIT_URL>"] = vcs_out["gitops_repo_ssh_clone_url"]
         p.parameters["<GIT_REPOSITORY_URL>"] = vcs_out["gitops_repo_html_url"]
+        p.internals["VCS_RUNNER_TOKEN"] = vcs_out["vcs_runner_token"]
+        p.internals["VCS_K8S_AGENT_TOKEN"] = vcs_out["vcs_k8s_agent_token"]
 
         # unset envs as no longer needed
         unset_envs(vcs_tf_env_vars)
@@ -767,6 +770,8 @@ def setup(
             "atlantis_repo_webhook_url": p.parameters["<IAC_PR_AUTOMATION_WEBHOOK_URL>"],
             "vault_token": p.internals["VAULT_ROOT_TOKEN"],
             "cluster_endpoint": p.internals["CC_CLUSTER_ENDPOINT"],
+            "vcs_runner_token": p.internals["VCS_RUNNER_TOKEN"],
+            "vcs_k8s_agent_token": p.internals["VCS_K8S_AGENT_TOKEN"],
         }
         if "<CC_CLUSTER_SSH_PUBLIC_KEY>" in p.parameters:
             sec_man_tf_params["cluster_ssh_public_key"] = p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"]
@@ -814,12 +819,11 @@ def setup(
         # run security manager tf to create secrets and roles
         user_man_tf_env_vars = {
             **{
-                "GITHUB_TOKEN": p.get_input_param(GIT_ACCESS_TOKEN),
-                "GITHUB_OWNER": p.get_input_param(GIT_ORGANIZATION_NAME),
                 "VAULT_TOKEN": p.internals["VAULT_ROOT_TOKEN"],
                 "VAULT_ADDR": f'https://{p.parameters["<SECRET_MANAGER_INGRESS_URL>"]}',
             },
-            **cloud_provider_auth_env_vars}
+            **cloud_provider_auth_env_vars,
+            **git_provider_env_vars}
         # set envs as required by tf
         set_envs(user_man_tf_env_vars)
 
@@ -994,7 +998,16 @@ def show_credentials(p):
     return
 
 
-def get_provider_specific_optional_services(cloud_provider: str) -> list[str]:
+def get_git_provider_specific_optional_services(git_provider: GitProviders) -> list:
+    # TODO: unify and restructure services switching logic after GitLab integration
+
+    if git_provider == GitProviders.GitHub:
+        return [OptionalServices.GitHub]
+    elif git_provider == GitProviders.GitLab:
+        return [OptionalServices.GitLab]
+
+
+def get_cloud_provider_specific_optional_services(cloud_provider: str) -> list[str]:
     if cloud_provider == CloudProviders.AWS:
         return [OptionalServices.ClusterAutoscaler.value]
     elif cloud_provider == CloudProviders.Azure:
@@ -1003,12 +1016,15 @@ def get_provider_specific_optional_services(cloud_provider: str) -> list[str]:
 
 
 @trace()
-def prepare_parameters(p):
+def prepare_parameters(p, git_man):
     # TODO: move to appropriate place
+
     optional_services = p.get_input_param(OPTIONAL_SERVICES) or []
-    optional_services.extend(get_provider_specific_optional_services(p.cloud_provider))
+    optional_services.extend(get_git_provider_specific_optional_services(p.git_provider))
+    optional_services.extend(get_cloud_provider_specific_optional_services(p.cloud_provider))
     exclude_string = build_argo_exclude_string(optional_services)
     p.parameters["<CD_SERVICE_EXCLUDE_LIST>"] = exclude_string
+
     if exclude_string:
         p.fragments["# <CD_SERVICE_EXCLUDE_SNIPPET>"] = """directory:
           exclude: '{<CD_SERVICE_EXCLUDE_LIST>}'"""
@@ -1024,7 +1040,7 @@ def prepare_parameters(p):
     p.parameters["<GITOPS_REPOSITORY_NAME>"] = p.get_input_param(GITOPS_REPOSITORY_NAME).lower()
     org_name = p.get_input_param(GIT_ORGANIZATION_NAME).lower()
     p.parameters["<GIT_ORGANIZATION_NAME>"] = org_name
-    p.parameters["<GIT_REPOSITORY_ROOT>"] = f'github.com/{org_name}'
+    p.parameters["<GIT_REPOSITORY_ROOT>"] = git_man.get_repository_root()
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME).lower()
     p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
     p.parameters["<TERRAFORM_VERSION>"] = TERRAFORM_VERSION

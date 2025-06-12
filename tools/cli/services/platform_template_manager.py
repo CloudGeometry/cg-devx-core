@@ -112,9 +112,10 @@ class GitOpsTemplateManager:
                     if os.path.isdir(path):
                         os.rmdir(path)
 
-        # restructure gitops
+        # restructure gitops platform/.gitlab
         shutil.copytree(temp_folder / "platform" / "terraform", LOCAL_GITOPS_FOLDER / "terraform")
         shutil.copytree(temp_folder / "platform" / "gitops-pipelines", LOCAL_GITOPS_FOLDER / "gitops-pipelines")
+        shutil.copytree(temp_folder / "platform" / "gitlab", LOCAL_GITOPS_FOLDER / ".gitlab")
         for src_file in Path(temp_folder / "platform").glob('*.*'):
             shutil.copy(src_file, LOCAL_GITOPS_FOLDER)
 

@@ -157,9 +157,9 @@ def bootstrap(
 
     # Initialize cloud manager for GitOps parameters
     cloud_man, _ = init_cloud_provider(state_store)
-    click.echo("2/11: Cloud manager initialized for GitOps.")
+    git_man = init_git_provider(state_store)
+    click.echo("2/11: Cloud manager and Git provider initialized for GitOps.")
 
-    # Initialize WorkloadManager for the workload repository
     wl_name, wl_repo_name, wl_gitops_repo_name = preprocess_workload_names(
         logger=logger,
         wl_name=wl_name,
@@ -220,7 +220,9 @@ def bootstrap(
             state_store.cloud_provider, cloud_account, cluster_name, wl_name, wl_svc_name
         ),
         "<CLOUD_BINARY_ARTIFACTS_STORE>": artifact_store,
-        "<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>": artifact_store_endpoint
+        "<CLOUD_BINARY_ARTIFACTS_STORE_ENDPOINT>": artifact_store_endpoint,
+        "<WL_GITOPS_REPO_NAME>": wl_gitops_repo_name,
+        "<GIT_ORGANIZATION_NAME>": git_organisation_name,
     }
 
     # set cloud provider specific params
@@ -242,7 +244,8 @@ def bootstrap(
         wl_repo_name=wl_repo_name,
         ssh_pkey_path=key_path,
         template_url=wl_template_url,
-        template_branch=wl_template_branch
+        template_branch=wl_template_branch,
+        repo_manager=git_man
     )
     click.echo("5/11: Workload repository manager initialized.")
 
@@ -265,7 +268,8 @@ def bootstrap(
         wl_repo_name=wl_gitops_repo_name,
         ssh_pkey_path=key_path,
         template_url=wl_gitops_template_url,
-        template_branch=wl_gitops_template_branch
+        template_branch=wl_gitops_template_branch,
+        repo_manager=git_man
     )
     click.echo("8/11: GitOps repository manager initialized.")
 

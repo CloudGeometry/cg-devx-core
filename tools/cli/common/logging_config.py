@@ -46,6 +46,6 @@ def configure_logging(verbosity: str) -> None:
         verbosity (str): The verbosity level. Should be one of 'DEBUG', 'INFO', 'WARNING', 'ERROR', or 'CRITICAL'.
     """
     # Set the global logging level based on the verbosity argument.
-    logging.basicConfig(level=getattr(logging, verbosity, logging.CRITICAL))
+    logging.basicConfig(level=getattr(logging, verbosity, logging.CRITICAL), filename="~/cgdevx.log")
     # Set the custom logger's level based on the verbosity argument.
     logger.setLevel(getattr(logging, verbosity, logging.CRITICAL))
