@@ -10,11 +10,12 @@ class OptionalServices(str, enum.Enum):
     GitHub = "github"
     GitLab = "gitlab"
     NvidiaGpuOperator = "nvidia-gpu-operator"
-    VPA = "vpa"
-    KEDA = "keda"
-    KUBEVIRT = "kubevirt"
-    ClusterAutoScaler = 'cluster-auto-scaler'
-    PerfectScale = 'perfectscale'
+    VPA = 'vpa'
+    KEDA = 'keda'
+    KubeVirt = 'kubevirt'
+    ClusterAutoscaler = 'cluster-auto-scaler'
+    Perfectscale = 'perfectscale'
+    Backstage = 'backstage'
 
     @classmethod
     def has_value(cls, value) -> bool:

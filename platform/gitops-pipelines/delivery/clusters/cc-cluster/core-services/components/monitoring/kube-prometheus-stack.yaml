@@ -24,8 +24,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: observability.prometheus-stack
-          cg-devx.metadata.chart-version: 47.6.1
-          cg-devx.metadata.version: 0.66.0
+          cg-devx.metadata.chart-version: 72.6.2
+          cg-devx.metadata.version: 0.82.2
         prometheus:
           prometheusSpec:
             podMonitorSelectorNilUsesHelmValues: false
@@ -83,7 +83,7 @@ spec:
           envFromSecret: grafana-secrets
           persistence:
             enabled: true
-            type: statefulset
+            type: sts
           admin:
               existingSecret: grafana-secrets
               userKey: grafana-user
@@ -110,8 +110,8 @@ spec:
               enabled: true
               allow_sign_up: true
               auto_login: false
-              client_id: $grafana-secrets:client-id
-              client_secret: $grafana-secrets:client-secret
+              client_id: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_ID}
+              client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
               auth_url: https://<OIDC_PROVIDER_AUTHORIZE_URL>
               token_url: https://<OIDC_PROVIDER_TOKEN_URL>
               api_url: https://<OIDC_PROVIDER_USERINFO_URL>
@@ -197,7 +197,7 @@ spec:
               k8s-scaler-keda:
                 url: https://raw.githubusercontent.com/kedacore/keda/main/config/grafana/keda-dashboard.json
     repoURL: https://prometheus-community.github.io/helm-charts
-    targetRevision: 47.6.1
+    targetRevision: 72.6.2
   syncPolicy:
     automated:
       prune: true

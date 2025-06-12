@@ -7,7 +7,7 @@ labels:
   cg-devx.cost-allocation.cost-center: "platform"
   cg-devx.metadata.owner: "<GITOPS_REPOSITORY_NAME>-admin"
   cg-devx.metadata.service: "continuous-delivery.argocd"
-  cg-devx.metadata.version: "2.11.3"
+  cg-devx.metadata.version: "2.14.12"
 fieldSpecs:
 - path: metadata/labels
   create: true

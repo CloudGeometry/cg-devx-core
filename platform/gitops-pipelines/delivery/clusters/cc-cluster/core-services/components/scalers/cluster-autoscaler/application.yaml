@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://kubernetes.github.io/autoscaler
     chart: cluster-autoscaler
-    targetRevision: 9.34.1
+    targetRevision: 9.46.6
     helm:
       values: |-
         affinity: {}
@@ -21,8 +21,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: scaler.cluster-autoscaler
-          cg-devx.metadata.chart-version: 9.34.1
-          cg-devx.metadata.version: 1.28.2
+          cg-devx.metadata.chart-version: 9.46.6
+          cg-devx.metadata.version: 1.32.0
         autoDiscovery:
           clusterName: <PRIMARY_CLUSTER_NAME>
           tags:

@@ -10,15 +10,15 @@ spec:
   source:
     repoURL: https://runatlantis.github.io/helm-charts
     chart: atlantis
-    targetRevision: 5.4.2
+    targetRevision: 5.17.2
     helm:
       values: |-
         commonLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: atlantis
-          cg-devx.metadata.chart-version: 5.4.2
-          cg-devx.metadata.version: 0.28.5
+          cg-devx.metadata.chart-version: 5.17.2
+          cg-devx.metadata.version: 0.34.0
         statefulSet:
           annotations:
             secret.reloader.stakater.com/reload: "atlantis-envs-secrets"

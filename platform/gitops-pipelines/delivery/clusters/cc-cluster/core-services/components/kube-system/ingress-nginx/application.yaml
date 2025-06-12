@@ -11,7 +11,7 @@ spec:
   project: core
   source:
     repoURL: https://kubernetes.github.io/ingress-nginx
-    targetRevision: 4.5.2
+    targetRevision: 4.12.2
     helm:
       values: |-
         controller:
@@ -33,8 +33,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: ingress-nginx
-          cg-devx.metadata.chart-version: 4.5.2
-          cg-devx.metadata.version: 1.6.4
+          cg-devx.metadata.chart-version: 4.12.2
+          cg-devx.metadata.version: 1.12.2
     chart: ingress-nginx
   destination:
     server: https://kubernetes.default.svc

@@ -10,15 +10,15 @@ spec:
   project: core
   source:
     repoURL: https://argoproj.github.io/argo-helm
-    targetRevision: 0.40.11
+    targetRevision: 0.45.15
     helm:
       valuesObject:
         commonLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: continuous-integration.argo-workflow
-          cg-devx.metadata.chart-version: 0.40.11
-          cg-devx.metadata.version: 3.5.4
+          cg-devx.metadata.chart-version: 0.45.15
+          cg-devx.metadata.version: 3.6.7
         singleNamespace: false
         nameOverride: argo
         controller:

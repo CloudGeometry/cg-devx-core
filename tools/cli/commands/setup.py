@@ -1006,11 +1006,12 @@ def get_git_provider_specific_optional_services(git_provider: GitProviders) -> l
     elif git_provider == GitProviders.GitLab:
         return [OptionalServices.GitLab]
 
-def get_provider_specific_optional_services(cloud_provider: str) -> list:
+
+def get_cloud_provider_specific_optional_services(cloud_provider: str) -> list[str]:
     if cloud_provider == CloudProviders.AWS:
-        return [OptionalServices.ClusterAutoScaler]
+        return [OptionalServices.ClusterAutoscaler.value]
     elif cloud_provider == CloudProviders.Azure:
-        return [OptionalServices.ClusterAutoScaler]
+        return [OptionalServices.ClusterAutoscaler.value]
     return []
 
 
@@ -1020,7 +1021,7 @@ def prepare_parameters(p, git_man):
 
     optional_services = p.get_input_param(OPTIONAL_SERVICES) or []
     optional_services.extend(get_git_provider_specific_optional_services(p.git_provider))
-    optional_services.extend(get_provider_specific_optional_services(p.cloud_provider))
+    optional_services.extend(get_cloud_provider_specific_optional_services(p.cloud_provider))
     exclude_string = build_argo_exclude_string(optional_services)
     p.parameters["<CD_SERVICE_EXCLUDE_LIST>"] = exclude_string
 
