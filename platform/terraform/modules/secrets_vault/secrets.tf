@@ -240,6 +240,8 @@ resource "vault_generic_secret" "gitlab_agent_token" {
       token = var.vcs_k8s_agent_token
     }
   )
+
+  depends_on = [vault_mount.secret]
 }
 
 resource "vault_generic_secret" "perfectscale_secret" {

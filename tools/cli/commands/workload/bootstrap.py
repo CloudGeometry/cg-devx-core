@@ -91,8 +91,8 @@ from services.wl_template_manager import WorkloadManager
     help='Set the verbosity level (DEBUG, INFO, WARNING, ERROR, CRITICAL)'
 )
 def bootstrap(
-        wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_template_url: str, wl_template_branch: str,
-        wl_gitops_template_url: str, wl_gitops_template_branch: str, wl_svc_name: str, wl_svc_port: int, verbosity: str
+    wl_name: str, wl_repo_name: str, wl_gitops_repo_name: str, wl_template_url: str, wl_template_branch: str,
+    wl_gitops_template_url: str, wl_gitops_template_branch: str, wl_svc_name: str, wl_svc_port: int, verbosity: str
 ):
     """
     Bootstrap a new workload environment by setting up the necessary repositories and configurations.
@@ -298,8 +298,11 @@ def bootstrap(
                                  author_email=state_store.internals["GIT_USER_EMAIL"])
         wl_gitops_manager.switch_to_branch()
 
-        pr_url = git_man.create_pr(wl_gitops_repo_name, branch_name, "main",
-                                   f"Execute IaC changes for {wl_name}", "Setup default secrets.")
+        pr_url = git_man.create_pr(wl_gitops_repo_name,
+                                   branch_name,
+                                   wl_gitops_manager.default_branch,
+                                   f"Execute IaC changes for {wl_name}",
+                                   "Setup default secrets.")
         webbrowser.open(pr_url, autoraise=False)
 
         click.echo("10/11: Created PR for GitOps repository.")

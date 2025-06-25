@@ -1,7 +1,8 @@
 import os
+import re
 import shutil
 from pathlib import Path
-from typing import Optional, Union, List, Dict
+from typing import Optional, Union, List, Dict, Any
 from urllib.parse import urlparse
 
 from git import Repo, GitError, Actor
@@ -18,13 +19,13 @@ class WorkloadManager:
     """CG DevX Workload templates manager."""
 
     def __init__(
-            self,
-            org_name: str,
-            wl_repo_name: str,
-            ssh_pkey_path: str,
-            repo_manager: GitProviderManager,
-            template_url: Optional[str] = WL_REPOSITORY_URL,
-            template_branch: Optional[str] = WL_REPOSITORY_BRANCH
+        self,
+        org_name: str,
+        wl_repo_name: str,
+        ssh_pkey_path: str,
+        repo_manager: GitProviderManager,
+        template_url: Optional[str] = WL_REPOSITORY_URL,
+        template_branch: Optional[str] = WL_REPOSITORY_BRANCH
     ):
         self._template_url = template_url
         self._branch = template_branch
@@ -36,6 +37,16 @@ class WorkloadManager:
         self.template_repo_folder = LOCAL_WORKLOAD_TEMP_FOLDER / self.get_repository_name_from_url(self._template_url)
         self.wl_repo = None
         self.template_repo = None
+
+    @property
+    def default_branch(self) -> str | None:
+        remote_info = self.wl_repo.git.remote("show", "origin")
+
+        # Parse the "HEAD branch" line
+        match = re.search(r"HEAD branch: (.+)", remote_info)
+        if match:
+            return match.group(1)
+        return None
 
     @trace()
     def clone_template(self) -> str:
@@ -150,11 +161,13 @@ class WorkloadManager:
         if not self.wl_repo:
             self.wl_repo = Repo(self.wl_repo_folder)
         with self.wl_repo.git.custom_environment(
-                GIT_SSH_COMMAND=f"ssh -o StrictHostKeyChecking=no -i {self.ssh_pkey_path}"):
+            GIT_SSH_COMMAND=f"ssh -o StrictHostKeyChecking=no -i {self.ssh_pkey_path}"):
             # clean stale branches
             self.wl_repo.remotes.origin.fetch(prune=True)
-            self.wl_repo.heads.main.checkout()
+            self.wl_repo.active_branch.checkout()
             self.wl_repo.remotes.origin.pull(self.wl_repo.active_branch)
+
+        return self.wl_repo.active_branch.name
 
     @trace()
     def branch_exist(self, branch_name):

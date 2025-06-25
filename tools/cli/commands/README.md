@@ -37,7 +37,7 @@ for checkpointing, allowing the command to be rerun if necessary.
 | -dk, --dns-registrar-key       | TEXT                                    | DNS registrar key                             |
 | -ds, --dns-registrar-secret    | TEXT                                    | DNS registrar secret                          |
 | -dn, --domain-name             | TEXT                                    | Domain name for the Kubernetes cluster        |
-| -g, --git-provider             | [github]                                | Git provider                                  |
+| -g, --git-provider             | [github,gitlab]                         | Git provider                                  |
 | -go, --git-org                 | TEXT                                    | Git organization name                         |
 | -gt, --git-access-token        | TEXT                                    | Git access token                              |
 | -grn, --gitops-repo-name       | TEXT                                    | GitOps repository name                        |

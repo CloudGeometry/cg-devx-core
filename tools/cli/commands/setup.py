@@ -302,7 +302,7 @@ def setup(
 
         tm.check_repository_existence()
         tm.clone()
-        tm.build_repo_from_template()
+        tm.build_repo_from_template(p.git_provider)
         tm.parametrise_tf(p)
 
         p.set_checkpoint("repo-prep")
@@ -1002,9 +1002,9 @@ def get_git_provider_specific_optional_services(git_provider: GitProviders) -> l
     # TODO: unify and restructure services switching logic after GitLab integration
 
     if git_provider == GitProviders.GitHub:
-        return [OptionalServices.GitHub]
+        return [OptionalServices.GitHub.value]
     elif git_provider == GitProviders.GitLab:
-        return [OptionalServices.GitLab]
+        return [OptionalServices.GitLab.value]
 
 
 def get_cloud_provider_specific_optional_services(cloud_provider: str) -> list[str]:

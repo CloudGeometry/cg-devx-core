@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 from typing import Optional, List
 
@@ -29,6 +30,16 @@ class PlatformGitOpsRepo:
         self._ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {self._ssh_key_path}'
         self._author_name = author_name
         self._author_email = author_email
+
+    @property
+    def default_branch(self) -> str | None :
+        remote_info = self._repo.git.remote("show", "origin")
+
+        # Parse the "HEAD branch" line
+        match = re.search(r"HEAD branch: (.+)", remote_info)
+        if match:
+            return match.group(1)
+        return None
 
     @trace()
     def _initialize_repo(self, repo_remote_url: Optional[str]) -> Repo:
@@ -71,8 +82,10 @@ class PlatformGitOpsRepo:
         with self._repo.git.custom_environment(GIT_SSH_COMMAND=self._ssh_cmd):
             # clean stale branches
             self._repo.remotes.origin.fetch(prune=True)
-            self._repo.heads.main.checkout()
+            self._repo.active_branch.checkout()
             self._repo.remotes.origin.pull(self._repo.active_branch)
+
+        return self._repo.active_branch.name
 
     @trace()
     def branch_exist(self, branch_name: str) -> bool:
@@ -107,7 +120,7 @@ class PlatformGitOpsRepo:
             self._repo.remotes.origin.push(self._repo.active_branch.name)
 
     @trace()
-    def switch_to_branch(self, branch_name: str = "main"):
+    def switch_to_branch(self, branch_name: str):
         """
         Switch to an existing branch in the platform GitOps repository
 
@@ -143,6 +156,7 @@ class PlatformGitOpsRepo:
         :param title: PR/MR title
         :param body: PR/MR body
         """
+        # self._repo.active_branch.name
         return self._git_man.create_pr(repo_name, head_branch, base_branch, title, body)
 
     @trace()

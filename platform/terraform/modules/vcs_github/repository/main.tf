@@ -27,14 +27,14 @@ resource "github_repository" "repo" {
 
 }
 
-# Protect the main branch of the repository. Additionally, require 
+# Protect the main branch of the repository. Additionally, require
 # only allow the engineers team merge to the branch.
 
 resource "github_branch_protection" "this" {
   count = var.branch_protection && var.vcs_subscription_plan ? 1 : 0
   repository_id = github_repository.repo.node_id
 
-  pattern          = "main"
+  pattern          = var.default_branch_name
   enforce_admins   = true
   allows_deletions = false
   allows_force_pushes = false
