@@ -372,7 +372,7 @@ def setup(
         # network
         p.parameters["<NETWORK_ID>"] = hp_out["network_id"]
         # roles
-        p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["iam_ci_role"]
+        p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["ci_role"]
         p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"] = hp_out["iac_pr_automation_role"]
         p.parameters["<CERT_MANAGER_IAM_ROLE_RN>"] = hp_out["cert_manager_role"]
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]

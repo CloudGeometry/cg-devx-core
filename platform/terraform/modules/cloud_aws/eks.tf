@@ -2,15 +2,12 @@
 
 module "eks" {
   source                         = "terraform-aws-modules/eks/aws"
-  version                        = "~>20.0.0"
+  version                        = "~>19.16.0"
   cluster_name                   = local.name
   cluster_version                = local.cluster_version
   cluster_endpoint_public_access = true
   cluster_enabled_log_types      = []
   create_cloudwatch_log_group    = false
-
-  # Add the current caller identity as an administrator via cluster access entry
-  enable_cluster_creator_admin_permissions = true
 
   # KMS configuration
   kms_key_enable_default_policy   = true
@@ -53,6 +50,9 @@ module "eks" {
   vpc_id                   = module.vpc.vpc_id
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
+
+  create_aws_auth_configmap       = (local.node_group_type == "SELF") ? true : false
+  manage_aws_auth_configmap       = (local.node_group_type == "SELF") ? true : false
 
   create_node_security_group      = false
   eks_managed_node_group_defaults = {
