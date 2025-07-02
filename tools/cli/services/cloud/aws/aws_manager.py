@@ -97,7 +97,7 @@ class AWSManager(CloudProviderManager):
             region = kwargs["region"]
 
         return textwrap.dedent('''\
-            backend "s3" {{
+          backend "s3" {{
             bucket = "{bucket}"
             key    = "terraform/{service}/terraform.tfstate"
             region  = "{region}"
