@@ -207,3 +207,14 @@ class GitHubProviderManager(GitProviderManager):
         :raises HTTPError: If there is an issue with the API request.
         """
         return GHRepo(owner=org_name, name=repo_name).ssh_url
+
+    def get_repository_hostname(self) -> str:
+        """
+        Retrieves the hostname for GitHub repository.
+
+        This method returns the GitHub repo hostname.
+
+        :return: The GitHub repo hostname.
+        :rtype: str
+        """
+        return "github.com"

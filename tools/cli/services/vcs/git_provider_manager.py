@@ -113,3 +113,15 @@ class GitProviderManager(ABC):
         :raises HTTPError: If there is an issue with the API request.
         """
         pass
+
+    @abstractmethod
+    def get_repository_hostname(self) -> str:
+        """
+        Retrieves the hostname for Git repository.
+
+        This method returns the Git repo hostname.
+
+        :return: The Git repo hostname.
+        :rtype: str
+        """
+        pass

@@ -15,8 +15,3 @@ output "vcs_runner_token" {
   value = gitlab_user_runner.group_runner.token
   sensitive = true
 }
-
-output "vcs_k8s_agent_token" {
-  value = gitlab_cluster_agent_token.gitops.token
-  sensitive = true
-}

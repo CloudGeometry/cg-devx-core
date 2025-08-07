@@ -116,17 +116,6 @@ class GitOpsTemplateManager:
         shutil.copytree(temp_folder / "platform" / "terraform", LOCAL_GITOPS_FOLDER / "terraform")
         shutil.copytree(temp_folder / "platform" / "gitops-pipelines", LOCAL_GITOPS_FOLDER / "gitops-pipelines")
 
-        for src_file in Path(temp_folder / "platform").glob('*.*'):
-            shutil.copy(src_file, LOCAL_GITOPS_FOLDER)
-
-        if git_provider == GitProviders.GitLab:
-          os.makedirs(LOCAL_GITOPS_FOLDER / ".gitlab", exist_ok=True)
-          with open(LOCAL_GITOPS_FOLDER / ".gitlab" / "config.yaml", "w") as file:
-            file.write("""ci_access:
-    groups:
-      - id: <GIT_ORGANIZATION_NAME>
-              """)
-
         # drop all non template readme files
         for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
             for name in files:
