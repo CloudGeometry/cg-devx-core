@@ -44,7 +44,6 @@ resource "gitlab_branch_protection" "this" {
 
   branch           = var.default_branch_name
   allow_force_push = false
-  # push_access_level = "main"
 
   dynamic "allowed_to_push" {
     for_each = var.vcs_subscription_plan && var.allow_push_to_protected ? [1] : []
