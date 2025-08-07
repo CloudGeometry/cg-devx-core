@@ -23,7 +23,7 @@ resource "gitlab_project" "repo" {
   remove_source_branch_after_merge = var.delete_branch_on_merge
   namespace_id                     = var.vcs_owner
   # disable shared runners and force usage of group runners provided by the platform
-  shared_runners_enabled           = false
+  shared_runners_enabled = false
 
 
   # atlantis currently doesn't support branch protection with required linear history when repo settings allowed merge commits
@@ -42,8 +42,8 @@ resource "gitlab_branch_protection" "this" {
   count   = var.branch_protection ? 1 : 0
   project = gitlab_project.repo.id
 
-  branch            = var.default_branch_name
-  allow_force_push  = false
+  branch           = var.default_branch_name
+  allow_force_push = false
   # push_access_level = "main"
 
   dynamic "allowed_to_push" {

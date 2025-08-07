@@ -1,5 +1,5 @@
 module "workload_repos" {
-  source   = "./repository"
+  source = "./repository"
   for_each = {
     for r in flatten([
       for wl in var.workloads :

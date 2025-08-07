@@ -5,9 +5,9 @@ resource "vault_identity_oidc_key" "key" {
 }
 
 resource "vault_identity_oidc_provider" "cgdevx" {
-  name               = "cgdevx"
-  https_enabled      = true
-  issuer_host        = "<SECRET_MANAGER_INGRESS_URL>"
+  name          = "cgdevx"
+  https_enabled = true
+  issuer_host   = "<SECRET_MANAGER_INGRESS_URL>"
   allowed_client_ids = [
     "*" # todo make explicit list of client ids
   ]

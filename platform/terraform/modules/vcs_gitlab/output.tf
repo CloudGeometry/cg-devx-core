@@ -12,6 +12,6 @@ output "gitops_repo_ssh_clone_url" {
 }
 
 output "vcs_runner_token" {
-  value = gitlab_user_runner.group_runner.token
+  value     = gitlab_user_runner.group_runner.token
   sensitive = true
 }

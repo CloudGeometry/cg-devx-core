@@ -82,6 +82,6 @@ variable "cd_webhook_url" {
 
 variable "vcs_subscription_plan" {
   description = "True for advanced github/gitlab plan. False for free tier"
-  type    = bool
-  default = false
+  type        = bool
+  default     = false
 }
