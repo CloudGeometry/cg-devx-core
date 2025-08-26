@@ -105,11 +105,13 @@ class AwsSdk:
 
             s3_client = self._session_manager.session.client('s3', region_name=region)
             location = {'LocationConstraint': region}
-            bucket = s3_client.create_bucket(Bucket=bucket_name,
-                                             CreateBucketConfiguration=location)
+            if region != "us-east-1":
+                bucket = s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration=location)
+            else:
+                bucket = s3_client.create_bucket(Bucket=bucket_name)
         except ClientError as e:
             logger.error(e)
-            return False
+            raise e
         return bucket_name
 
     def enable_bucket_versioning(self, bucket_name, region=None):
