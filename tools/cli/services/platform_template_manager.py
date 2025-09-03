@@ -10,6 +10,7 @@ from git import Repo, RemoteProgress, GitError, Actor
 
 from common.const.common_path import LOCAL_TF_FOLDER, LOCAL_GITOPS_FOLDER
 from common.const.const import GITOPS_REPOSITORY_URL, GITOPS_REPOSITORY_BRANCH
+from common.enums.git_providers import GitProviders
 from common.state_store import StateStore
 from common.tracing_decorator import trace
 
@@ -80,7 +81,7 @@ class GitOpsTemplateManager:
         try:
             ssh_cmd = f'ssh -o StrictHostKeyChecking=no -i {key_path}'
 
-            repo = Repo.init(LOCAL_GITOPS_FOLDER)
+            repo = Repo.init(LOCAL_GITOPS_FOLDER, **{"initial-branch": "main"})
 
             with repo.git.custom_environment(GIT_SSH_COMMAND=ssh_cmd):
                 if not any(repo.remotes):
@@ -97,7 +98,7 @@ class GitOpsTemplateManager:
 
     @staticmethod
     @trace()
-    def build_repo_from_template():
+    def build_repo_from_template(git_provider: GitProviders):
         temp_folder = LOCAL_GITOPS_FOLDER / ".tmp"
 
         os.makedirs(LOCAL_GITOPS_FOLDER, exist_ok=True)
@@ -112,12 +113,8 @@ class GitOpsTemplateManager:
                     if os.path.isdir(path):
                         os.rmdir(path)
 
-        # restructure gitops platform/.gitlab
         shutil.copytree(temp_folder / "platform" / "terraform", LOCAL_GITOPS_FOLDER / "terraform")
         shutil.copytree(temp_folder / "platform" / "gitops-pipelines", LOCAL_GITOPS_FOLDER / "gitops-pipelines")
-        shutil.copytree(temp_folder / "platform" / "gitlab", LOCAL_GITOPS_FOLDER / ".gitlab")
-        for src_file in Path(temp_folder / "platform").glob('*.*'):
-            shutil.copy(src_file, LOCAL_GITOPS_FOLDER)
 
         # drop all non template readme files
         for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):

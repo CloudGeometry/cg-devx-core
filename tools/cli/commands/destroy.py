@@ -98,7 +98,6 @@ def destroy(verbosity: str):
                 cd_man.turn_off_app_sync("actions-runner-controller-components")
             elif p.git_provider == GitProviders.GitLab:
                 cd_man.turn_off_app_sync("gitlab-runner-components")
-                cd_man.turn_off_app_sync("gitlab-agent-components")
             else:
                 raise Exception('Error: None of the available Git providers were specified')
 
@@ -111,7 +110,6 @@ def destroy(verbosity: str):
                 cd_man.delete_app("actions-runner-controller-components")
             elif p.git_provider == GitProviders.GitLab:
                 cd_man.delete_app("gitlab-runner-components")
-                cd_man.delete_app("gitlab-agent-components")
             else:
                 raise Exception('Error: None of the available Git providers were specified')
 

@@ -302,7 +302,7 @@ def setup(
 
         tm.check_repository_existence()
         tm.clone()
-        tm.build_repo_from_template()
+        tm.build_repo_from_template(p.git_provider)
         tm.parametrise_tf(p)
 
         p.set_checkpoint("repo-prep")
@@ -339,7 +339,6 @@ def setup(
         p.parameters["<GIT_REPOSITORY_GIT_URL>"] = vcs_out["gitops_repo_ssh_clone_url"]
         p.parameters["<GIT_REPOSITORY_URL>"] = vcs_out["gitops_repo_html_url"]
         p.internals["VCS_RUNNER_TOKEN"] = vcs_out["vcs_runner_token"]
-        p.internals["VCS_K8S_AGENT_TOKEN"] = vcs_out["vcs_k8s_agent_token"]
 
         # unset envs as no longer needed
         unset_envs(vcs_tf_env_vars)
@@ -372,7 +371,7 @@ def setup(
         # network
         p.parameters["<NETWORK_ID>"] = hp_out["network_id"]
         # roles
-        p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["iam_ci_role"]
+        p.parameters["<CI_IAM_ROLE_RN>"] = hp_out["ci_role"]
         p.parameters["<IAC_PR_AUTOMATION_IAM_ROLE_RN>"] = hp_out["iac_pr_automation_role"]
         p.parameters["<CERT_MANAGER_IAM_ROLE_RN>"] = hp_out["cert_manager_role"]
         p.parameters["<EXTERNAL_DNS_IAM_ROLE_RN>"] = hp_out["external_dns_role"]
@@ -771,7 +770,6 @@ def setup(
             "vault_token": p.internals["VAULT_ROOT_TOKEN"],
             "cluster_endpoint": p.internals["CC_CLUSTER_ENDPOINT"],
             "vcs_runner_token": p.internals["VCS_RUNNER_TOKEN"],
-            "vcs_k8s_agent_token": p.internals["VCS_K8S_AGENT_TOKEN"],
         }
         if "<CC_CLUSTER_SSH_PUBLIC_KEY>" in p.parameters:
             sec_man_tf_params["cluster_ssh_public_key"] = p.parameters["<CC_CLUSTER_SSH_PUBLIC_KEY>"]
@@ -1002,9 +1000,9 @@ def get_git_provider_specific_optional_services(git_provider: GitProviders) -> l
     # TODO: unify and restructure services switching logic after GitLab integration
 
     if git_provider == GitProviders.GitHub:
-        return [OptionalServices.GitHub]
+        return [OptionalServices.GitHub.value]
     elif git_provider == GitProviders.GitLab:
-        return [OptionalServices.GitLab]
+        return [OptionalServices.GitLab.value]
 
 
 def get_cloud_provider_specific_optional_services(cloud_provider: str) -> list[str]:
@@ -1044,6 +1042,7 @@ def prepare_parameters(p, git_man):
     p.parameters["<DOMAIN_NAME>"] = p.get_input_param(DOMAIN_NAME).lower()
     p.parameters["<KUBECTL_VERSION>"] = KUBECTL_VERSION
     p.parameters["<TERRAFORM_VERSION>"] = TERRAFORM_VERSION
+    p.parameters["<GIT_HOSTNAME>"] = git_man.get_repository_hostname()
 
     # set IaC webhook secret
     if "<IAC_PR_AUTOMATION_WEBHOOK_SECRET>" not in p.parameters:

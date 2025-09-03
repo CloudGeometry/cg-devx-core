@@ -45,7 +45,7 @@ spec:
             [[ $PROMOTE_SETTINGS == 'true' ]] && cp -v "${ENV_PATH}/${SOURCE_ENV}/settings.yaml" "${ENV_PATH}/${TARGET_ENV}"
             [[ $PROMOTE_CONFIGMAPS == 'true' ]] && cp -v "${ENV_PATH}/${SOURCE_ENV}/cm.yaml" "${ENV_PATH}/${TARGET_ENV}"
             mkdir ~/.ssh
-            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+            ssh-keyscan -t rsa <GIT_HOSTNAME> >> ~/.ssh/known_hosts
             cp /etc/ssh-key/SSH_PRIVATE_KEY ~/.ssh/id_rsa
             ssh-keygen -f ~/.ssh/id_rsa -y > ~/.ssh/id_rsa.pub
             git config --global user.email "<GIT_USER_EMAIL>"

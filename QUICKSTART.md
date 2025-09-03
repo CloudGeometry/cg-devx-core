@@ -16,7 +16,7 @@ deploying the application in production, the following platforms are currently s
 ### Git Providers
 
 - GitHub - Supported
-- GitLab - Will be added to a future release
+- GitLab - Supported
 - Bitbucket - Will be added to a future release
 
 ### Cloud Providers
@@ -34,18 +34,18 @@ Before you begin the installation process, ensure you have the following prerequ
 You should have:
 
 1. A user account for the Git platform you're working with. This account will be used to create and manage repositories,
-   make commits, manage users, and perform other tasks, such as executing Terraform scripts. For Github, you can create
+   make commits, manage users, and perform other tasks, such as executing Terraform scripts. For GitHub, you can create
    one
    following [this guide](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account)
    to sign up for a GitHub account.
-3. A GitHub Organization. Organizations are used to group repositories, and CGDevX will create a new repo within a
+2. A GitHub Organization. Organizations are used to group repositories, and CG DevX will create a new repo within a
    specific
-   organization so that it's easy to find and manage later should you decide to stop using CGDevX. you don't have one,
+   organization so that it's easy to find and manage later should you decide to stop using CG DevX. you don't have one,
    please
    follow [this guide](https://docs.github.com/en/organizations/collaborating-with-groups-in-organizations/creating-a-new-organization-from-scratch)
    to create a new organization from scratch.
    to create one. The user from step 1 should be part of this organization.
-5. A personal access token for the account from step 1. This token will enable CGDevX to take action on the user's
+3. A personal access token for the account from step 1. This token will enable CG DevX to take action on the user's
    behalf,
    creating and managing repos, and so on. To get a personal access token, also known as a "developer token", please
    follow the steps as described
@@ -56,34 +56,84 @@ You should have:
    deleting repositories, groups, and other users. To provide permission for these actions, make sure you select the
    following set of scopes:
 
-    - [x] **repo** Full control of private repositories
-        - [x] **repo:status** Access commit status
-        - [x] **repo_deployment** Access deployment status
-        - [x] **public_repo** Access public repositories
-        - [x] **repo:invite** Access repository invitations
-        - [x] **security_events** Read and write security events
-    - [x] **workflow** Update GitHub Action workflows
-    - [x] **write:packages** Upload packages to GitHub Package Registry
-        - [x] **read:packages** Download packages from GitHub Package Registry
-    - [x] **admin:org** Full control of orgs and teams, read and write org projects
-        - [x] **write:org** Read and write org and team membership, read and write org projects
-        - [x] **read:org** Read org and team membership, read org projects
-        - [x] **manage_runners:org** Manage org runners and runner groups
-    - [x] **admin:public_key** Full control of user public keys
-        - [x] **write:public_key** Write user public keys
-        - [x] **read:public_key** Read user public keys
-    - [x] **admin:repo_hook** Full control of repository hooks
-        - [x] **write:repo_hook** Write repository hooks
-        - [x] **read:repo_hook** Read repository hooks
-    - [x] **admin:org_hook** Full control of organization hooks
-    - [x] **user** Update ALL user data
-        - [x] **read:user** Read ALL user profile data
-        - [x] **user:email** Access user email addresses (read-only)
-        - [x] **user:follow** Follow and unfollow users
-    - [x] **delete_repo** Delete repositories
-    - [x] **admin:ssh_signing_key** Full control of public user SSH signing keys
-        - [x] **write:ssh_signing_key** Write public user SSH signing keys
-        - [x] **read:ssh_signing_key** Read public user SSH signing keys
+- [x] **repo** Full control of private repositories
+  - [x] **repo:status** Access commit status
+  - [x] **repo_deployment** Access deployment status
+  - [x] **public_repo** Access public repositories
+  - [x] **repo:invite** Access repository invitations
+  - [x] **security_events** Read and write security events
+- [x] **workflow** Update GitHub Action workflows
+- [x] **write:packages** Upload packages to GitHub Package Registry
+  - [x] **read:packages** Download packages from GitHub Package Registry
+- [x] **admin:org** Full control of orgs and teams, read and write org projects
+  - [x] **write:org** Read and write org and team membership, read and write org projects
+  - [x] **read:org** Read org and team membership, read org projects
+  - [x] **manage_runners:org** Manage org runners and runner groups
+- [x] **admin:public_key** Full control of user public keys
+  - [x] **write:public_key** Write user public keys
+  - [x] **read:public_key** Read user public keys
+- [x] **admin:repo_hook** Full control of repository hooks
+  - [x] **write:repo_hook** Write repository hooks
+  - [x] **read:repo_hook** Read repository hooks
+- [x] **admin:org_hook** Full control of organization hooks
+- [x] **user** Update ALL user data
+  - [x] **read:user** Read ALL user profile data
+  - [x] **user:email** Access user email addresses (read-only)
+  - [x] **user:follow** Follow and unfollow users
+- [x] **delete_repo** Delete repositories
+- [x] **admin:ssh_signing_key** Full control of public user SSH signing keys
+  - [x] **write:ssh_signing_key** Write public user SSH signing keys
+  - [x] **read:ssh_signing_key** Read public user SSH signing keys
+
+### GitLab Setup Requirements
+
+You should have:
+
+1. A user account for the Git platform you're working with. This account will be used to create and manage repositories,
+   make commits, manage users, and perform other tasks, such as executing Terraform scripts. For Github, you can create
+   one
+   following [this guide](https://docs.gitlab.com/user/profile/account/create_accounts/#create-a-user-on-the-sign-in-page)
+   to sign up for a GitHub account.
+2. A GitLab Organization. Organizations are used to group repositories, and CG DevX will create a new repo within a
+   specific
+   organization so that it's easy to find and manage later should you decide to stop using CG DevX. you don't have one,
+   please
+   follow [this guide](https://docs.gitlab.com/user/organization/#create-an-organization)
+   to create a new organization from scratch.
+   to create one. The user from step 1 should have access to this organization.
+3. A personal access token for the account from step 1. This token will enable CG DevX to take action on the user's
+   behalf,
+   creating and managing repos, and so on. To get a personal access token, also known as a "developer token", please
+   follow the steps as described
+   in [this guide](https://docs.gitlab.com/user/profile/personal_access_tokens/#create-a-personal-access-token)
+   to managing personal access tokens.
+
+   The GitLab token will be used to authenticate with the GitLab API and perform various actions such as creating and
+   deleting repositories, groups, and other users. To provide permission for these actions, make sure you select the
+   following set of scopes:
+
+- [ ] **read_user**: Grants read-only access to your profile through the /user API endpoint, which includes username,
+  public email, and full name. Also grants access to read-only API endpoints under /users.
+- [ ] **read_repository**: Grants read-only access to repositories on private projects using Git-over-HTTP or the
+  Repository Files API.
+- [ ] **read_virtual_registry**: Grants read-only access to container images through the dependency proxy in private
+  projects and virtual registries.
+- [ ] **read_registry**: Grants read-only access to container registry images on private projects.
+- [ ] **read_api**: Grants read access to the API, including all groups and projects, the container registry, and the
+  package registry.
+- [ ] **self_rotate**: Grants permission for token to rotate itself.
+- [ ] **write_repository**: Grants read-write access to repositories on private projects using Git-over-HTTP (not using
+  the API).
+- [ ] **write_virtual_registry**: Grants read, write, and delete access to container images through the dependency proxy
+  in private projects.
+- [ ] **write_registry**: Grants write access to container registry images on private projects. You need both read and
+  write access to push images.
+- [x] **api**: Grants complete read/write access to the API, including all groups and projects, the container registry,
+  the dependency proxy, and the package registry.
+- [ ] **ai_features**: Grants access to GitLab Duo related API endpoints.
+- [ ] **create_runner**: Grants create access to the runners.
+- [ ] **manage_runner**: Grants access to manage the runners.
+- [ ] **k8s_proxy**: Grants permission to perform Kubernetes API calls using the agent for Kubernetes.
 
 ### Cloud account
 
@@ -102,7 +152,7 @@ Before deploying to AWS, ensure that you have:
    to set up an IAM account,
    and [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/tutorial_cross-account-with-roles.html) to grant it
    `AdministratorAccess`.
-4. The security credentials for this account, which enables CGDevX to use it.
+4. The security credentials for this account, which enables CG DevX to use it.
    Use [this guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds.html#access-keys-and-secret-access-keys)
    to
    get your access keys.
@@ -115,7 +165,7 @@ Before deploying to AWS, ensure that you have:
 Before deploying to Azure, ensure that you have:
 
 1. An Azure account with billing enabled. Subscription ID will be used
-   as cloud-profile during setup. 
+   as cloud-profile during setup.
    (Remember, deploying clusters will incur charges. Make sure to destroy
    resources when you're finished with them!)
 2. A public DNS zone hosted in Azure DNS.
@@ -155,7 +205,7 @@ Before deploying to Google Compute Platform, ensure that you have:
 
 ## Installation process
 
-Once you have the prerequisites installed and configured, you are ready to install the CGDevX CLI.
+Once you have the prerequisites installed and configured, you are ready to install the CG DevX CLI.
 Follow the instructions in the [CLI tool readme](tools/README.md).
 
 Once installed the CLI,

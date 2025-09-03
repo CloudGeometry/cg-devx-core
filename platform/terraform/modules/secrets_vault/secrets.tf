@@ -1,19 +1,19 @@
 locals {
-  b64_docker_auth = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
+  b64_docker_auth      = base64encode("robot@main-robot:${random_password.harbor_main_robot_password.result}")
   harbor_admin_user    = "admin"
   grafana_admin_user   = "admin"
   atlantis_admin_user  = "admin"
   sonarqube_admin_user = "admin"
-  image_registry_auth  = tomap({ for key, value in var.image_registry_auth == null ? {} : var.image_registry_auth: key => {"auth": base64encode("${value.login}:${value.token}") } })
+  image_registry_auth  = tomap({ for key, value in var.image_registry_auth == null ? {} : var.image_registry_auth : key => { "auth" : base64encode("${value.login}:${value.token}") } })
 }
 
 resource "vault_generic_secret" "docker_config" {
-    path = "secret/dockerconfigjson"
+  path = "secret/dockerconfigjson"
 
   data_json = jsonencode(
     {
       dockerconfig = jsonencode({ "auths" : merge(
-        { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" }},
+        { "<REGISTRY_INGRESS_URL>" : { "auth" : "${local.b64_docker_auth}" } },
         local.image_registry_auth)
       })
     }
@@ -41,7 +41,7 @@ resource "vault_generic_secret" "cd_secrets" {
 
   data_json = jsonencode(
     {
-      cd_webhook_secret         = var.cd_webhook_secret,
+      cd_webhook_secret = var.cd_webhook_secret,
     }
   )
 
@@ -56,7 +56,7 @@ resource "vault_generic_secret" "atlantis_secrets" {
 
   data_json = jsonencode(
     {
-      ARGO_SERVER_URL                      = "argo.argo.svc.cluster.local:2746",
+      ARGO_SERVER_URL = "argo.argo.svc.cluster.local:2746",
       # <VCS_IAC_PR_AUTOMATION_CONFIG>
       TF_VAR_atlantis_repo_webhook_secret  = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url     = var.atlantis_repo_webhook_url,
@@ -65,23 +65,23 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_tf_backend_storage_access_key = var.tf_backend_storage_access_key,
       TF_VAR_cluster_ssh_public_key        = var.cluster_ssh_public_key,
       # <CLOUD_PROVIDER_IAC_PR_AUTOMATION_CONFIG>
-      TF_VAR_hosted_zone_name              = "<DOMAIN_NAME>",
-      TF_VAR_vcs_bot_ssh_public_key        = var.vcs_bot_ssh_public_key,
-      TF_VAR_vcs_bot_ssh_private_key       = var.vcs_bot_ssh_private_key,
+      TF_VAR_hosted_zone_name        = "<DOMAIN_NAME>",
+      TF_VAR_vcs_bot_ssh_public_key  = var.vcs_bot_ssh_public_key,
+      TF_VAR_vcs_bot_ssh_private_key = var.vcs_bot_ssh_private_key,
       # harbor specific section
-      TF_VAR_registry_oidc_client_id                 = module.harbor.vault_oidc_client_id,
-      TF_VAR_registry_oidc_client_secret             = module.harbor.vault_oidc_client_secret,
-      TF_VAR_registry_main_robot_password            = random_password.harbor_main_robot_password.result,
-      HARBOR_URL                                     = "https://<REGISTRY_INGRESS_URL>",
-      HARBOR_USERNAME                                = local.harbor_admin_user,
-      HARBOR_PASSWORD                                = random_password.harbor_password.result,
+      TF_VAR_registry_oidc_client_id      = module.harbor.vault_oidc_client_id,
+      TF_VAR_registry_oidc_client_secret  = module.harbor.vault_oidc_client_secret,
+      TF_VAR_registry_main_robot_password = random_password.harbor_main_robot_password.result,
+      HARBOR_URL                          = "https://<REGISTRY_INGRESS_URL>",
+      HARBOR_USERNAME                     = local.harbor_admin_user,
+      HARBOR_PASSWORD                     = random_password.harbor_password.result,
       # ----
 
       # vault specific section
-      TF_VAR_vault_addr                      = "http://vault.vault.svc.cluster.local:8200",
-      TF_VAR_vault_token                     = var.vault_token,
-      VAULT_ADDR                             = "http://vault.vault.svc.cluster.local:8200",
-      VAULT_TOKEN                            = var.vault_token,
+      TF_VAR_vault_addr  = "http://vault.vault.svc.cluster.local:8200",
+      TF_VAR_vault_token = var.vault_token,
+      VAULT_ADDR         = "http://vault.vault.svc.cluster.local:8200",
+      VAULT_TOKEN        = var.vault_token,
       # code quality specific section
       TF_VAR_code_quality_oidc_client_id     = module.sonarqube.vault_oidc_client_id,
       TF_VAR_code_quality_oidc_client_secret = module.sonarqube.vault_oidc_client_secret,
@@ -232,24 +232,12 @@ resource "vault_generic_secret" "runner_token" {
   depends_on = [vault_mount.secret]
 }
 
-resource "vault_generic_secret" "gitlab_agent_token" {
-  path = "secret/gitlab-agent"
-
-  data_json = jsonencode(
-    {
-      token = var.vcs_k8s_agent_token
-    }
-  )
-
-  depends_on = [vault_mount.secret]
-}
-
 resource "vault_generic_secret" "perfectscale_secret" {
   path = "secret/perfectscale-secret"
 
   data_json = jsonencode(
     {
-      clientId = "",
+      clientId     = "",
       clientSecret = "",
     }
   )

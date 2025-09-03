@@ -245,7 +245,7 @@ class GitLabProviderManager(GitProviderManager):
 
     def create_iac_pr_automation_config_snippet(self):
         """
-        Creates GitHub specific configuration section for Atlantis
+        Creates GitLab specific configuration section for Atlantis
         :return: Atlantis configuration section
         """
         return textwrap.dedent("""# gitlab specific section
@@ -301,3 +301,14 @@ class GitLabProviderManager(GitProviderManager):
         except (KeyError, requests.RequestException) as e:
             logger.error(f"Error retrieving repository URL: {e}")
             raise
+
+    def get_repository_hostname(self) -> str:
+        """
+        Retrieves the hostname for GitLab repository.
+
+        This method returns the GitLab repo hostname.
+
+        :return: The GitLab repo hostname.
+        :rtype: str
+        """
+        return "gitlab.com"

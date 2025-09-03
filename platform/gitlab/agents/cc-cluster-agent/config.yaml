@@ -1,3 +1,0 @@
-ci_access:
-  groups:
-    - id: <GIT_ORGANIZATION_NAME>

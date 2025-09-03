@@ -9,7 +9,7 @@ output "network_id" {
 ################################################################################
 # IAM roles
 ################################################################################
-output "iam_ci_role" {
+output "ci_role" {
   value       = module.hosting-provider.iam_ci_irsa_role
   description = "Continuous Integration IAM role for K8s service account"
 }

@@ -33,7 +33,8 @@ spec:
             [[runners]]
               [runners.kubernetes]
                 image = "ubuntu:24.04"
-                privileged = true
+                privileged = false
+                service_account = "gitlab-runner"
               [[runners.kubernetes.volumes.empty_dir]]
                 name = "docker-certs"
                 mount_path = "/certs/client"

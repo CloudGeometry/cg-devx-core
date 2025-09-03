@@ -53,7 +53,7 @@ module "eks" {
 
   create_aws_auth_configmap       = (local.node_group_type == "SELF") ? true : false
   manage_aws_auth_configmap       = (local.node_group_type == "SELF") ? true : false
-  #
+
   create_node_security_group      = false
   eks_managed_node_group_defaults = {
     # ami_type                              = "AL2_x86_64"
@@ -66,33 +66,6 @@ module "eks" {
   }
 
   eks_managed_node_groups = (local.node_group_type == "EKS") ? local.eks_node_groups : []
-
-  #
-  self_managed_node_group_defaults = {
-    # enable discovery of autoscaling groups by cluster-autoscaler
-    autoscaling_group_tags = {
-      "k8s.io/cluster-autoscaler/enabled" : true,
-      "k8s.io/cluster-autoscaler/${local.name}" : "owned",
-    }
-    subnet_ids               = module.vpc.private_subnets
-    launch_template_os       = "amazonlinux2eks"
-    k8s_taints               = [{ key = "ondemandInstance", value = "true", effect = "NO_SCHEDULE" }]
-    #
-    create_iam_role          = true
-    iam_role_name            = "${local.name}-sm-ng-iam-role"
-    iam_role_use_name_prefix = true
-    iam_role_description     = "Def role"
-    iam_role_tags            = {
-      Purpose = "Protector of the kubelet"
-    }
-    capacity_rebalance   = true
-    node_group_name      = "${local.name}-node-group"
-    launch_template_name = "${local.name}-lt-def"
-
-  }
-  #Still commented out for the safety of stable version
-  #self_managed_node_groups = local.node_groups
-
 }
 
 # key-pair for custom launch template

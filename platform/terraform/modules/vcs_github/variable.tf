@@ -32,8 +32,8 @@ variable "vcs_bot_ssh_public_key" {
 
 variable "vcs_subscription_plan" {
   description = "True for advanced github/gitlab plan. False for free tier"
-  type    = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 variable "vcs_owner" {
@@ -48,9 +48,9 @@ variable "cluster_name" {
 
 variable "workloads" {
   description = "workloads configuration"
-  type        = map(object({
+  type = map(object({
     description = optional(string, "")
-    repos       = map(object({
+    repos = map(object({
       description            = optional(string, "")
       visibility             = optional(string, "private")
       auto_init              = optional(bool, false)

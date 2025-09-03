@@ -47,7 +47,7 @@ created by the [create command](#create).
 
 Templates used:
 
-Workload repository: [CG DevX Workload GitOps template](https://github.com/CloudGeometry/cg-devx-wl-gitops-template)
+Workload repository: [CG DevX Workload template](https://github.com/CloudGeometry/cg-devx-wl-template)
 Workload GitOps
 repository: [CG DevX Workload GitOps template](https://github.com/CloudGeometry/cg-devx-wl-gitops-template)
 
@@ -57,6 +57,13 @@ definitions.
 ### Customization
 
 You can fork and customize these templates and specify custom URLs and branches during execution.
+
+Example of custom template
+
+- Cloud Native Application Starter Kit (CNASK)
+  - Workload repository: [CNASK template](https://github.com/CloudGeometry/cg-devx-wl-cnask)
+  - Workload GitOps
+    repository: [CNASK GitOps template](https://github.com/CloudGeometry/cg-devx-wl-cnask-gitops)
 
 ### Usage
 
