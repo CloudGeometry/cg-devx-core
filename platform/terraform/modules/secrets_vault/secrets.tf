@@ -61,6 +61,7 @@ resource "vault_generic_secret" "atlantis_secrets" {
       TF_VAR_atlantis_repo_webhook_secret  = var.atlantis_repo_webhook_secret,
       TF_VAR_atlantis_repo_webhook_url     = var.atlantis_repo_webhook_url,
       TF_VAR_vcs_token                     = var.vcs_token,
+      TF_VAR_vcs_runner_token                     = var.vcs_runner_token,
       TF_VAR_cluster_endpoint              = var.cluster_endpoint,
       TF_VAR_tf_backend_storage_access_key = var.tf_backend_storage_access_key,
       TF_VAR_cluster_ssh_public_key        = var.cluster_ssh_public_key,
