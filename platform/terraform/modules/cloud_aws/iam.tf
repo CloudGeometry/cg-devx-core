@@ -5,6 +5,7 @@
 # CNI
 module "vpc_cni_irsa" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
 
   role_name             = "${local.name}-vpc-cni-role"
   attach_vpc_cni_policy = true
@@ -22,6 +23,7 @@ module "vpc_cni_irsa" {
 # CSI
 module "ebs_csi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
 
   role_name             = "${local.name}-ebs-csi-role"
   attach_ebs_csi_policy = true
@@ -37,6 +39,7 @@ module "ebs_csi_irsa_role" {
 
 module "efs_csi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
 
   role_name             = "${local.name}-efs-csi-role"
   attach_efs_csi_policy = true
@@ -60,6 +63,8 @@ locals {
 # Cloud Native CI
 module "iam_ci_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
+
   role_name = "${local.name}-ci-role"
 
   role_policy_arns = {
@@ -78,6 +83,8 @@ module "iam_ci_role" {
 # IaC PR automation
 module "iac_pr_automation_irsa_role" {
   source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
+
   role_name      = "${local.name}-iac_pr_automation-role"
   oidc_providers = {
     main = {
@@ -95,6 +102,8 @@ module "iac_pr_automation_irsa_role" {
 # cert manager
 module "cert_manager_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
+
   role_name                  = "${local.name}-cert-manager-role"
   attach_cert_manager_policy = true
   #  cert_manager_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
@@ -110,6 +119,8 @@ module "cert_manager_irsa_role" {
 # external DNS
 module "external_dns_irsa_role" {
   source                     = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
+
   role_name                  = "${local.name}-external-dns-role"
   attach_external_dns_policy = true
   #  external_dns_hosted_zone_arns = ["arn:aws:route53:::hostedzone/*"]
@@ -125,6 +136,8 @@ module "external_dns_irsa_role" {
 # secret_manager
 module "secret_manager_irsa_role" {
   source         = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
+
   role_name      = "${local.name}-secret_manager-role"
   oidc_providers = {
     main = {
@@ -141,6 +154,7 @@ module "secret_manager_irsa_role" {
 # Cluster Autoscaler
 module "cluster_autoscaler_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
 
   role_name                        = "${local.name}-cluster-autoscaler"
   attach_cluster_autoscaler_policy = true
@@ -157,6 +171,8 @@ module "cluster_autoscaler_irsa_role" {
 # Cluster Backups Manager
 module "backups_manager_irsa_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.58.0"
+
   role_name = "${local.name}-backups-manager-role"
 
   role_policy_arns = {
