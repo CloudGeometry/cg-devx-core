@@ -115,6 +115,8 @@ class GitOpsTemplateManager:
 
         shutil.copytree(temp_folder / "platform" / "terraform", LOCAL_GITOPS_FOLDER / "terraform")
         shutil.copytree(temp_folder / "platform" / "gitops-pipelines", LOCAL_GITOPS_FOLDER / "gitops-pipelines")
+        for src_file in Path(temp_folder / "platform").glob('*.*'):
+            shutil.copy(src_file, LOCAL_GITOPS_FOLDER)
 
         # drop all non template readme files
         for root, dirs, files in os.walk(LOCAL_GITOPS_FOLDER):
