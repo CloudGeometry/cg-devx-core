@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://helm.releases.hashicorp.com
-    targetRevision: 0.26.1
+    targetRevision: 0.33.0
     helm:
       parameters:
         - name: server.route.host
@@ -25,8 +25,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: secrets-management.hashicorp-vault
-            cg-devx.metadata.chart-version: 0.26.1
-            cg-devx.metadata.version: 1.15.1
+            cg-devx.metadata.chart-version: 0.33.0
+            cg-devx.metadata.version: 2.0.2
             # <ADDITIONAL_LABELS>
           serviceAccount:
             create: true

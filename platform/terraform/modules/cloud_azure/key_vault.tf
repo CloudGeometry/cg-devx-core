@@ -10,7 +10,7 @@ resource "azurerm_key_vault" "key_vault" {
   enabled_for_deployment          = false
   enabled_for_disk_encryption     = true
   enabled_for_template_deployment = false
-  enable_rbac_authorization       = true
+  rbac_authorization_enabled      = true
   purge_protection_enabled        = true
   public_network_access_enabled   = true
 

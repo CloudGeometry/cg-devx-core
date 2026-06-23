@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://helm.ngc.nvidia.com/nvidia
     chart: gpu-operator
-    targetRevision: v24.3.0
+    targetRevision: v26.3.2
     helm:
       values: |-
         daemonsets:
@@ -18,8 +18,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: ml.gpu-operator
-            cg-devx.metadata.chart-version: 24.3.0
-            cg-devx.metadata.version: 24.3.0
+            cg-devx.metadata.chart-version: 26.3.2
+            cg-devx.metadata.version: v26.3.2
       parameters:
         # set tolerations to work on gpu enabled node groups
         # node-feature-discovery.worker

@@ -9,7 +9,7 @@ spec:
   project: core
   source:
     repoURL: https://charts.jetstack.io
-    targetRevision: v1.17.2
+    targetRevision: v1.20.2
     helm:
       values: |-
         serviceAccount:
@@ -28,8 +28,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: cert-manager
-            cg-devx.metadata.chart-version: 1.17.2
-            cg-devx.metadata.version: 1.17.2
+            cg-devx.metadata.chart-version: 1.20.2
+            cg-devx.metadata.version: v1.20.2
     chart: cert-manager
   destination:
     server: https://kubernetes.default.svc

@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: https://perfectscale-io.github.io
     chart: exporter
-    targetRevision: v1.0.41
+    targetRevision: v1.1.11
     helm:
       values: |-
         secret:
@@ -22,7 +22,7 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: scaler.perfectscale
-          cg-devx.metadata.chart-version: 1.0.41
+          cg-devx.metadata.chart-version: 1.1.11
           cg-devx.metadata.version: 1.0.0
   destination:
     server: 'https://kubernetes.default.svc'
@@ -46,7 +46,7 @@ spec:
   source:
     repoURL: https://perfectscale-io.github.io
     chart: psc-autoscaler
-    targetRevision: v1.0.10
+    targetRevision: v1.0.49
     helm:
       values: |-
         secret:

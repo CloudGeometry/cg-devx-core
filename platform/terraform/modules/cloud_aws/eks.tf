@@ -2,7 +2,7 @@
 
 module "eks" {
   source                         = "terraform-aws-modules/eks/aws"
-  version                        = "~>19.16.0"
+  version                        = "~> 20.37"
   cluster_name                   = local.name
   cluster_version                = local.cluster_version
   cluster_endpoint_public_access = true
@@ -51,8 +51,12 @@ module "eks" {
   subnet_ids               = module.vpc.private_subnets
   control_plane_subnet_ids = module.vpc.intra_subnets
 
-  create_aws_auth_configmap       = (local.node_group_type == "SELF") ? true : false
-  manage_aws_auth_configmap       = (local.node_group_type == "SELF") ? true : false
+  # EKS module v20 replaced the in-module aws-auth ConfigMap management with EKS
+  # Access Entries. API_AND_CONFIG_MAP keeps the ConfigMap honored for backward
+  # compatibility (and for SELF-managed node registration, which must now be done
+  # via the dedicated terraform-aws-modules/eks/aws//modules/aws-auth submodule).
+  authentication_mode                      = "API_AND_CONFIG_MAP"
+  enable_cluster_creator_admin_permissions = true
 
   create_node_security_group      = false
   eks_managed_node_group_defaults = {

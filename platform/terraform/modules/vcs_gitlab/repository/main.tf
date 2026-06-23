@@ -19,7 +19,7 @@ resource "gitlab_project" "repo" {
   visibility_level                 = var.visibility
   initialize_with_readme           = var.auto_init
   archive_on_destroy               = var.archive_on_destroy
-  issues_enabled                   = var.has_issues
+  issues_access_level              = var.has_issues ? "enabled" : "disabled"
   remove_source_branch_after_merge = var.delete_branch_on_merge
   namespace_id                     = var.vcs_owner
   # disable shared runners and force usage of group runners provided by the platform
@@ -45,14 +45,12 @@ resource "gitlab_branch_protection" "this" {
   branch           = var.default_branch_name
   allow_force_push = false
 
-  dynamic "allowed_to_push" {
-    for_each = var.vcs_subscription_plan && var.allow_push_to_protected ? [1] : []
-
-    content {
+  # gitlab provider v17+ exposes allowed_to_push as a list attribute instead of a nested block
+  allowed_to_push = var.vcs_subscription_plan && var.allow_push_to_protected ? [
+    {
       user_id = data.gitlab_current_user.current.id
     }
-
-  }
+  ] : []
 }
 
 output "repo_name" {

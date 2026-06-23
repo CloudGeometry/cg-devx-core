@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: 'https://charts.gitlab.io'
-    targetRevision: 0.77.2
+    targetRevision: 0.90.0
     helm:
       values: |-
         gitlabUrl: https://gitlab.com
@@ -43,14 +43,14 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: vsc.runner
-          cg-devx.metadata.chart-version: 0.77.2
-          cg-devx.metadata.version: 0.27.6
+          cg-devx.metadata.chart-version: 0.90.0
+          cg-devx.metadata.version: 19.1.0
         podLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: vsc.runner
-          cg-devx.metadata.chart-version: 0.77.2
-          cg-devx.metadata.version: 0.27.6    
+          cg-devx.metadata.chart-version: 0.90.0
+          cg-devx.metadata.version: 19.1.0    
     chart: gitlab-runner
   syncPolicy:
     automated:

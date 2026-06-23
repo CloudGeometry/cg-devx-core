@@ -50,9 +50,9 @@ spec:
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: log-management.promtail
             cg-devx.metadata.chart-version: 0.20.2
-            cg-devx.metadata.version: 0.25.2
+            cg-devx.metadata.version: 3.5.1
     repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 6.16.6
+    targetRevision: 6.17.1
   syncPolicy:
     automated:
       prune: true

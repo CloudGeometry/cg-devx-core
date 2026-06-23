@@ -34,9 +34,9 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     vnet_subnet_id         = azurerm_subnet.private_subnet.id
     zones                  = local.azs
     node_labels            = var.cluster_node_labels
-    enable_auto_scaling    = local.enable_native_auto_scaling
-    enable_host_encryption = false
-    enable_node_public_ip  = false
+    auto_scaling_enabled   = local.enable_native_auto_scaling
+    host_encryption_enabled = false
+    node_public_ip_enabled = false
     node_count             = local.default_node_group.desired_size
     min_count              = local.enable_native_auto_scaling ? local.default_node_group.min_size : null
     max_count              = local.enable_native_auto_scaling ? local.default_node_group.max_size : null
@@ -73,7 +73,6 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
   }
 
   azure_active_directory_role_based_access_control {
-    managed            = true
     tenant_id          = data.azurerm_client_config.current.tenant_id
     azure_rbac_enabled = true
   }
@@ -111,7 +110,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "node_pool" {
   node_taints           = each.value.gpu_enabled == true ? ["group-type=gpu-enabled:NoSchedule"] : []
   orchestrator_version  = var.cluster_version
   tags                  = local.tags
-  enable_node_public_ip = false
+  node_public_ip_enabled = false
   max_pods              = local.max_pods
   priority              = each.value.capacity_type
 

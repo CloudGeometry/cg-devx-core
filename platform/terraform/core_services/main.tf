@@ -4,16 +4,20 @@ terraform {
 
   required_providers {
     harbor = {
-      source = "goharbor/harbor"
+      source  = "goharbor/harbor"
+      version = "~> 3.0"
     }
     sonarqube = {
-      source = "jdamata/sonarqube"
+      source  = "jdamata/sonarqube"
+      version = "~> 0.16"
     }
     restapi = {
-      source = "Mastercard/restapi"
+      source  = "Mastercard/restapi"
+      version = "~> 3.0"
     }
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
+      version = "~> 5.0"
     }
   }
 }

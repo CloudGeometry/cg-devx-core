@@ -15,7 +15,7 @@ spec:
   source:
     chart: sonarqube
     repoURL: https://SonarSource.github.io/helm-chart-sonarqube
-    targetRevision: 10.2.0
+    targetRevision: 10.8.1
     helm:
       releaseName: sonarqube
       values: |
@@ -49,8 +49,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: code-quality.sonarqube
-            cg-devx.metadata.chart-version: 10.2.0
-            cg-devx.metadata.version: 10.2.0
+            cg-devx.metadata.chart-version: 10.8.1
+            cg-devx.metadata.version: 10.8.1
           tls:
             - secretName: sonarqube-tls
               hosts:
@@ -61,8 +61,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: code-quality.sonarqube
-          cg-devx.metadata.chart-version: 10.2.0
-          cg-devx.metadata.version: 10.2.0
+          cg-devx.metadata.chart-version: 10.8.1
+          cg-devx.metadata.version: 10.8.1
   syncPolicy:
     automated:
       prune: true

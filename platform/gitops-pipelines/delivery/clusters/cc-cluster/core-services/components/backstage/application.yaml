@@ -10,14 +10,14 @@ spec:
   source:
     repoURL: https://backstage.github.io/charts
     chart: backstage
-    targetRevision: 1.6.0
+    targetRevision: 2.8.2
     helm:
       values: |-
         commonLabels:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: developer-portal.backstage
-          cg-devx.metadata.chart-version: 1.6.0
+          cg-devx.metadata.chart-version: 2.8.2
           cg-devx.metadata.version: 1.17.0-next.2
         global:
           imageRegistry: ""
@@ -57,7 +57,6 @@ spec:
             tag: 1.17.0-next.2
             pullPolicy: Always
             pullSecrets: []
-            debug: false
           containerPorts:
             backend: 7007
           command: ["node", "packages/backend"]

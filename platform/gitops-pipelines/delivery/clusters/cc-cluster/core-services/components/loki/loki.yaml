@@ -47,8 +47,8 @@ spec:
             cg-devx.cost-allocation.cost-center: platform
             cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
             cg-devx.metadata.service: log-management.loki
-            cg-devx.metadata.chart-version: 6.30.0
-            cg-devx.metadata.version: 3.5.0
+            cg-devx.metadata.chart-version: 7.0.0
+            cg-devx.metadata.version: 3.6.7
         test:
           enabled: false
         lokiCanary:
@@ -99,7 +99,7 @@ spec:
                       summary: >-
                         {{ printf "Service {{ $labels.namespace }}, Pod {{ $labels.pod }} has being force terminated and is attempting to recover." }}
     repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 6.30.0
+    targetRevision: 7.0.0
   syncPolicy:
     automated:
       prune: true

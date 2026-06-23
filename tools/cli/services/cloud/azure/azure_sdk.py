@@ -10,7 +10,7 @@ from azure.mgmt.dns import DnsManagementClient
 from azure.mgmt.privatedns import PrivateDnsManagementClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
-from azure.mgmt.storage.v2021_04_01.models import SkuName, Kind
+from azure.mgmt.storage.models import SkuName, Kind
 from azure.mgmt.subscription import SubscriptionClient
 from azure.storage.blob import BlobServiceClient
 

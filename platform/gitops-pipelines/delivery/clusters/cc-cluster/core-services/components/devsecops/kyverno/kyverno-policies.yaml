@@ -13,7 +13,7 @@ spec:
   source:
     chart: kyverno-policies
     repoURL: https://kyverno.github.io/kyverno
-    targetRevision: v3.4.1
+    targetRevision: v3.8.0
     helm:
       releaseName: kyverno-policies
       values: |
@@ -21,8 +21,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: policy-engine.kyverno-policies
-          cg-devx.metadata.chart-version: 3.4.1
-          cg-devx.metadata.version: 1.14.1
+          cg-devx.metadata.chart-version: 3.8.0
+          cg-devx.metadata.version: v1.18.0
   syncPolicy:
     automated:
       prune: true

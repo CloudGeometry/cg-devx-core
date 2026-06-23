@@ -17,7 +17,7 @@ resource "azurerm_subnet" "public_subnet" {
   resource_group_name                           = azurerm_resource_group.rg.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
   address_prefixes                              = [cidrsubnet(var.cluster_network_cidr, 4, 0)]
-  private_endpoint_network_policies_enabled     = false
+  private_endpoint_network_policies             = "Disabled"
   private_link_service_network_policies_enabled = true
 }
 
@@ -26,7 +26,7 @@ resource "azurerm_subnet" "private_subnet" {
   resource_group_name                           = azurerm_resource_group.rg.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
   address_prefixes                              = [cidrsubnet(var.cluster_network_cidr, 4, 1)]
-  private_endpoint_network_policies_enabled     = false
+  private_endpoint_network_policies             = "Disabled"
   private_link_service_network_policies_enabled = true
   service_endpoints                             = ["Microsoft.KeyVault", "Microsoft.Storage"]
 }
@@ -36,7 +36,7 @@ resource "azurerm_subnet" "internal_subnet" {
   resource_group_name                           = azurerm_resource_group.rg.name
   virtual_network_name                          = azurerm_virtual_network.vnet.name
   address_prefixes                              = [cidrsubnet(var.cluster_network_cidr, 4, 2)]
-  private_endpoint_network_policies_enabled     = false
+  private_endpoint_network_policies             = "Disabled"
   private_link_service_network_policies_enabled = true
 }
 

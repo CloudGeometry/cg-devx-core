@@ -24,8 +24,8 @@ spec:
           cg-devx.cost-allocation.cost-center: platform
           cg-devx.metadata.owner: <GITOPS_REPOSITORY_NAME>-admin
           cg-devx.metadata.service: observability.prometheus-stack
-          cg-devx.metadata.chart-version: 72.6.2
-          cg-devx.metadata.version: 0.82.2
+          cg-devx.metadata.chart-version: 87.1.0
+          cg-devx.metadata.version: v0.92.0
         prometheus:
           prometheusSpec:
             podMonitorSelectorNilUsesHelmValues: false
@@ -197,7 +197,7 @@ spec:
               k8s-scaler-keda:
                 url: https://raw.githubusercontent.com/kedacore/keda/main/config/grafana/keda-dashboard.json
     repoURL: https://prometheus-community.github.io/helm-charts
-    targetRevision: 72.6.2
+    targetRevision: 87.1.0
   syncPolicy:
     automated:
       prune: true
